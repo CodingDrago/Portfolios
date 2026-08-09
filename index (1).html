@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Sora:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
   :root{
     --bg: #0a0e14;
@@ -119,7 +120,7 @@
     width: min(88vw, 128vh, 900px);
     aspect-ratio: 760 / 560;
   }
-  #stage{ width: 100%; height: 100%; overflow: visible; }
+  #stage{ position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 
   #scroll-cue{
     position: absolute;
@@ -143,23 +144,9 @@
   }
   @keyframes scrollPulse{ 0%,100%{ opacity: 0.2; } 50%{ opacity: 1; } }
 
-  /* ================= ARM + TILES ================= */
-  .arm-link{ stroke: var(--trace-live); stroke-width: 7; stroke-linecap: round; fill: none; pointer-events: none; }
-  .arm-joint{ fill: var(--bg); stroke: var(--trace-live); stroke-width: 3; pointer-events: none; }
-  .arm-base{
-    fill: var(--panel-bg);
-    stroke: var(--trace-live);
-    stroke-width: 3;
-    pointer-events: none;
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: baseBreathe 3.2s ease-in-out infinite;
-  }
-  @keyframes baseBreathe{
-    0%, 100%{ transform: scale(1); }
-    50%{ transform: scale(1.06); }
-  }
-  .claw-prong{ stroke: var(--amber); stroke-width: 5; stroke-linecap: round; fill: none; pointer-events: none; }
+  /* ================= ARM (3D) + TILES ================= */
+  #arm-3d{ position: absolute; inset: 0; pointer-events: none; }
+  #arm-3d canvas{ display: block; width: 100%; height: 100%; }
 
   .tile{ cursor: pointer; pointer-events: all; }
   .tile-rect{
@@ -326,6 +313,7 @@
     </div>
 
     <div id="stage-wrap">
+      <div id="arm-3d"></div>
       <svg id="stage" viewBox="0 0 760 560" xmlns="http://www.w3.org/2000/svg">
         <g class="tile" data-key="summary" data-title="Summary">
           <rect class="tile-rect" x="310" y="30" width="140" height="94" rx="4"/>
@@ -347,14 +335,6 @@
           <text class="tile-label" x="100" y="271">Projects</text>
           <text class="tile-caption" x="100" y="297">the work</text>
         </g>
-
-        <circle class="arm-base" cx="380" cy="280" r="22"/>
-        <line id="upper-arm" class="arm-link" x1="380" y1="280" x2="380" y2="280"/>
-        <circle id="elbow" class="arm-joint" cx="380" cy="280" r="9"/>
-        <line id="forearm" class="arm-link" x1="380" y1="280" x2="380" y2="280"/>
-        <circle id="wrist" class="arm-joint" cx="380" cy="280" r="7"/>
-        <line id="claw-a" class="claw-prong" x1="380" y1="280" x2="380" y2="280"/>
-        <line id="claw-b" class="claw-prong" x1="380" y1="280" x2="380" y2="280"/>
       </svg>
     </div>
   </div>
@@ -507,25 +487,20 @@
 </script>
 
 <script>
-/* ===================== ARM + TILES ===================== */
+/* ===================== 3D ARM + TILES ===================== */
 (function(){
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var stageWrap = document.getElementById('stage-wrap');
+  var armContainer = document.getElementById('arm-3d');
   var stage = document.getElementById('stage');
-  var upperArm = document.getElementById('upper-arm');
-  var forearm = document.getElementById('forearm');
-  var elbowEl = document.getElementById('elbow');
-  var wristEl = document.getElementById('wrist');
-  var clawA = document.getElementById('claw-a');
-  var clawB = document.getElementById('claw-b');
   var panel = document.getElementById('panel');
   var panelTitle = document.getElementById('panel-title');
   var panelBody = document.getElementById('panel-body');
   var panelClose = document.getElementById('panel-close');
 
-  var BASE = { x: 380, y: 280 };
-  var L1 = 210, L2 = 190;
+  var BASE = { x: 0, y: 0 };
+  var L1 = 2.1, L2 = 1.9;
   var MAX_REACH = (L1 + L2) * 0.97;
   var MIN_REACH = Math.abs(L1 - L2) * 1.15;
 
@@ -536,11 +511,96 @@
     projects: { title: 'Projects', body: 'The project grid lives here — robotics builds, firmware work, hackathon entries.' }
   };
 
-  var desired = { x: 300, y: 140 };
-  var current = { x: 300, y: 140 };
+  var desired = { x: 0, y: 0.7 };
+  var current = { x: 0, y: 0.7 };
   var grip = 0;
   var mode = 'idle';
   var pointerActive = false;
+
+  /* ---------- Three.js scene setup ---------- */
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(32, 760/560, 0.1, 50);
+  camera.position.set(0, 0, 9);
+  camera.lookAt(0, 0, 0);
+
+  var renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  renderer.setClearColor(0x000000, 0);
+  armContainer.appendChild(renderer.domElement);
+
+  function resizeRenderer(){
+    var w = stageWrap.clientWidth, h = stageWrap.clientHeight;
+    if (w === 0 || h === 0) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  resizeRenderer();
+  window.addEventListener('resize', resizeRenderer);
+
+  scene.add(new THREE.AmbientLight(0x33445a, 0.65));
+  var keyLight = new THREE.DirectionalLight(0x9fc6ee, 1.15);
+  keyLight.position.set(2.5, 3, 4);
+  scene.add(keyLight);
+  var rimLight = new THREE.DirectionalLight(0xe6b45a, 0.45);
+  rimLight.position.set(-3, -1.5, 2);
+  scene.add(rimLight);
+  var grabLight = new THREE.PointLight(0xe6b45a, 0, 6, 2);
+  scene.add(grabLight);
+
+  var bodyMat = new THREE.MeshStandardMaterial({ color: 0x141b24, metalness: 0.7, roughness: 0.35, emissive: 0x0d2a3f, emissiveIntensity: 0.3 });
+  var jointMat = new THREE.MeshStandardMaterial({ color: 0x0d131b, metalness: 0.55, roughness: 0.4, emissive: 0x5aa9e6, emissiveIntensity: 0.55 });
+  var clawMat = new THREE.MeshStandardMaterial({ color: 0x1a140a, metalness: 0.6, roughness: 0.3, emissive: 0xe6b45a, emissiveIntensity: 0.55 });
+
+  var baseMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.55, 0.26, 28), bodyMat);
+  scene.add(baseMesh);
+
+  var upperArmGeo = new THREE.CylinderGeometry(0.12, 0.15, 1, 16);
+  var forearmGeo = new THREE.CylinderGeometry(0.09, 0.12, 1, 16);
+  var clawGeo = new THREE.CylinderGeometry(0.03, 0.055, 1, 10);
+  var jointGeo = new THREE.SphereGeometry(0.16, 20, 20);
+  var wristGeo = new THREE.SphereGeometry(0.13, 20, 20);
+
+  var upperArmMesh = new THREE.Mesh(upperArmGeo, bodyMat);
+  var elbowMesh = new THREE.Mesh(jointGeo, jointMat);
+  var forearmMesh = new THREE.Mesh(forearmGeo, bodyMat);
+  var wristMesh = new THREE.Mesh(wristGeo, jointMat);
+  var clawAMesh = new THREE.Mesh(clawGeo, clawMat);
+  var clawBMesh = new THREE.Mesh(clawGeo, clawMat);
+  scene.add(upperArmMesh, elbowMesh, forearmMesh, wristMesh, clawAMesh, clawBMesh);
+
+  var UP = new THREE.Vector3(0, 1, 0);
+  function setBone(mesh, p1, p2, minLen){
+    var dir = new THREE.Vector3().subVectors(p2, p1);
+    var len = Math.max(dir.length(), minLen || 0.01);
+    mesh.position.copy(p1).addScaledVector(dir, 0.5 * (dir.length() > 0 ? 1 : 0));
+    mesh.position.lerpVectors(p1, p2, 0.5);
+    mesh.scale.set(1, len, 1);
+    var axis = dir.clone().normalize();
+    if (axis.lengthSq() > 0.0001) {
+      mesh.quaternion.setFromUnitVectors(UP, axis);
+    }
+  }
+
+  /* ---------- screen <-> 3D world conversion ---------- */
+  var raycaster = new THREE.Raycaster();
+  var ndc = new THREE.Vector2();
+  var groundPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+
+  function clientToWorld(clientX, clientY){
+    var rect = stageWrap.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return { x: 0, y: 0 };
+    ndc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    ndc.y = -(((clientY - rect.top) / rect.height) * 2 - 1);
+    raycaster.setFromCamera(ndc, camera);
+    var pt = new THREE.Vector3();
+    var hit = raycaster.ray.intersectPlane(groundPlane, pt);
+    return hit ? { x: pt.x, y: pt.y } : { x: 0, y: 0 };
+  }
+
+  function tileWorldCenter(el){
+    var rect = el.querySelector('.tile-rect').getBoundingClientRect();
+    return clientToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  }
 
   function clampToReach(p){
     var dx = p.x - BASE.x, dy = p.y - BASE.y;
@@ -549,13 +609,6 @@
     var clamped = Math.min(Math.max(d, MIN_REACH), MAX_REACH);
     var s = clamped / d;
     return { x: BASE.x + dx * s, y: BASE.y + dy * s };
-  }
-
-  function stagePointFromClient(clientX, clientY){
-    var rect = stageWrap.getBoundingClientRect();
-    var nx = (clientX - rect.left) / rect.width;
-    var ny = (clientY - rect.top) / rect.height;
-    return { x: nx * 760, y: ny * 560 };
   }
 
   function solveIK(target){
@@ -581,33 +634,40 @@
     return { elbow: elbow, wrist: wrist, forearmAngle: forearmAngle };
   }
 
+  var clock = { t: 0 };
+
   function render(){
     var solved = solveIK(current);
-    upperArm.setAttribute('x1', BASE.x); upperArm.setAttribute('y1', BASE.y);
-    upperArm.setAttribute('x2', solved.elbow.x); upperArm.setAttribute('y2', solved.elbow.y);
-    elbowEl.setAttribute('cx', solved.elbow.x); elbowEl.setAttribute('cy', solved.elbow.y);
-    forearm.setAttribute('x1', solved.elbow.x); forearm.setAttribute('y1', solved.elbow.y);
-    forearm.setAttribute('x2', solved.wrist.x); forearm.setAttribute('y2', solved.wrist.y);
-    wristEl.setAttribute('cx', solved.wrist.x); wristEl.setAttribute('cy', solved.wrist.y);
+    var shoulderP = new THREE.Vector3(BASE.x, BASE.y, 0);
+    var elbowP = new THREE.Vector3(solved.elbow.x, solved.elbow.y, 0);
+    var wristP = new THREE.Vector3(solved.wrist.x, solved.wrist.y, 0);
+
+    setBone(upperArmMesh, shoulderP, elbowP, 0.05);
+    elbowMesh.position.copy(elbowP);
+    setBone(forearmMesh, elbowP, wristP, 0.05);
+    wristMesh.position.copy(wristP);
 
     var openAngle = 0.5 - grip * 0.42;
-    var prongLen = 22;
+    var prongLen = 0.42;
     var a1 = solved.forearmAngle + openAngle;
     var a2 = solved.forearmAngle - openAngle;
-    clawA.setAttribute('x1', solved.wrist.x); clawA.setAttribute('y1', solved.wrist.y);
-    clawA.setAttribute('x2', solved.wrist.x + prongLen * Math.cos(a1));
-    clawA.setAttribute('y2', solved.wrist.y + prongLen * Math.sin(a1));
-    clawB.setAttribute('x1', solved.wrist.x); clawB.setAttribute('y1', solved.wrist.y);
-    clawB.setAttribute('x2', solved.wrist.x + prongLen * Math.cos(a2));
-    clawB.setAttribute('y2', solved.wrist.y + prongLen * Math.sin(a2));
+    var tipA = new THREE.Vector3(wristP.x + prongLen * Math.cos(a1), wristP.y + prongLen * Math.sin(a1), 0);
+    var tipB = new THREE.Vector3(wristP.x + prongLen * Math.cos(a2), wristP.y + prongLen * Math.sin(a2), 0);
+    setBone(clawAMesh, wristP, tipA, 0.02);
+    setBone(clawBMesh, wristP, tipB, 0.02);
 
-    return solved;
+    grabLight.position.copy(wristP).setZ(0.6);
+    grabLight.intensity = grip * 2.2;
+
+    baseMesh.material.emissiveIntensity = 0.3 + Math.sin(clock.t * 0.0022) * 0.12;
+
+    renderer.render(scene, camera);
   }
 
   function onPointerMove(e){
     if (mode !== 'idle') return;
     pointerActive = true;
-    var p = stagePointFromClient(e.clientX, e.clientY);
+    var p = clientToWorld(e.clientX, e.clientY);
     desired = clampToReach(p);
   }
   window.addEventListener('pointermove', onPointerMove);
@@ -617,7 +677,7 @@
     var angle = t * 0.0006;
     return clampToReach({
       x: BASE.x + Math.cos(angle) * (MAX_REACH * 0.5),
-      y: BASE.y + Math.sin(angle) * (MAX_REACH * 0.32)
+      y: BASE.y + Math.sin(angle) * (MAX_REACH * 0.3) + 0.3
     });
   }
 
@@ -635,28 +695,22 @@
   }
 
   function loop(ts){
+    clock.t = ts;
     if (mode === 'idle') {
       if (!pointerActive) desired = idleSway(ts);
-      current.x += (desired.x - current.x) * 0.32;
-      current.y += (desired.y - current.y) * 0.32;
+      current.x += (desired.x - current.x) * 0.28;
+      current.y += (desired.y - current.y) * 0.28;
       grip += (0 - grip) * 0.2;
-      render();
     }
+    render();
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
 
-  function tileCenter(el){
-    var rect = el.querySelector('.tile-rect');
-    var x = parseFloat(rect.getAttribute('x')) + parseFloat(rect.getAttribute('width')) / 2;
-    var y = parseFloat(rect.getAttribute('y')) + parseFloat(rect.getAttribute('height')) / 2;
-    return { x: x, y: y };
-  }
-
   function openPanel(key, tileEl){
     if (mode !== 'idle') return;
     mode = 'reaching';
-    var tilePos = tileCenter(tileEl);
+    var tilePos = tileWorldCenter(tileEl);
     var startPos = { x: current.x, y: current.y };
 
     if (reduceMotion) {
@@ -668,12 +722,10 @@
     tween(320, function(e){
       current.x = startPos.x + (tilePos.x - startPos.x) * e;
       current.y = startPos.y + (tilePos.y - startPos.y) * e;
-      render();
     }, function(){
       mode = 'grabbing';
       tween(150, function(e){
         grip = e;
-        render();
       }, function(){
         tileEl.classList.add('grabbed');
         launchPanel(key, tileEl);
@@ -730,7 +782,6 @@
       mode = 'releasing';
       tween(150, function(e){
         grip = 1 - e;
-        render();
       }, function(){
         mode = 'idle';
         desired = { x: current.x, y: current.y };
