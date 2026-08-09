@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guna — Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Sora:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0e14;
+    --panel-bg: #0d131b;
+    --trace-dim: #2d3d4f;
+    --trace-live: #5aa9e6;
+    --amber: #e6b45a;
+    --led-glow: #ff9d4d;
+    --flash: #eaf2fb;
+    --muted: #5c6f82;
+    --tile-bg: #0f151d;
+    --tile-border: #1f2d3d;
+    --mono: 'JetBrains Mono', 'IBM Plex Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+    --display: 'Chakra Petch', var(--mono);
+    --sans: 'Sora', -apple-system, sans-serif;
+  }
+  *{ box-sizing: border-box; }
+  html, body{
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: var(--mono);
+    color: #cfd8d3;
+  }
+
+  /* ================= MAIN CONTENT (real page) ================= */
+  #main-content{
+    position: fixed;
+    inset: 0;
+    filter: brightness(0.12);
+    will-change: filter;
+    overflow: hidden;
+  }
+
+  #bg-grid{
+    position: absolute;
+    inset: -30px;
+    background-image: radial-gradient(rgba(90,169,230,0.22) 1.5px, transparent 1.5px);
+    background-size: 28px 28px;
+    pointer-events: none;
+    animation: gridDrift 50s linear infinite alternate;
+  }
+  @keyframes gridDrift{
+    0%{ background-position: 0 0; }
+    100%{ background-position: 42px 30px; }
+  }
+  .corner{
+    position: absolute; width: 30px; height: 30px;
+    border-color: var(--trace-live);
+    pointer-events: none;
+    animation: cornerPulse 4.5s ease-in-out infinite;
+  }
+  .corner-tr{ animation-delay: 0.6s; }
+  .corner-bl{ animation-delay: 1.2s; }
+  .corner-br{ animation-delay: 1.8s; }
+  @keyframes cornerPulse{
+    0%, 100%{ opacity: 0.35; }
+    50%{ opacity: 0.9; }
+  }
+  .corner-tl{ top: 26px; left: 26px; border-top: 2px solid; border-left: 2px solid; }
+  .corner-tr{ top: 26px; right: 26px; border-top: 2px solid; border-right: 2px solid; }
+  .corner-bl{ bottom: 26px; left: 26px; border-bottom: 2px solid; border-left: 2px solid; }
+  .corner-br{ bottom: 26px; right: 26px; border-bottom: 2px solid; border-right: 2px solid; }
+
+  #hero{
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(8px, 1.6vh, 18px);
+    text-align: center;
+    padding: 24px 16px;
+  }
+
+  #hero-header .eyebrow{
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+  #hero-header h1{
+    color: var(--amber);
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(1.8rem, 5.4vw, 3.2rem);
+    letter-spacing: 0.04em;
+    margin: 0;
+    animation: titleGlow 5s ease-in-out infinite;
+  }
+  @keyframes titleGlow{
+    0%, 100%{ text-shadow: 0 0 0 rgba(230,180,90,0); }
+    50%{ text-shadow: 0 0 22px rgba(230,180,90,0.4); }
+  }
+  #hero-header .sub{
+    color: #8a9aab;
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    margin: 6px 0 0;
+  }
+
+  #stage-wrap{
+    position: relative;
+    width: min(88vw, 128vh, 900px);
+    aspect-ratio: 760 / 560;
+  }
+  #stage{ width: 100%; height: 100%; overflow: visible; }
+
+  #scroll-cue{
+    position: absolute;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    pointer-events: none;
+  }
+  #scroll-cue .line{
+    width: 1px;
+    height: 24px;
+    background: linear-gradient(var(--trace-live), transparent);
+    animation: scrollPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes scrollPulse{ 0%,100%{ opacity: 0.2; } 50%{ opacity: 1; } }
+
+  /* ================= ARM + TILES ================= */
+  .arm-link{ stroke: var(--trace-live); stroke-width: 7; stroke-linecap: round; fill: none; pointer-events: none; }
+  .arm-joint{ fill: var(--bg); stroke: var(--trace-live); stroke-width: 3; pointer-events: none; }
+  .arm-base{
+    fill: var(--panel-bg);
+    stroke: var(--trace-live);
+    stroke-width: 3;
+    pointer-events: none;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: baseBreathe 3.2s ease-in-out infinite;
+  }
+  @keyframes baseBreathe{
+    0%, 100%{ transform: scale(1); }
+    50%{ transform: scale(1.06); }
+  }
+  .claw-prong{ stroke: var(--amber); stroke-width: 5; stroke-linecap: round; fill: none; pointer-events: none; }
+
+  .tile{ cursor: pointer; pointer-events: all; }
+  .tile-rect{
+    fill: var(--tile-bg);
+    stroke: var(--tile-border);
+    stroke-width: 2.5;
+    pointer-events: all;
+    transition: stroke 0.2s ease, fill 0.2s ease;
+    animation: tileBreathe 5.5s ease-in-out infinite;
+  }
+  .tile:nth-of-type(1) .tile-rect{ animation-delay: 0s; }
+  .tile:nth-of-type(2) .tile-rect{ animation-delay: 1.3s; }
+  .tile:nth-of-type(3) .tile-rect{ animation-delay: 2.6s; }
+  .tile:nth-of-type(4) .tile-rect{ animation-delay: 3.9s; }
+  @keyframes tileBreathe{
+    0%, 100%{ stroke: var(--tile-border); }
+    50%{ stroke: #33526c; }
+  }
+  .tile:hover .tile-rect{ stroke: var(--trace-live); fill: #121c28; animation-play-state: paused; }
+  .tile-label{
+    fill: #b7c6d6;
+    font-family: var(--mono);
+    font-size: 18px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+    transition: fill 0.2s ease;
+  }
+  .tile-caption{
+    fill: var(--muted);
+    font-family: var(--sans);
+    font-style: italic;
+    font-weight: 300;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+  }
+  .tile:hover .tile-label{ fill: var(--amber); }
+  .tile.grabbed{ opacity: 0; }
+
+  /* ================= FULLSCREEN PANEL ================= */
+  #panel{
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: var(--panel-bg);
+    display: none;
+    overflow-y: auto;
+    transform-origin: top left;
+    will-change: transform;
+  }
+  #panel.open{ display: block; }
+  #panel-inner{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 90px 32px 64px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  #panel.settled #panel-inner{ opacity: 1; }
+  #panel h2{
+    color: var(--amber);
+    font-family: var(--display);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    font-size: clamp(1.4rem, 3.5vw, 2.1rem);
+    margin: 0 0 18px;
+  }
+  #panel p{ color: #a8b6c4; font-family: var(--sans); font-weight: 300; line-height: 1.7; font-size: 0.95rem; }
+  #panel-close{
+    position: fixed;
+    top: 22px;
+    right: 28px;
+    background: transparent;
+    border: 1px solid var(--tile-border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  #panel-close:hover{ border-color: var(--trace-live); color: var(--trace-live); }
+
+  /* ================= LOADER ================= */
+  #loader{
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    background: var(--bg);
+    transition: opacity 0.35s ease;
+  }
+  #loader svg{ width: min(58vw, 380px); height: auto; overflow: visible; }
+
+  .trace{ fill: none; stroke: var(--trace-dim); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.25s ease; }
+  .trace.live{ stroke: var(--trace-live); }
+  .flow{ fill: none; stroke: var(--trace-live); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+  .part{ stroke: var(--trace-dim); stroke-width: 3; fill: none; transition: stroke 0.25s ease; }
+  .part.live{ stroke: var(--trace-live); }
+
+  #switch-lever{
+    transform-origin: 158px 30px;
+    transform: rotate(-26deg);
+    transition: transform 0.4s cubic-bezier(.4,0,.2,1);
+  }
+  #switch-lever.closed{ transform: rotate(0deg); }
+
+  #led-body{
+    transform-origin: 320px 110px;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    filter: drop-shadow(0 0 0px transparent);
+  }
+  #led-body.overload{
+    transform: scale(1.35);
+    filter: drop-shadow(0 0 14px var(--led-glow)) drop-shadow(0 0 28px var(--flash));
+  }
+  #led-body.overload polygon,
+  #led-body.overload line{ stroke: var(--flash); }
+
+  .loader-label{ fill: var(--muted); font-size: 10px; letter-spacing: 0.06em; font-family: var(--mono); }
+
+  /* ================= FLASH / RADIAL REVEAL ================= */
+  #flash{
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: var(--flash);
+    pointer-events: none;
+    opacity: 0;
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0%, transparent 0%, #000 0%);
+            mask-image: radial-gradient(circle at 50% 50%, transparent 0%, transparent 0%, #000 0%);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #loader, #flash{ display: none !important; }
+    #main-content{ filter: brightness(1) !important; }
+    #panel{ transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="main-content">
+  <div id="bg-grid"></div>
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <div id="hero">
+    <div id="hero-header">
+      <p class="eyebrow">ECE · Embedded Systems</p>
+      <h1>GUNA</h1>
+      <p class="sub">Robotics · IoT · Applied ML</p>
+    </div>
+
+    <div id="stage-wrap">
+      <svg id="stage" viewBox="0 0 760 560" xmlns="http://www.w3.org/2000/svg">
+        <g class="tile" data-key="summary" data-title="Summary">
+          <rect class="tile-rect" x="310" y="30" width="140" height="94" rx="4"/>
+          <text class="tile-label" x="380" y="68">Summary</text>
+          <text class="tile-caption" x="380" y="94">overview</text>
+        </g>
+        <g class="tile" data-key="about" data-title="About">
+          <rect class="tile-rect" x="590" y="233" width="140" height="94" rx="4"/>
+          <text class="tile-label" x="660" y="271">About</text>
+          <text class="tile-caption" x="660" y="297">background</text>
+        </g>
+        <g class="tile" data-key="social" data-title="Social">
+          <rect class="tile-rect" x="310" y="436" width="140" height="94" rx="4"/>
+          <text class="tile-label" x="380" y="474">Social</text>
+          <text class="tile-caption" x="380" y="500">connect</text>
+        </g>
+        <g class="tile" data-key="projects" data-title="Projects">
+          <rect class="tile-rect" x="30" y="233" width="140" height="94" rx="4"/>
+          <text class="tile-label" x="100" y="271">Projects</text>
+          <text class="tile-caption" x="100" y="297">the work</text>
+        </g>
+
+        <circle class="arm-base" cx="380" cy="280" r="22"/>
+        <line id="upper-arm" class="arm-link" x1="380" y1="280" x2="380" y2="280"/>
+        <circle id="elbow" class="arm-joint" cx="380" cy="280" r="9"/>
+        <line id="forearm" class="arm-link" x1="380" y1="280" x2="380" y2="280"/>
+        <circle id="wrist" class="arm-joint" cx="380" cy="280" r="7"/>
+        <line id="claw-a" class="claw-prong" x1="380" y1="280" x2="380" y2="280"/>
+        <line id="claw-b" class="claw-prong" x1="380" y1="280" x2="380" y2="280"/>
+      </svg>
+    </div>
+  </div>
+
+  <div id="scroll-cue"><span class="line"></span>SCROLL</div>
+</div>
+
+<div id="panel">
+  <button id="panel-close">Close ✕</button>
+  <div id="panel-inner">
+    <h2 id="panel-title">Section</h2>
+    <p id="panel-body">Placeholder content for this section goes here.</p>
+  </div>
+</div>
+
+<div id="flash"></div>
+
+<div id="loader">
+  <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+    <path class="trace" id="wire-top-left" d="M40,140 L40,30 L128,30" />
+    <path class="trace" id="wire-top-right" d="M188,30 L320,30 L320,84" />
+    <path class="trace" id="wire-bottom" d="M320,136 L320,190 L40,190 L40,140" />
+
+    <path class="flow" id="flow-path"
+          d="M40,140 L40,30 L128,30 M188,30 L320,30 L320,84 M320,136 L320,190 L40,190 L40,140"
+          stroke-dasharray="6 10" />
+
+    <g class="part" id="battery">
+      <line x1="26" y1="118" x2="54" y2="118" stroke-width="4"/>
+      <line x1="32" y1="128" x2="48" y2="128" stroke-width="2"/>
+      <line x1="26" y1="152" x2="54" y2="152" stroke-width="4"/>
+      <line x1="32" y1="142" x2="48" y2="142" stroke-width="2"/>
+    </g>
+    <text class="loader-label" x="8" y="180">VCC</text>
+
+    <g id="switch">
+      <circle cx="128" cy="30" r="3" fill="var(--trace-dim)" stroke="none"/>
+      <circle cx="188" cy="30" r="3" fill="var(--trace-dim)" stroke="none"/>
+      <line id="switch-lever" class="part" x1="128" y1="30" x2="186" y2="30" stroke-width="3"/>
+    </g>
+    <text class="loader-label" x="140" y="18">SW1</text>
+
+    <g id="led-body">
+      <polygon class="part" points="320,96 306,120 334,120" />
+      <line class="part" x1="306" y1="120" x2="334" y2="120" />
+      <line class="part" x1="298" y1="90" x2="290" y2="80" />
+      <line class="part" x1="308" y1="86" x2="300" y2="76" />
+    </g>
+    <text class="loader-label" x="336" y="112">LED1</text>
+  </svg>
+</div>
+
+<script>
+/* ===================== LOADING SEQUENCE ===================== */
+(function(){
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var mainContent = document.getElementById('main-content');
+  var loader = document.getElementById('loader');
+  var flash = document.getElementById('flash');
+  var switchLever = document.getElementById('switch-lever');
+  var ledBody = document.getElementById('led-body');
+  var flowPath = document.getElementById('flow-path');
+
+  if (reduceMotion) {
+    finish();
+    return;
+  }
+
+  var flowLen = flowPath.getTotalLength();
+  flowPath.style.strokeDasharray = flowLen;
+  flowPath.style.strokeDashoffset = flowLen;
+
+  var done = false;
+  var timers = [];
+  function at(ms, fn){ timers.push(setTimeout(fn, ms)); }
+  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+  function setLoop(live){
+    document.querySelectorAll('.trace').forEach(function(el){
+      el.classList.toggle('live', live);
+    });
+  }
+
+  at(450, function(){
+    switchLever.classList.add('closed');
+    setLoop(true);
+  });
+
+  at(750, function(){
+    flowPath.style.transition = 'stroke-dashoffset 0.42s linear, opacity 0.1s linear';
+    flowPath.style.opacity = '1';
+    flowPath.style.strokeDashoffset = '0';
+  });
+
+  at(1150, function(){
+    ledBody.classList.add('overload');
+  });
+
+  at(1230, function(){
+    flash.style.transition = 'opacity 0.18s ease-out';
+    flash.style.opacity = '0.85';
+    loader.style.opacity = '0';
+  });
+
+  at(1470, function(){
+    runReveal(950);
+  });
+
+  function runReveal(duration){
+    var start = null;
+    function step(ts){
+      if (done) return;
+      if (start === null) start = ts;
+      var raw = Math.min((ts - start) / duration, 1);
+      var eased = easeOutCubic(raw);
+      var radius = eased * 145;
+      flash.style.maskImage =
+        'radial-gradient(circle at 50% 50%, transparent 0%, transparent ' + radius + '%, #000 ' + Math.min(radius + 2, 148) + '%)';
+      flash.style.webkitMaskImage = flash.style.maskImage;
+      flash.style.opacity = String(0.85 * (1 - eased * 0.9));
+      mainContent.style.filter = 'brightness(' + (0.12 + eased * 0.88) + ')';
+      if (raw < 1) {
+        requestAnimationFrame(step);
+      } else {
+        finish();
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function finish(){
+    if (done) return;
+    done = true;
+    timers.forEach(clearTimeout);
+    mainContent.style.filter = 'brightness(1)';
+    flash.style.opacity = '0';
+    flash.style.pointerEvents = 'none';
+    loader.style.opacity = '0';
+    document.body.style.overflow = 'auto';
+    setTimeout(function(){
+      loader.style.display = 'none';
+      flash.style.display = 'none';
+    }, 400);
+  }
+
+  function skip(){ finish(); }
+  window.addEventListener('click', skip, { once: true });
+  window.addEventListener('keydown', skip, { once: true });
+})();
+</script>
+
+<script>
+/* ===================== ARM + TILES ===================== */
+(function(){
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var stageWrap = document.getElementById('stage-wrap');
+  var stage = document.getElementById('stage');
+  var upperArm = document.getElementById('upper-arm');
+  var forearm = document.getElementById('forearm');
+  var elbowEl = document.getElementById('elbow');
+  var wristEl = document.getElementById('wrist');
+  var clawA = document.getElementById('claw-a');
+  var clawB = document.getElementById('claw-b');
+  var panel = document.getElementById('panel');
+  var panelTitle = document.getElementById('panel-title');
+  var panelBody = document.getElementById('panel-body');
+  var panelClose = document.getElementById('panel-close');
+
+  var BASE = { x: 380, y: 280 };
+  var L1 = 210, L2 = 190;
+  var MAX_REACH = (L1 + L2) * 0.97;
+  var MIN_REACH = Math.abs(L1 - L2) * 1.15;
+
+  var content = {
+    summary:  { title: 'Summary',  body: 'A quick snapshot of who I am and what I build — ECE student, embedded systems and robotics focus.' },
+    about:    { title: 'About',    body: 'Longer background: coursework, tools, how I got into hardware and firmware work.' },
+    social:   { title: 'Social',   body: 'Links out — GitHub, LinkedIn, wherever else you want to be reachable.' },
+    projects: { title: 'Projects', body: 'The project grid lives here — robotics builds, firmware work, hackathon entries.' }
+  };
+
+  var desired = { x: 300, y: 140 };
+  var current = { x: 300, y: 140 };
+  var grip = 0;
+  var mode = 'idle';
+  var pointerActive = false;
+
+  function clampToReach(p){
+    var dx = p.x - BASE.x, dy = p.y - BASE.y;
+    var d = Math.hypot(dx, dy);
+    if (d < 1e-4) return { x: BASE.x + MIN_REACH, y: BASE.y };
+    var clamped = Math.min(Math.max(d, MIN_REACH), MAX_REACH);
+    var s = clamped / d;
+    return { x: BASE.x + dx * s, y: BASE.y + dy * s };
+  }
+
+  function stagePointFromClient(clientX, clientY){
+    var rect = stageWrap.getBoundingClientRect();
+    var nx = (clientX - rect.left) / rect.width;
+    var ny = (clientY - rect.top) / rect.height;
+    return { x: nx * 760, y: ny * 560 };
+  }
+
+  function solveIK(target){
+    var dx = target.x - BASE.x, dy = target.y - BASE.y;
+    var d = Math.min(Math.max(Math.hypot(dx, dy), MIN_REACH), MAX_REACH);
+    var a = Math.atan2(dy, dx);
+    var cosA0 = (L1*L1 + d*d - L2*L2) / (2 * L1 * d);
+    cosA0 = Math.min(1, Math.max(-1, cosA0));
+    var a0 = Math.acos(cosA0);
+    var shoulderAngle = a - a0;
+    var elbow = {
+      x: BASE.x + L1 * Math.cos(shoulderAngle),
+      y: BASE.y + L1 * Math.sin(shoulderAngle)
+    };
+    var cosA1 = (L1*L1 + L2*L2 - d*d) / (2 * L1 * L2);
+    cosA1 = Math.min(1, Math.max(-1, cosA1));
+    var a1 = Math.acos(cosA1);
+    var forearmAngle = shoulderAngle + (Math.PI - a1);
+    var wrist = {
+      x: elbow.x + L2 * Math.cos(forearmAngle),
+      y: elbow.y + L2 * Math.sin(forearmAngle)
+    };
+    return { elbow: elbow, wrist: wrist, forearmAngle: forearmAngle };
+  }
+
+  function render(){
+    var solved = solveIK(current);
+    upperArm.setAttribute('x1', BASE.x); upperArm.setAttribute('y1', BASE.y);
+    upperArm.setAttribute('x2', solved.elbow.x); upperArm.setAttribute('y2', solved.elbow.y);
+    elbowEl.setAttribute('cx', solved.elbow.x); elbowEl.setAttribute('cy', solved.elbow.y);
+    forearm.setAttribute('x1', solved.elbow.x); forearm.setAttribute('y1', solved.elbow.y);
+    forearm.setAttribute('x2', solved.wrist.x); forearm.setAttribute('y2', solved.wrist.y);
+    wristEl.setAttribute('cx', solved.wrist.x); wristEl.setAttribute('cy', solved.wrist.y);
+
+    var openAngle = 0.5 - grip * 0.42;
+    var prongLen = 22;
+    var a1 = solved.forearmAngle + openAngle;
+    var a2 = solved.forearmAngle - openAngle;
+    clawA.setAttribute('x1', solved.wrist.x); clawA.setAttribute('y1', solved.wrist.y);
+    clawA.setAttribute('x2', solved.wrist.x + prongLen * Math.cos(a1));
+    clawA.setAttribute('y2', solved.wrist.y + prongLen * Math.sin(a1));
+    clawB.setAttribute('x1', solved.wrist.x); clawB.setAttribute('y1', solved.wrist.y);
+    clawB.setAttribute('x2', solved.wrist.x + prongLen * Math.cos(a2));
+    clawB.setAttribute('y2', solved.wrist.y + prongLen * Math.sin(a2));
+
+    return solved;
+  }
+
+  function onPointerMove(e){
+    if (mode !== 'idle') return;
+    pointerActive = true;
+    var p = stagePointFromClient(e.clientX, e.clientY);
+    desired = clampToReach(p);
+  }
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerleave', function(){ pointerActive = false; });
+
+  function idleSway(t){
+    var angle = t * 0.0006;
+    return clampToReach({
+      x: BASE.x + Math.cos(angle) * (MAX_REACH * 0.5),
+      y: BASE.y + Math.sin(angle) * (MAX_REACH * 0.32)
+    });
+  }
+
+  function tween(duration, onFrame, onDone){
+    var start = null;
+    function ease(t){ return 1 - Math.pow(1 - t, 3); }
+    function step(ts){
+      if (start === null) start = ts;
+      var raw = Math.min((ts - start) / duration, 1);
+      onFrame(ease(raw), raw);
+      if (raw < 1) requestAnimationFrame(step);
+      else if (onDone) onDone();
+    }
+    requestAnimationFrame(step);
+  }
+
+  function loop(ts){
+    if (mode === 'idle') {
+      if (!pointerActive) desired = idleSway(ts);
+      current.x += (desired.x - current.x) * 0.32;
+      current.y += (desired.y - current.y) * 0.32;
+      grip += (0 - grip) * 0.2;
+      render();
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  function tileCenter(el){
+    var rect = el.querySelector('.tile-rect');
+    var x = parseFloat(rect.getAttribute('x')) + parseFloat(rect.getAttribute('width')) / 2;
+    var y = parseFloat(rect.getAttribute('y')) + parseFloat(rect.getAttribute('height')) / 2;
+    return { x: x, y: y };
+  }
+
+  function openPanel(key, tileEl){
+    if (mode !== 'idle') return;
+    mode = 'reaching';
+    var tilePos = tileCenter(tileEl);
+    var startPos = { x: current.x, y: current.y };
+
+    if (reduceMotion) {
+      launchPanel(key, tileEl);
+      mode = 'idle';
+      return;
+    }
+
+    tween(320, function(e){
+      current.x = startPos.x + (tilePos.x - startPos.x) * e;
+      current.y = startPos.y + (tilePos.y - startPos.y) * e;
+      render();
+    }, function(){
+      mode = 'grabbing';
+      tween(150, function(e){
+        grip = e;
+        render();
+      }, function(){
+        tileEl.classList.add('grabbed');
+        launchPanel(key, tileEl);
+      });
+    });
+  }
+
+  function launchPanel(key, tileEl){
+    var data = content[key] || { title: tileEl.getAttribute('data-title'), body: '' };
+    panelTitle.textContent = data.title;
+    panelBody.textContent = data.body;
+
+    var rect = tileEl.querySelector('.tile-rect').getBoundingClientRect();
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var scaleX = rect.width / vw, scaleY = rect.height / vh;
+    var originX = rect.left + rect.width / 2;
+    var originY = rect.top + rect.height / 2;
+
+    panel.style.transition = 'none';
+    panel.style.transform =
+      'translate(' + (originX - vw/2) + 'px,' + (originY - vh/2) + 'px) scale(' + scaleX + ',' + scaleY + ')';
+    panel.classList.add('open');
+    void panel.offsetWidth;
+
+    panel.style.transition = reduceMotion ? 'none' : 'transform 0.45s cubic-bezier(.4,0,.2,1)';
+    panel.style.transform = 'translate(0,0) scale(1,1)';
+
+    setTimeout(function(){
+      panel.classList.add('settled');
+    }, reduceMotion ? 0 : 420);
+
+    mode = 'expanded';
+    panel.dataset.activeTile = key;
+  }
+
+  function closePanel(){
+    if (mode !== 'expanded') return;
+    var key = panel.dataset.activeTile;
+    var tileEl = document.querySelector('.tile[data-key="' + key + '"]');
+    var rect = tileEl.querySelector('.tile-rect').getBoundingClientRect();
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var scaleX = rect.width / vw, scaleY = rect.height / vh;
+    var originX = rect.left + rect.width / 2;
+    var originY = rect.top + rect.height / 2;
+
+    panel.classList.remove('settled');
+    panel.style.transition = reduceMotion ? 'none' : 'transform 0.4s cubic-bezier(.4,0,.2,1)';
+    panel.style.transform =
+      'translate(' + (originX - vw/2) + 'px,' + (originY - vh/2) + 'px) scale(' + scaleX + ',' + scaleY + ')';
+
+    var finish = function(){
+      panel.classList.remove('open');
+      tileEl.classList.remove('grabbed');
+      mode = 'releasing';
+      tween(150, function(e){
+        grip = 1 - e;
+        render();
+      }, function(){
+        mode = 'idle';
+        desired = { x: current.x, y: current.y };
+      });
+    };
+    if (reduceMotion) finish();
+    else setTimeout(finish, 400);
+  }
+
+  stage.addEventListener('click', function(e){
+    var tileEl = e.target.closest('.tile');
+    if (!tileEl) return;
+    openPanel(tileEl.getAttribute('data-key'), tileEl);
+  });
+  panelClose.addEventListener('click', closePanel);
+  window.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closePanel();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
