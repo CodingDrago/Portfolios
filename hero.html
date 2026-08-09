@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guna — Hero</title>
+<style>
+  :root{
+    --bg: #0a0e14;
+    --panel-bg: #0d131b;
+    --trace-dim: #2d3d4f;
+    --trace-live: #5aa9e6;
+    --amber: #e6b45a;
+    --muted: #5c6f82;
+    --tile-bg: #0f151d;
+    --tile-border: #1f2d3d;
+    --mono: 'JetBrains Mono', 'IBM Plex Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  }
+  *{ box-sizing: border-box; }
+  html, body{
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    font-family: var(--mono);
+    color: #cfd8d3;
+  }
+
+  #hero{
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  #stage-wrap{
+    position: relative;
+    width: min(86vw, 86vh, 640px);
+    aspect-ratio: 1 / 1;
+  }
+
+  #stage{ width: 100%; height: 100%; overflow: visible; }
+
+  .arm-link{
+    stroke: var(--trace-live);
+    stroke-width: 7;
+    stroke-linecap: round;
+    fill: none;
+    pointer-events: none;
+  }
+  .arm-joint{ fill: var(--bg); stroke: var(--trace-live); stroke-width: 3; pointer-events: none; }
+  .arm-base{ fill: var(--panel-bg); stroke: var(--trace-live); stroke-width: 3; pointer-events: none; }
+  .claw-prong{ stroke: var(--amber); stroke-width: 5; stroke-linecap: round; fill: none; pointer-events: none; }
+
+  .tile{ cursor: pointer; pointer-events: all; }
+  .tile-rect{
+    fill: var(--tile-bg);
+    stroke: var(--tile-border);
+    stroke-width: 2;
+    pointer-events: all;
+    transition: stroke 0.2s ease, fill 0.2s ease;
+  }
+  .tile:hover .tile-rect{ stroke: var(--trace-live); }
+  .tile-label{
+    fill: #9fb0a8;
+    font-family: var(--mono);
+    font-size: 15px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+    transition: fill 0.2s ease;
+  }
+  .tile:hover .tile-label{ fill: var(--amber); }
+  .tile.grabbed{ opacity: 0; }
+
+  /* ---------- Fullscreen takeover panel ---------- */
+  #panel{
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: var(--panel-bg);
+    display: none;
+    overflow-y: auto;
+    transform-origin: top left;
+    will-change: transform;
+  }
+  #panel.open{ display: block; }
+  #panel-inner{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 90px 32px 64px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  #panel.settled #panel-inner{ opacity: 1; }
+  #panel h2{
+    color: var(--amber);
+    letter-spacing: 0.08em;
+    font-size: clamp(1.4rem, 3.5vw, 2.1rem);
+    margin: 0 0 18px;
+  }
+  #panel p{ color: #a8b6b0; line-height: 1.7; font-size: 0.95rem; }
+  #panel-close{
+    position: fixed;
+    top: 22px;
+    right: 28px;
+    background: transparent;
+    border: 1px solid var(--tile-border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  #panel-close:hover{ border-color: var(--trace-live); color: var(--trace-live); }
+
+  @media (prefers-reduced-motion: reduce){
+    #panel{ transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="hero">
+  <div id="stage-wrap">
+    <svg id="stage" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+      <!-- tiles (ring around center) -->
+      <g class="tile" data-key="summary" data-title="Summary">
+        <rect class="tile-rect" x="240" y="60" width="120" height="80" rx="4"/>
+        <text class="tile-label" x="300" y="101">Summary</text>
+      </g>
+      <g class="tile" data-key="about" data-title="About">
+        <rect class="tile-rect" x="460" y="260" width="120" height="80" rx="4"/>
+        <text class="tile-label" x="520" y="301">About</text>
+      </g>
+      <g class="tile" data-key="social" data-title="Social">
+        <rect class="tile-rect" x="240" y="460" width="120" height="80" rx="4"/>
+        <text class="tile-label" x="300" y="501">Social</text>
+      </g>
+      <g class="tile" data-key="projects" data-title="Projects">
+        <rect class="tile-rect" x="20" y="260" width="120" height="80" rx="4"/>
+        <text class="tile-label" x="80" y="301">Projects</text>
+      </g>
+
+      <!-- arm -->
+      <circle class="arm-base" cx="300" cy="300" r="20"/>
+      <line id="upper-arm" class="arm-link" x1="300" y1="300" x2="300" y2="300"/>
+      <circle id="elbow" class="arm-joint" cx="300" cy="300" r="9"/>
+      <line id="forearm" class="arm-link" x1="300" y1="300" x2="300" y2="300"/>
+      <circle id="wrist" class="arm-joint" cx="300" cy="300" r="7"/>
+      <line id="claw-a" class="claw-prong" x1="300" y1="300" x2="300" y2="300"/>
+      <line id="claw-b" class="claw-prong" x1="300" y1="300" x2="300" y2="300"/>
+    </svg>
+  </div>
+</div>
+
+<div id="panel">
+  <button id="panel-close">Close ✕</button>
+  <div id="panel-inner">
+    <h2 id="panel-title">Section</h2>
+    <p id="panel-body">Placeholder content for this section goes here.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var stageWrap = document.getElementById('stage-wrap');
+  var stage = document.getElementById('stage');
+  var upperArm = document.getElementById('upper-arm');
+  var forearm = document.getElementById('forearm');
+  var elbowEl = document.getElementById('elbow');
+  var wristEl = document.getElementById('wrist');
+  var clawA = document.getElementById('claw-a');
+  var clawB = document.getElementById('claw-b');
+  var tiles = Array.prototype.slice.call(document.querySelectorAll('.tile'));
+  var panel = document.getElementById('panel');
+  var panelInner = document.getElementById('panel-inner');
+  var panelTitle = document.getElementById('panel-title');
+  var panelBody = document.getElementById('panel-body');
+  var panelClose = document.getElementById('panel-close');
+
+  var BASE = { x: 300, y: 300 };
+  var L1 = 170, L2 = 150;
+  var MAX_REACH = (L1 + L2) * 0.96;
+  var MIN_REACH = Math.abs(L1 - L2) * 1.15;
+
+  var content = {
+    summary:  { title: 'Summary',  body: 'A quick snapshot of who I am and what I build — ECE student, embedded systems and robotics focus.' },
+    about:    { title: 'About',    body: 'Longer background: coursework, tools, how I got into hardware and firmware work.' },
+    social:   { title: 'Social',   body: 'Links out — GitHub, LinkedIn, wherever else you want to be reachable.' },
+    projects: { title: 'Projects', body: 'The project grid lives here — robotics builds, firmware work, hackathon entries.' }
+  };
+
+  // current & desired IK target, in stage (viewBox) coordinates
+  var desired = { x: 300, y: 140 };
+  var current = { x: 300, y: 140 };
+  var grip = 0;          // 0 = open, 1 = closed
+  var mode = 'idle';     // idle | reaching | grabbing | lifting | returning | releasing
+  var idleT = 0;
+  var pointerActive = false;
+
+  function clampToReach(p){
+    var dx = p.x - BASE.x, dy = p.y - BASE.y;
+    var d = Math.hypot(dx, dy);
+    if (d < 1e-4) return { x: BASE.x + MIN_REACH, y: BASE.y };
+    var clamped = Math.min(Math.max(d, MIN_REACH), MAX_REACH);
+    var s = clamped / d;
+    return { x: BASE.x + dx * s, y: BASE.y + dy * s };
+  }
+
+  function stagePointFromClient(clientX, clientY){
+    var rect = stageWrap.getBoundingClientRect();
+    var nx = (clientX - rect.left) / rect.width;
+    var ny = (clientY - rect.top) / rect.height;
+    return { x: nx * 600, y: ny * 600 };
+  }
+
+  function solveIK(target){
+    var dx = target.x - BASE.x, dy = target.y - BASE.y;
+    var d = Math.min(Math.max(Math.hypot(dx, dy), MIN_REACH), MAX_REACH);
+    var a = Math.atan2(dy, dx);
+    var cosA0 = (L1*L1 + d*d - L2*L2) / (2 * L1 * d);
+    cosA0 = Math.min(1, Math.max(-1, cosA0));
+    var a0 = Math.acos(cosA0);
+    var shoulderAngle = a - a0;
+    var elbow = {
+      x: BASE.x + L1 * Math.cos(shoulderAngle),
+      y: BASE.y + L1 * Math.sin(shoulderAngle)
+    };
+    var cosA1 = (L1*L1 + L2*L2 - d*d) / (2 * L1 * L2);
+    cosA1 = Math.min(1, Math.max(-1, cosA1));
+    var a1 = Math.acos(cosA1);
+    var forearmAngle = shoulderAngle + (Math.PI - a1);
+    var wrist = {
+      x: elbow.x + L2 * Math.cos(forearmAngle),
+      y: elbow.y + L2 * Math.sin(forearmAngle)
+    };
+    return { elbow: elbow, wrist: wrist, forearmAngle: forearmAngle };
+  }
+
+  function render(){
+    var solved = solveIK(current);
+    upperArm.setAttribute('x1', BASE.x); upperArm.setAttribute('y1', BASE.y);
+    upperArm.setAttribute('x2', solved.elbow.x); upperArm.setAttribute('y2', solved.elbow.y);
+    elbowEl.setAttribute('cx', solved.elbow.x); elbowEl.setAttribute('cy', solved.elbow.y);
+    forearm.setAttribute('x1', solved.elbow.x); forearm.setAttribute('y1', solved.elbow.y);
+    forearm.setAttribute('x2', solved.wrist.x); forearm.setAttribute('y2', solved.wrist.y);
+    wristEl.setAttribute('cx', solved.wrist.x); wristEl.setAttribute('cy', solved.wrist.y);
+
+    var openAngle = 0.5 - grip * 0.42; // radians spread, closes toward forearm line as grip -> 1
+    var prongLen = 22;
+    var a1 = solved.forearmAngle + openAngle;
+    var a2 = solved.forearmAngle - openAngle;
+    clawA.setAttribute('x1', solved.wrist.x); clawA.setAttribute('y1', solved.wrist.y);
+    clawA.setAttribute('x2', solved.wrist.x + prongLen * Math.cos(a1));
+    clawA.setAttribute('y2', solved.wrist.y + prongLen * Math.sin(a1));
+    clawB.setAttribute('x1', solved.wrist.x); clawB.setAttribute('y1', solved.wrist.y);
+    clawB.setAttribute('x2', solved.wrist.x + prongLen * Math.cos(a2));
+    clawB.setAttribute('y2', solved.wrist.y + prongLen * Math.sin(a2));
+
+    return solved;
+  }
+
+  // ---------- idle cursor tracking ----------
+  function onPointerMove(e){
+    if (mode !== 'idle') return;
+    pointerActive = true;
+    var p = stagePointFromClient(e.clientX, e.clientY);
+    desired = clampToReach(p);
+  }
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerleave', function(){ pointerActive = false; });
+
+  function idleSway(t){
+    var angle = t * 0.0006;
+    return clampToReach({
+      x: BASE.x + Math.cos(angle) * (MAX_REACH * 0.55),
+      y: BASE.y + Math.sin(angle) * (MAX_REACH * 0.35) - 20
+    });
+  }
+
+  // ---------- tween helper ----------
+  function tween(duration, onFrame, onDone){
+    var start = null;
+    function ease(t){ return 1 - Math.pow(1 - t, 3); }
+    function step(ts){
+      if (start === null) start = ts;
+      var raw = Math.min((ts - start) / duration, 1);
+      onFrame(ease(raw), raw);
+      if (raw < 1) requestAnimationFrame(step);
+      else if (onDone) onDone();
+    }
+    requestAnimationFrame(step);
+  }
+
+  // ---------- main render loop (idle only) ----------
+  function loop(ts){
+    if (mode === 'idle') {
+      if (!pointerActive) desired = idleSway(ts);
+      current.x += (desired.x - current.x) * 0.22;
+      current.y += (desired.y - current.y) * 0.22;
+      grip += (0 - grip) * 0.2;
+      render();
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ---------- grab & open sequence ----------
+  function tileCenter(el){
+    var rect = el.querySelector('.tile-rect');
+    var x = parseFloat(rect.getAttribute('x')) + parseFloat(rect.getAttribute('width')) / 2;
+    var y = parseFloat(rect.getAttribute('y')) + parseFloat(rect.getAttribute('height')) / 2;
+    return { x: x, y: y };
+  }
+
+  function openPanel(key, tileEl){
+    if (mode !== 'idle') return;
+    mode = 'reaching';
+    var tilePos = tileCenter(tileEl);
+    var startPos = { x: current.x, y: current.y };
+
+    if (reduceMotion) {
+      launchPanel(key, tileEl);
+      mode = 'idle';
+      return;
+    }
+
+    tween(320, function(e){
+      current.x = startPos.x + (tilePos.x - startPos.x) * e;
+      current.y = startPos.y + (tilePos.y - startPos.y) * e;
+      render();
+    }, function(){
+      mode = 'grabbing';
+      tween(150, function(e){
+        grip = e;
+        render();
+      }, function(){
+        tileEl.classList.add('grabbed');
+        launchPanel(key, tileEl);
+      });
+    });
+  }
+
+  function launchPanel(key, tileEl){
+    var data = content[key] || { title: tileEl.getAttribute('data-title'), body: '' };
+    panelTitle.textContent = data.title;
+    panelBody.textContent = data.body;
+
+    var rect = tileEl.querySelector('.tile-rect').getBoundingClientRect();
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var scaleX = rect.width / vw, scaleY = rect.height / vh;
+    var originX = rect.left + rect.width / 2;
+    var originY = rect.top + rect.height / 2;
+
+    panel.style.transition = 'none';
+    panel.style.transform =
+      'translate(' + (originX - vw/2) + 'px,' + (originY - vh/2) + 'px) scale(' + scaleX + ',' + scaleY + ')';
+    panel.classList.add('open');
+    // force reflow so the next transform change animates
+    void panel.offsetWidth;
+
+    panel.style.transition = reduceMotion ? 'none' : 'transform 0.45s cubic-bezier(.4,0,.2,1)';
+    panel.style.transform = 'translate(0,0) scale(1,1)';
+
+    setTimeout(function(){
+      panel.classList.add('settled');
+    }, reduceMotion ? 0 : 420);
+
+    mode = 'expanded';
+    panel.dataset.activeTile = key;
+  }
+
+  function closePanel(){
+    if (mode !== 'expanded') return;
+    var key = panel.dataset.activeTile;
+    var tileEl = document.querySelector('.tile[data-key="' + key + '"]');
+    var rect = tileEl.querySelector('.tile-rect').getBoundingClientRect();
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var scaleX = rect.width / vw, scaleY = rect.height / vh;
+    var originX = rect.left + rect.width / 2;
+    var originY = rect.top + rect.height / 2;
+
+    panel.classList.remove('settled');
+    panel.style.transition = reduceMotion ? 'none' : 'transform 0.4s cubic-bezier(.4,0,.2,1)';
+    panel.style.transform =
+      'translate(' + (originX - vw/2) + 'px,' + (originY - vh/2) + 'px) scale(' + scaleX + ',' + scaleY + ')';
+
+    var finish = function(){
+      panel.classList.remove('open');
+      tileEl.classList.remove('grabbed');
+      mode = 'releasing';
+      tween(150, function(e){
+        grip = 1 - e;
+        render();
+      }, function(){
+        mode = 'idle';
+        desired = { x: current.x, y: current.y };
+      });
+    };
+    if (reduceMotion) finish();
+    else setTimeout(finish, 400);
+  }
+
+  stage.addEventListener('click', function(e){
+    var tileEl = e.target.closest('.tile');
+    if (!tileEl) return;
+    openPanel(tileEl.getAttribute('data-key'), tileEl);
+  });
+  panelClose.addEventListener('click', closePanel);
+  window.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closePanel();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
