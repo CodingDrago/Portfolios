@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guna — Portfolio</title>
+<style>
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: local('JetBrains Mono');
+  }
+  :root{
+    --bg: #0a0d0c;
+    --trace-dim: #33463c;
+    --trace-live: #6be8c9;
+    --amber: #e8a33d;
+    --led-idle: #4a3a2c;
+    --led-glow: #ff8a3d;
+    --flash: #f6f4ec;
+    --muted: #6d7d73;
+    --mono: 'JetBrains Mono', 'IBM Plex Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: var(--mono);
+  }
+
+  /* ---------- Main page (stand-in for the real site) ---------- */
+  #main-content{
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    filter: brightness(0.12);
+    will-change: filter;
+  }
+  #main-content .eyebrow{
+    color: var(--muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    margin: 0 0 14px;
+  }
+  #main-content h1{
+    color: var(--amber);
+    font-size: clamp(1.6rem, 5vw, 3.2rem);
+    letter-spacing: 0.06em;
+    font-weight: 500;
+    margin: 0;
+  }
+  #main-content .sub{
+    color: #8a9a90;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    margin-top: 14px;
+  }
+
+  /* ---------- Loader ---------- */
+  #loader{
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    background: var(--bg);
+    transition: opacity 0.35s ease;
+  }
+  #loader svg{
+    width: min(58vw, 380px);
+    height: auto;
+    overflow: visible;
+  }
+
+  .trace{
+    fill: none;
+    stroke: var(--trace-dim);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke 0.25s ease;
+  }
+  .trace.live{ stroke: var(--trace-live); }
+
+  .flow{
+    fill: none;
+    stroke: var(--trace-live);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+  }
+
+  .part{ stroke: var(--trace-dim); stroke-width: 3; fill: none; transition: stroke 0.25s ease; }
+  .part.live{ stroke: var(--trace-live); }
+
+  #switch-lever{
+    transform-origin: 158px 30px;
+    transform: rotate(-26deg);
+    transition: transform 0.4s cubic-bezier(.4,0,.2,1);
+  }
+  #switch-lever.closed{ transform: rotate(0deg); }
+
+  #led-body{
+    transform-origin: 320px 110px;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    filter: drop-shadow(0 0 0px transparent);
+  }
+  #led-body.overload{
+    transform: scale(1.35);
+    filter: drop-shadow(0 0 14px var(--led-glow)) drop-shadow(0 0 28px var(--flash));
+  }
+  #led-body.overload polygon,
+  #led-body.overload line{ stroke: var(--flash); }
+
+  .label{
+    fill: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    font-family: var(--mono);
+  }
+
+  /* ---------- Flash / radial reveal ---------- */
+  #flash{
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: var(--flash);
+    pointer-events: none;
+    opacity: 0;
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0%, transparent 0%, #000 0%);
+            mask-image: radial-gradient(circle at 50% 50%, transparent 0%, transparent 0%, #000 0%);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #loader, #flash{ display: none !important; }
+    #main-content{ filter: brightness(1) !important; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="main-content">
+    <div>
+      <p class="eyebrow">ECE · Embedded Systems</p>
+      <h1>GUNA</h1>
+      <p class="sub">Robotics · IoT · Applied ML</p>
+    </div>
+  </div>
+
+  <div id="flash"></div>
+
+  <div id="loader">
+    <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+      <!-- main loop wiring -->
+      <path class="trace" id="wire-top-left"
+            d="M40,140 L40,30 L128,30" />
+      <path class="trace" id="wire-top-right"
+            d="M188,30 L320,30 L320,84" />
+      <path class="trace" id="wire-bottom"
+            d="M320,136 L320,190 L40,190 L40,140" />
+
+      <!-- animated current flow overlay (same geometry, drawn on top) -->
+      <path class="flow" id="flow-path"
+            d="M40,140 L40,30 L128,30 M188,30 L320,30 L320,84 M320,136 L320,190 L40,190 L40,140"
+            stroke-dasharray="6 10" />
+
+      <!-- battery / power supply -->
+      <g class="part" id="battery">
+        <line x1="26" y1="118" x2="54" y2="118" stroke-width="4"/>
+        <line x1="32" y1="128" x2="48" y2="128" stroke-width="2"/>
+        <line x1="26" y1="152" x2="54" y2="152" stroke-width="4"/>
+        <line x1="32" y1="142" x2="48" y2="142" stroke-width="2"/>
+      </g>
+      <text class="label" x="8" y="180">VCC</text>
+
+      <!-- switch -->
+      <g id="switch">
+        <circle cx="128" cy="30" r="3" fill="var(--trace-dim)" stroke="none"/>
+        <circle cx="188" cy="30" r="3" fill="var(--trace-dim)" stroke="none"/>
+        <line id="switch-lever" class="part" x1="128" y1="30" x2="186" y2="30" stroke-width="3"/>
+      </g>
+      <text class="label" x="140" y="18">SW1</text>
+
+      <!-- LED -->
+      <g id="led-body">
+        <polygon class="part" points="320,96 306,120 334,120" />
+        <line class="part" x1="306" y1="120" x2="334" y2="120" />
+        <line class="part" x1="298" y1="90" x2="290" y2="80" />
+        <line class="part" x1="308" y1="86" x2="300" y2="76" />
+      </g>
+      <text class="label" x="336" y="112">LED1</text>
+    </svg>
+  </div>
+
+<script>
+(function(){
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var mainContent = document.getElementById('main-content');
+  var loader = document.getElementById('loader');
+  var flash = document.getElementById('flash');
+  var switchLever = document.getElementById('switch-lever');
+  var ledBody = document.getElementById('led-body');
+  var flowPath = document.getElementById('flow-path');
+  var traces = document.querySelectorAll('.trace, #switch-lever, #battery, #led-body .part');
+
+  if (reduceMotion) {
+    finish();
+    return;
+  }
+
+  var flowLen = flowPath.getTotalLength();
+  flowPath.style.strokeDasharray = flowLen;
+  flowPath.style.strokeDashoffset = flowLen;
+
+  var done = false;
+  var timers = [];
+  function at(ms, fn){ timers.push(setTimeout(fn, ms)); }
+
+  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+
+  function setLoop(live){
+    document.querySelectorAll('.trace').forEach(function(el){
+      el.classList.toggle('live', live);
+    });
+  }
+
+  // 1. switch closes
+  at(450, function(){
+    switchLever.classList.add('closed');
+    setLoop(true);
+  });
+
+  // 2. current travels the loop toward the LED
+  at(750, function(){
+    flowPath.style.transition = 'stroke-dashoffset 0.42s linear, opacity 0.1s linear';
+    flowPath.style.opacity = '1';
+    flowPath.style.strokeDashoffset = '0';
+  });
+
+  // 3. LED overloads (no resistor)
+  at(1150, function(){
+    ledBody.classList.add('overload');
+  });
+
+  // 4. flashbang — brief, capped brightness, single flash
+  at(1230, function(){
+    flash.style.transition = 'opacity 0.09s ease-out';
+    flash.style.opacity = '0.85';
+    loader.style.opacity = '0';
+  });
+
+  // 5. radial reveal begins — mask expands from center, main content brightens in sync
+  at(1340, function(){
+    runReveal(950);
+  });
+
+  function runReveal(duration){
+    var start = null;
+    function step(ts){
+      if (done) return;
+      if (start === null) start = ts;
+      var raw = Math.min((ts - start) / duration, 1);
+      var eased = easeOutCubic(raw);
+      var radius = eased * 145; // vmax-ish %, overshoots viewport corners
+      flash.style.maskImage =
+        'radial-gradient(circle at 50% 50%, transparent 0%, transparent ' + radius + '%, #000 ' + Math.min(radius + 2, 148) + '%)';
+      flash.style.webkitMaskImage = flash.style.maskImage;
+      flash.style.opacity = String(0.85 * (1 - eased * 0.9));
+      mainContent.style.filter = 'brightness(' + (0.12 + eased * 0.88) + ')';
+      if (raw < 1) {
+        requestAnimationFrame(step);
+      } else {
+        finish();
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function finish(){
+    if (done) return;
+    done = true;
+    timers.forEach(clearTimeout);
+    mainContent.style.filter = 'brightness(1)';
+    flash.style.opacity = '0';
+    flash.style.pointerEvents = 'none';
+    loader.style.opacity = '0';
+    document.body.style.overflow = 'auto';
+    setTimeout(function(){
+      loader.style.display = 'none';
+      flash.style.display = 'none';
+    }, 400);
+  }
+
+  function skip(){
+    finish();
+  }
+  window.addEventListener('click', skip, { once: true });
+  window.addEventListener('keydown', skip, { once: true });
+})();
+</script>
+</body>
+</html>
