@@ -588,14 +588,46 @@
 
   var bodyMat = new THREE.MeshStandardMaterial({ color: 0x141b24, metalness: 0.7, roughness: 0.35, emissive: 0x0d2a3f, emissiveIntensity: 0.3 });
   var jointMat = new THREE.MeshStandardMaterial({ color: 0x0d131b, metalness: 0.55, roughness: 0.4, emissive: 0x5aa9e6, emissiveIntensity: 0.55 });
-  var clawMat = new THREE.MeshStandardMaterial({ color: 0x1a140a, metalness: 0.6, roughness: 0.3, emissive: 0xe6b45a, emissiveIntensity: 0.55 });
+  // Gunmetal gripper body — lighter than the arm's own body color specifically
+  // so it reads as distinct hardware against the dark background, not just
+  // blending into it.
+  var clawBodyMat = new THREE.MeshStandardMaterial({ color: 0x38414c, metalness: 0.7, roughness: 0.35, emissive: 0x14405a, emissiveIntensity: 0.22 });
+  // Matte, non-metallic contact pad — the part that would actually touch a grabbed object.
+  var padMat = new THREE.MeshStandardMaterial({ color: 0x22262b, metalness: 0.05, roughness: 0.85 });
 
   var baseMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.55, 0.26, 28), bodyMat);
   scene.add(baseMesh);
 
+  // Wider foot beneath the main base, for a grounded multi-layer turntable look.
+  var footMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.72, 0.1, 28), bodyMat);
+  footMesh.position.y = -0.18;
+  scene.add(footMesh);
+
+  // Pulsing blue LED seam ring, sitting in the gap between foot and base.
+  var baseLedMat = new THREE.MeshStandardMaterial({ color: 0x0a1a24, metalness: 0.2, roughness: 0.5, emissive: 0x5aa9e6, emissiveIntensity: 0.9 });
+  var baseLedRing = new THREE.Mesh(new THREE.TorusGeometry(0.61, 0.014, 6, 40), baseLedMat);
+  baseLedRing.rotation.x = Math.PI / 2;
+  baseLedRing.position.y = -0.13;
+  scene.add(baseLedRing);
+
+  // Small vent slits and bolts around the foot's perimeter — static detail.
+  var ventMat = new THREE.MeshStandardMaterial({ color: 0x090b0d, metalness: 0.5, roughness: 0.6 });
+  for (var vi = 0; vi < 10; vi++) {
+    var vAngle = (vi / 10) * Math.PI * 2;
+    var vent = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.05, 0.02), ventMat);
+    vent.position.set(Math.cos(vAngle) * 0.685, -0.18, Math.sin(vAngle) * 0.685);
+    vent.rotation.y = -vAngle;
+    scene.add(vent);
+  }
+  for (var bi = 0; bi < 14; bi++) {
+    var bAngle = (bi / 14) * Math.PI * 2;
+    var baseBolt = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.014, 8), jointMat);
+    baseBolt.position.set(Math.cos(bAngle) * 0.5, -0.045, Math.sin(bAngle) * 0.5);
+    scene.add(baseBolt);
+  }
+
   var upperArmGeo = new THREE.CylinderGeometry(0.12, 0.15, 1, 16);
   var forearmGeo = new THREE.CylinderGeometry(0.09, 0.12, 1, 16);
-  var clawGeo = new THREE.CylinderGeometry(0.03, 0.055, 1, 10);
   var jointGeo = new THREE.SphereGeometry(0.16, 20, 20);
   var wristGeo = new THREE.SphereGeometry(0.13, 20, 20);
 
@@ -603,9 +635,84 @@
   var elbowMesh = new THREE.Mesh(jointGeo, jointMat);
   var forearmMesh = new THREE.Mesh(forearmGeo, bodyMat);
   var wristMesh = new THREE.Mesh(wristGeo, jointMat);
-  var clawAMesh = new THREE.Mesh(clawGeo, clawMat);
-  var clawBMesh = new THREE.Mesh(clawGeo, clawMat);
-  scene.add(upperArmMesh, elbowMesh, forearmMesh, wristMesh, clawAMesh, clawBMesh);
+
+  // Gripper actuator housing — sits just past the wrist joint, the body the
+  // two finger carriages ride on. Distinct from wristMesh (unchanged joint).
+  var housingMesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.13), clawBodyMat);
+  scene.add(housingMesh);
+
+  var boltGeo = new THREE.CylinderGeometry(0.014, 0.014, 0.012, 8);
+
+  // Brass/gold accent for hardware — matches the reference image's warm
+  // bolts against gunmetal, and ties into the site's existing amber accent.
+  var brassMat = new THREE.MeshStandardMaterial({ color: 0xc79a4b, metalness: 0.85, roughness: 0.32 });
+
+  // Builds one finger of the parallel gripper: mount/carriage, brass bolts,
+  // side plates, an articulated joint housing, a two-step tapered tip, and
+  // serrated ridge "teeth" on the inner jaw face instead of a smooth pad.
+  // padSide (-1/+1) picks which local face the teeth/pad sit on, so they
+  // always face the opposing finger.
+  function buildFinger(padSide){
+    var g = new THREE.Group();
+
+    var mount = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.09, 0.1), clawBodyMat);
+    mount.position.y = 0.045;
+    g.add(mount);
+
+    // Thin side plate for a layered/plated look on the mount.
+    var plate = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.07, 0.02), clawBodyMat);
+    plate.position.set(0, 0.05, padSide * -0.058);
+    g.add(plate);
+
+    [0.022, 0.07].forEach(function(yy){
+      var bolt = new THREE.Mesh(boltGeo, brassMat);
+      bolt.rotation.x = Math.PI / 2;
+      bolt.position.set(0, yy, 0.052);
+      g.add(bolt);
+    });
+
+    var joint = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.045, 8), jointMat);
+    joint.rotation.x = Math.PI / 2;
+    joint.position.y = 0.11;
+    g.add(joint);
+
+    var tipWide = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.15, 0.048), clawBodyMat);
+    tipWide.position.y = 0.21;
+    g.add(tipWide);
+
+    var tipNarrow = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.13, 0.034), clawBodyMat);
+    tipNarrow.position.y = 0.35;
+    g.add(tipNarrow);
+
+    // Serrated ridge "teeth" on the inner jaw face, replacing the old
+    // single smooth pad — reads as a real gripping/traction surface.
+    var toothGeo = new THREE.BoxGeometry(0.01, 0.018, 0.026);
+    for (var ti = 0; ti < 5; ti++) {
+      var tooth = new THREE.Mesh(toothGeo, padMat);
+      tooth.position.set(padSide * 0.026, 0.3 + ti * 0.022, 0);
+      g.add(tooth);
+    }
+
+    return g;
+  }
+
+  var fingerA = buildFinger(-1);
+  var fingerB = buildFinger(1);
+
+  // Bearing-collar rings at the joints — like a pipe clamp, oriented
+  // perpendicular to the arm's direction. Updated per frame in render().
+  var elbowRing = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.024, 8, 22), bodyMat);
+  var wristRing = new THREE.Mesh(new THREE.TorusGeometry(0.155, 0.02, 8, 22), bodyMat);
+
+  // Cable conduits running alongside the links, offset to one side — simple
+  // straight segments (not curved tubes) so they can reuse setBone() cheaply
+  // every frame instead of rebuilding geometry.
+  var cableMat = new THREE.MeshStandardMaterial({ color: 0x08090a, metalness: 0.15, roughness: 0.8 });
+  var cableGeo = new THREE.CylinderGeometry(0.025, 0.025, 1, 8);
+  var cableUpper = new THREE.Mesh(cableGeo, cableMat);
+  var cableForearm = new THREE.Mesh(cableGeo, cableMat);
+
+  scene.add(upperArmMesh, elbowMesh, forearmMesh, wristMesh, fingerA, fingerB, elbowRing, wristRing, cableUpper, cableForearm);
 
   var UP = new THREE.Vector3(0, 1, 0);
   function setBone(mesh, p1, p2, minLen){
@@ -685,19 +792,44 @@
     setBone(forearmMesh, elbowP, wristP, 0.05);
     wristMesh.position.copy(wristP);
 
-    var openAngle = 0.5 - grip * 0.42;
-    var prongLen = 0.42;
-    var a1 = solved.forearmAngle + openAngle;
-    var a2 = solved.forearmAngle - openAngle;
-    var tipA = new THREE.Vector3(wristP.x + prongLen * Math.cos(a1), wristP.y + prongLen * Math.sin(a1), 0);
-    var tipB = new THREE.Vector3(wristP.x + prongLen * Math.cos(a2), wristP.y + prongLen * Math.sin(a2), 0);
-    setBone(clawAMesh, wristP, tipA, 0.02);
-    setBone(clawBMesh, wristP, tipB, 0.02);
+    // Bearing-collar rings, oriented like a clamp around each joint.
+    var upperDir = elbowP.clone().sub(shoulderP).normalize();
+    var forearmDir = wristP.clone().sub(elbowP).normalize();
+    var Z_AXIS = new THREE.Vector3(0, 0, 1);
+    elbowRing.position.copy(elbowP);
+    elbowRing.quaternion.setFromUnitVectors(Z_AXIS, upperDir);
+    wristRing.position.copy(wristP);
+    wristRing.quaternion.setFromUnitVectors(Z_AXIS, forearmDir);
+
+    // Cable conduits, offset slightly to one side of each link.
+    var upperPerp = new THREE.Vector3(-upperDir.y, upperDir.x, 0).multiplyScalar(0.1);
+    setBone(cableUpper, shoulderP.clone().add(upperPerp), elbowP.clone().add(upperPerp), 0.03);
+    var forearmPerp = new THREE.Vector3(-forearmDir.y, forearmDir.x, 0).multiplyScalar(0.08);
+    setBone(cableForearm, elbowP.clone().add(forearmPerp), wristP.clone().add(forearmPerp), 0.03);
+
+    // Parallel gripper: fingers translate symmetrically along the lateral
+    // axis (perpendicular to the arm's extension direction) instead of
+    // rotating like a pincer.
+    var forward = new THREE.Vector3(Math.cos(solved.forearmAngle), Math.sin(solved.forearmAngle), 0);
+    var lateral = new THREE.Vector3(-forward.y, forward.x, 0);
+    var gripQuat = new THREE.Quaternion().setFromUnitVectors(UP, forward);
+
+    var openGap = 0.15, closedGap = 0.05;
+    var halfGap = openGap + (closedGap - openGap) * grip;
+
+    housingMesh.position.copy(wristP);
+    housingMesh.quaternion.copy(gripQuat);
+
+    fingerA.position.copy(wristP).addScaledVector(lateral, halfGap);
+    fingerA.quaternion.copy(gripQuat);
+
+    fingerB.position.copy(wristP).addScaledVector(lateral, -halfGap);
+    fingerB.quaternion.copy(gripQuat);
 
     grabLight.position.copy(wristP).setZ(0.6);
     grabLight.intensity = grip * 2.2;
 
-    baseMesh.material.emissiveIntensity = 0.3 + Math.sin(clock.t * 0.0022) * 0.12;
+    // Static now — the periodic pulse was reading as distracting, not "alive".
 
     renderer.render(scene, camera);
   }
