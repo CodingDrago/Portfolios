@@ -6,6 +6,7 @@
     <meta name="description" content="GUNA - Portfolio & Interactive Robotics Workstation | ECE · Embedded Systems · Robotics · IoT · Applied ML">
     <title>GUNA | ECE & Robotics Engineering Workstation</title>
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/boot.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +23,58 @@
     </script>
 </head>
 <body>
-    <!-- Fullscreen Hero Workstation Container -->
+
+    <!-- ==========================================================================
+         FLASHBANG & RADIAL REVEAL MASK LAYER (Source: loading.html)
+         ========================================================================== -->
+    <div id="flash"></div>
+
+    <!-- ==========================================================================
+         SYSTEM BOOT / LOADING SUBSYSTEM OVERLAY (Source: loading.html)
+         ========================================================================== -->
+    <div id="loader">
+        <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+            <!-- main loop wiring -->
+            <path class="trace" id="wire-top-left" d="M40,140 L40,30 L128,30" />
+            <path class="trace" id="wire-top-right" d="M188,30 L320,30 L320,84" />
+            <path class="trace" id="wire-bottom" d="M320,136 L320,190 L40,190 L40,140" />
+
+            <!-- animated current flow overlay (same geometry, drawn on top) -->
+            <path class="flow" id="flow-path"
+                  d="M40,140 L40,30 L128,30 M188,30 L320,30 L320,84 M320,136 L320,190 L40,190 L40,140"
+                  stroke-dasharray="6 10" />
+
+            <!-- battery / power supply -->
+            <g class="part" id="battery">
+                <line x1="26" y1="118" x2="54" y2="118" stroke-width="4"/>
+                <line x1="32" y1="128" x2="48" y2="128" stroke-width="2"/>
+                <line x1="26" y1="152" x2="54" y2="152" stroke-width="4"/>
+                <line x1="32" y1="142" x2="48" y2="142" stroke-width="2"/>
+            </g>
+            <text class="label" x="8" y="180">VCC</text>
+
+            <!-- switch -->
+            <g id="switch">
+                <circle cx="128" cy="30" r="3" fill="var(--loader-trace-dim)" stroke="none"/>
+                <circle cx="188" cy="30" r="3" fill="var(--loader-trace-dim)" stroke="none"/>
+                <line id="switch-lever" class="part" x1="128" y1="30" x2="186" y2="30" stroke-width="3"/>
+            </g>
+            <text class="label" x="140" y="18">SW1</text>
+
+            <!-- LED -->
+            <g id="led-body">
+                <polygon class="part" points="320,96 306,120 334,120" />
+                <line class="part" x1="306" y1="120" x2="334" y2="120" />
+                <line class="part" x1="298" y1="90" x2="290" y2="80" />
+                <line class="part" x1="308" y1="86" x2="300" y2="76" />
+            </g>
+            <text class="label" x="336" y="112">LED1</text>
+        </svg>
+    </div>
+
+    <!-- ==========================================================================
+         FULLSCREEN HERO WORKSTATION CONTAINER (Destination)
+         ========================================================================== -->
     <main id="hero-container" class="hero-container">
         
         <!-- 3D Canvas Mount Point -->

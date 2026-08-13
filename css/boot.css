@@ -1,0 +1,112 @@
+/* ==========================================================================
+   SYSTEM BOOT / LOADING SUBSYSTEM STYLES
+   Source Implementation: loading.html (Integrated with Hero Palette)
+   ========================================================================== */
+
+:root {
+  --loader-bg: #08090b;
+  --loader-trace-dim: #1e2530;
+  --loader-trace-live: #ffb703; /* Hero Warm Amber */
+  --loader-amber: #ffb703;      /* Hero Warm Amber */
+  --loader-led-idle: #3a2e1d;
+  --loader-led-glow: #ffb703;
+  --loader-flash: #fff8ea;
+  --loader-muted: #526072;
+  --loader-mono: 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', monospace;
+}
+
+/* ---------- Flash / Radial Reveal Mask Layer ---------- */
+#flash {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: var(--loader-flash);
+  pointer-events: none;
+  opacity: 0;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0%, transparent 0%, #000 0%);
+          mask-image: radial-gradient(circle at 50% 50%, transparent 0%, transparent 0%, #000 0%);
+}
+
+/* ---------- Loader Container Overlay ---------- */
+#loader {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  background: var(--loader-bg);
+  transition: opacity 0.35s ease;
+  user-select: none;
+}
+
+#loader svg {
+  width: min(58vw, 380px);
+  height: auto;
+  overflow: visible;
+}
+
+/* ---------- Circuit Traces & Flow Overlay ---------- */
+.trace {
+  fill: none;
+  stroke: var(--loader-trace-dim);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.25s ease;
+}
+.trace.live { stroke: var(--loader-trace-live); }
+
+.flow {
+  fill: none;
+  stroke: var(--loader-trace-live);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px rgba(255, 183, 3, 0.8));
+}
+
+.part {
+  stroke: var(--loader-trace-dim);
+  stroke-width: 3;
+  fill: none;
+  transition: stroke 0.25s ease;
+}
+.part.live { stroke: var(--loader-trace-live); }
+
+/* ---------- Switch Component ---------- */
+#switch-lever {
+  transform-origin: 158px 30px;
+  transform: rotate(-26deg);
+  transition: transform 0.4s cubic-bezier(.4,0,.2,1);
+}
+#switch-lever.closed { transform: rotate(0deg); }
+
+/* ---------- LED Overload Effect ---------- */
+#led-body {
+  transform-origin: 320px 110px;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  filter: drop-shadow(0 0 0px transparent);
+}
+#led-body.overload {
+  transform: scale(1.35);
+  filter: drop-shadow(0 0 14px var(--loader-led-glow)) drop-shadow(0 0 28px var(--loader-flash));
+}
+#led-body.overload polygon,
+#led-body.overload line {
+  stroke: var(--loader-flash);
+}
+
+.label {
+  fill: var(--loader-muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  font-family: var(--loader-mono);
+}
+
+/* ---------- Prefers-Reduced-Motion Override ---------- */
+@media (prefers-reduced-motion: reduce) {
+  #loader, #flash { display: none !important; }
+  #hero-container { filter: brightness(1) !important; }
+}

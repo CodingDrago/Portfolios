@@ -1,5 +1,11 @@
 /**
  * Main Application Bootstrap & Master Controller
+ * GUNA - Interactive Robotics Workstation Portfolio Hero
+ * Integrates BootManager (extracted from loading.html) with WebGL hero architecture
+ */
+
+import { CONFIG, STATES } from './config.js';
+import { BootManager } from './loader/BootManager.js';
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 1 Foundation)
  */
 
@@ -12,6 +18,8 @@ import { PlaceholderObject } from './scene/PlaceholderObject.js';
 
 class App {
     constructor() {
+        // Subsystem References
+        this.bootManager = null;
         // Module References
         this.stateManager = null;
         this.pointerTracker = null;
@@ -22,6 +30,7 @@ class App {
         // Animation Loop Control
         this.lastFrameTime = 0;
         this.isLoopRunning = false;
+        this.isInteractive = false; // Activated on BOOT_COMPLETE
 
         // DOM Telemetry Elements
         this.domElements = {
@@ -32,6 +41,14 @@ class App {
         };
 
         this._onFrame = this._onFrame.bind(this);
+        this._onBootComplete = this._onBootComplete.bind(this);
+    }
+
+    /**
+     * Bootstrap Hero Architecture & Boot Manager Subsystem
+     */
+    async init() {
+        console.log('[App] Initializing Architecture & Boot Subsystem...');
     }
 
     /**
@@ -62,6 +79,24 @@ class App {
             this.placeholderObject = new PlaceholderObject();
             this.placeholderObject.addToScene(this.sceneManager.scene);
 
+            // 7. Bind Systems & State Change Listeners
+            this._bindEvents();
+
+            // 8. Start Master RAF Animation Loop (Runs 3D scene rendering underneath loader)
+            this.startLoop();
+
+            // 9. Instantiate & Execute BootManager (extracted from loading.html)
+            this.bootManager = new BootManager({
+                loaderElement: document.getElementById('loader'),
+                flashElement: document.getElementById('flash'),
+                targetElement: document.getElementById('hero-container'),
+                onComplete: this._onBootComplete
+            });
+            
+            // Execute Boot Sequence
+            this.bootManager.start();
+
+            console.log('[App] System Initialized. Boot Subsystem Running.');
             // 7. Bind Systems & Event Listeners
             this._bindEvents();
 
@@ -75,6 +110,28 @@ class App {
                 this.domElements.telemetryStatus.textContent = 'ERR_INIT_FAIL';
                 this.domElements.telemetryStatus.style.color = '#ef4444';
             }
+        }
+    }
+
+    /**
+     * Callback triggered ONCE when BootManager dispatches BOOT_COMPLETE
+     * @private
+     */
+    _onBootComplete() {
+        if (this.isInteractive) return;
+        this.isInteractive = true;
+
+        console.log('[App] BOOT_COMPLETE Event Received. Workstation Fully Operational.');
+
+        // Activate telemetry status
+        if (this.domElements.telemetryStatus) {
+            this.domElements.telemetryStatus.textContent = 'ONLINE';
+            this.domElements.telemetryStatus.style.color = CONFIG.colors.amber;
+        }
+
+        // Activate state machine to initial IDLE state
+        if (this.stateManager) {
+            this.stateManager.setState(STATES.IDLE);
         }
     }
 
@@ -103,6 +160,10 @@ class App {
                 this.placeholderObject.onStateChange(state);
             }
         });
+
+        // Pointer Activity Listener -> Drive State Machine Transitions (Only after BOOT_COMPLETE)
+        this.pointerTracker.onActivityChange((isActive) => {
+            if (!this.isInteractive) return;
 
         // Pointer Activity Listener -> Drive State Machine Transitions
         this.pointerTracker.onActivityChange((isActive) => {
