@@ -6,6 +6,10 @@
 
 import { CONFIG, STATES } from './config.js';
 import { BootManager } from './loader/BootManager.js';
+ * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 1 Foundation)
+ */
+
+import { CONFIG, STATES } from './config.js';
 import { StateManager } from './state/StateManager.js';
 import { PointerTracker } from './input/PointerTracker.js';
 import { SceneManager } from './scene/SceneManager.js';
@@ -16,6 +20,7 @@ class App {
     constructor() {
         // Subsystem References
         this.bootManager = null;
+        // Module References
         this.stateManager = null;
         this.pointerTracker = null;
         this.sceneManager = null;
@@ -44,6 +49,13 @@ class App {
      */
     async init() {
         console.log('[App] Initializing Architecture & Boot Subsystem...');
+    }
+
+    /**
+     * Bootstrap Phase 1 Foundation Architecture
+     */
+    async init() {
+        console.log('[App] Initializing Phase 1 Foundation Architecture...');
 
         try {
             // 1. Initialize DOM Telemetry Handles
@@ -85,6 +97,13 @@ class App {
             this.bootManager.start();
 
             console.log('[App] System Initialized. Boot Subsystem Running.');
+            // 7. Bind Systems & Event Listeners
+            this._bindEvents();
+
+            // 8. Start RAF Animation Loop
+            this.startLoop();
+
+            console.log('[App] Phase 1 Initialization Complete. System Online.');
         } catch (err) {
             console.error('[App] Fatal Initialization Error:', err);
             if (this.domElements.telemetryStatus) {
@@ -146,6 +165,8 @@ class App {
         this.pointerTracker.onActivityChange((isActive) => {
             if (!this.isInteractive) return;
 
+        // Pointer Activity Listener -> Drive State Machine Transitions
+        this.pointerTracker.onActivityChange((isActive) => {
             if (this.domElements.trackingDisplay) {
                 this.domElements.trackingDisplay.textContent = isActive ? 'ACTIVE' : 'IDLE';
                 this.domElements.trackingDisplay.style.color = isActive ? CONFIG.colors.amber : '#7a889b';
