@@ -1,6 +1,6 @@
 /**
- * Lighting - Industrial Workstation Lighting Setup
- * Configures key light, ambient light, fill light, and rim light for depth & form
+ * Lighting - Industrial Workstation Lighting System
+ * Configures Key Light, Fill Light, Rim Light, Ambient Light, and Base Practical Light
  */
 
 import * as THREE from 'three';
@@ -12,6 +12,7 @@ export class Lighting {
         this.keyLight = null;
         this.fillLight = null;
         this.rimLight = null;
+        this.practicalLight = null;
 
         this._initLights();
     }
@@ -23,42 +24,62 @@ export class Lighting {
     _initLights() {
         const { ambient, keyLight, fillLight, rimLight } = CONFIG.lighting;
 
-        // Ambient Light (subtle overall illumination)
+        // 1. Ambient Light (Subtle environment fill)
         this.ambientLight = new THREE.AmbientLight(
-            ambient.color,
-            ambient.intensity
+            ambient.color || 0xffffff,
+            ambient.intensity || 0.5
         );
 
-        // Primary Directional Key Light (industrial overhead spotlight effect)
+        // 2. Overhead Directional Key Spotlight (Primary shadow caster)
         this.keyLight = new THREE.DirectionalLight(
-            keyLight.color,
-            keyLight.intensity
+            keyLight.color || 0xfff4e0,
+            keyLight.intensity || 1.6
         );
-        this.keyLight.position.set(keyLight.position.x, keyLight.position.y, keyLight.position.z);
+        this.keyLight.position.set(
+            keyLight.position.x || 4,
+            keyLight.position.y || 10,
+            keyLight.position.z || 6
+        );
         this.keyLight.castShadow = true;
         this.keyLight.shadow.mapSize.width = 2048;
         this.keyLight.shadow.mapSize.height = 2048;
         this.keyLight.shadow.camera.near = 0.5;
-        this.keyLight.shadow.camera.far = 25;
+        this.keyLight.shadow.camera.far = 30;
         this.keyLight.shadow.bias = -0.0005;
 
-        // Fill Light (cool technical fill from bottom left)
+        // 3. Cool Technical Fill Light (Prevents harsh dark shadows)
         this.fillLight = new THREE.DirectionalLight(
-            fillLight.color,
-            fillLight.intensity
+            fillLight.color || 0x405878,
+            fillLight.intensity || 0.6
         );
-        this.fillLight.position.set(fillLight.position.x, fillLight.position.y, fillLight.position.z);
+        this.fillLight.position.set(
+            fillLight.position.x || -6,
+            fillLight.position.y || 1,
+            fillLight.position.z || -2
+        );
 
-        // Rim Light (warm amber backlighting to highlight mechanical silhouettes)
+        // 4. Warm Amber Rim Backlight (Separates platform & columns from background)
         this.rimLight = new THREE.DirectionalLight(
-            rimLight.color,
-            rimLight.intensity
+            rimLight.color || 0xffb703,
+            rimLight.intensity || 1.2
         );
-        this.rimLight.position.set(rimLight.position.x, rimLight.position.y, rimLight.position.z);
+        this.rimLight.position.set(
+            rimLight.position.x || 0,
+            rimLight.position.y || 6,
+            rimLight.position.z || -8
+        );
+
+        // 5. Local Practical Base Point Light (Gradients floor & mounting platform)
+        this.practicalLight = new THREE.PointLight(
+            CONFIG.colors.amber || 0xffb703,
+            0.6,
+            8
+        );
+        this.practicalLight.position.set(0, -1.2, 0.5);
     }
 
     /**
-     * Add all created lights to the target Three.js scene
+     * Add all lights to target scene
      * @param {THREE.Scene} scene 
      */
     addToScene(scene) {
@@ -67,5 +88,6 @@ export class Lighting {
         scene.add(this.keyLight);
         scene.add(this.fillLight);
         scene.add(this.rimLight);
+        scene.add(this.practicalLight);
     }
 }
