@@ -1,31 +1,31 @@
 /**
  * Main Application Bootstrap & Master Controller
- * GUNA - Interactive Robotics Workstation Portfolio Hero
- * Integrates BootManager (extracted from loading.html) with WebGL hero architecture
+ * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 2 Workstation)
  */
 
 import { CONFIG, STATES } from './config.js';
 import { BootManager } from './loader/BootManager.js';
- * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 1 Foundation)
- */
-
-import { CONFIG, STATES } from './config.js';
 import { StateManager } from './state/StateManager.js';
 import { PointerTracker } from './input/PointerTracker.js';
 import { SceneManager } from './scene/SceneManager.js';
 import { Lighting } from './scene/Lighting.js';
-import { PlaceholderObject } from './scene/PlaceholderObject.js';
+import { Materials } from './scene/Materials.js';
+import { MountingPlatform } from './scene/MountingPlatform.js';
+import { Environment } from './scene/Environment.js';
 
 class App {
     constructor() {
         // Subsystem References
         this.bootManager = null;
-        // Module References
         this.stateManager = null;
         this.pointerTracker = null;
         this.sceneManager = null;
         this.lighting = null;
-        this.placeholderObject = null;
+
+        // Phase 2 Workstation Environment Subsystems
+        this.materials = null;
+        this.mountingPlatform = null;
+        this.environment = null;
 
         // Animation Loop Control
         this.lastFrameTime = 0;
@@ -45,17 +45,10 @@ class App {
     }
 
     /**
-     * Bootstrap Hero Architecture & Boot Manager Subsystem
+     * Bootstrap Workstation Architecture & Boot Subsystem
      */
     async init() {
-        console.log('[App] Initializing Architecture & Boot Subsystem...');
-    }
-
-    /**
-     * Bootstrap Phase 1 Foundation Architecture
-     */
-    async init() {
-        console.log('[App] Initializing Phase 1 Foundation Architecture...');
+        console.log('[App] Initializing Phase 2 Workstation Architecture...');
 
         try {
             // 1. Initialize DOM Telemetry Handles
@@ -71,21 +64,28 @@ class App {
             const canvasContainer = document.getElementById('canvas-container');
             this.sceneManager = new SceneManager(canvasContainer);
 
-            // 5. Initialize Industrial Lighting
+            // 5. Initialize Industrial Lighting System
             this.lighting = new Lighting();
             this.lighting.addToScene(this.sceneManager.scene);
 
-            // 6. Initialize Verification Placeholder Object
-            this.placeholderObject = new PlaceholderObject();
-            this.placeholderObject.addToScene(this.sceneManager.scene);
+            // 6. Initialize Industrial Materials Registry
+            this.materials = new Materials();
 
-            // 7. Bind Systems & State Change Listeners
+            // 7. Initialize 3D Workstation Environment (Floor plates, wall panels, parallax)
+            this.environment = new Environment(this.materials);
+            this.environment.addToScene(this.sceneManager.scene);
+
+            // 8. Initialize Central Robot Mounting Platform (Origin: 0, -2.0, 0)
+            this.mountingPlatform = new MountingPlatform(this.materials);
+            this.mountingPlatform.addToScene(this.sceneManager.scene);
+
+            // 9. Bind Systems & State Change Listeners
             this._bindEvents();
 
-            // 8. Start Master RAF Animation Loop (Runs 3D scene rendering underneath loader)
+            // 10. Start Master RAF Animation Loop (Renders 3D environment underneath loader)
             this.startLoop();
 
-            // 9. Instantiate & Execute BootManager (extracted from loading.html)
+            // 11. Instantiate & Execute BootManager (extracted from loading.html)
             this.bootManager = new BootManager({
                 loaderElement: document.getElementById('loader'),
                 flashElement: document.getElementById('flash'),
@@ -96,14 +96,7 @@ class App {
             // Execute Boot Sequence
             this.bootManager.start();
 
-            console.log('[App] System Initialized. Boot Subsystem Running.');
-            // 7. Bind Systems & Event Listeners
-            this._bindEvents();
-
-            // 8. Start RAF Animation Loop
-            this.startLoop();
-
-            console.log('[App] Phase 1 Initialization Complete. System Online.');
+            console.log('[App] Workstation Environment Initialized. Boot Subsystem Running.');
         } catch (err) {
             console.error('[App] Fatal Initialization Error:', err);
             if (this.domElements.telemetryStatus) {
@@ -121,7 +114,7 @@ class App {
         if (this.isInteractive) return;
         this.isInteractive = true;
 
-        console.log('[App] BOOT_COMPLETE Event Received. Workstation Fully Operational.');
+        console.log('[App] BOOT_COMPLETE Event Received. Workstation Environment Fully Operational.');
 
         // Activate telemetry status
         if (this.domElements.telemetryStatus) {
@@ -151,13 +144,10 @@ class App {
      * @private
      */
     _bindEvents() {
-        // State Machine Listener -> Update DOM & Placeholder Mesh
+        // State Machine Listener -> Update DOM
         this.stateManager.onChange(({ state }) => {
             if (this.domElements.stateDisplay) {
                 this.domElements.stateDisplay.textContent = state;
-            }
-            if (this.placeholderObject) {
-                this.placeholderObject.onStateChange(state);
             }
         });
 
@@ -165,8 +155,6 @@ class App {
         this.pointerTracker.onActivityChange((isActive) => {
             if (!this.isInteractive) return;
 
-        // Pointer Activity Listener -> Drive State Machine Transitions
-        this.pointerTracker.onActivityChange((isActive) => {
             if (this.domElements.trackingDisplay) {
                 this.domElements.trackingDisplay.textContent = isActive ? 'ACTIVE' : 'IDLE';
                 this.domElements.trackingDisplay.style.color = isActive ? CONFIG.colors.amber : '#7a889b';
@@ -220,9 +208,9 @@ class App {
             }
         }
 
-        // 2. Update Placeholder Mesh
-        if (this.placeholderObject) {
-            this.placeholderObject.update(deltaTime, this.pointerTracker);
+        // 2. Update Workstation Environment & Parallax Depth System
+        if (this.environment) {
+            this.environment.update(deltaTime, this.pointerTracker);
         }
 
         // 3. Render WebGL Scene
