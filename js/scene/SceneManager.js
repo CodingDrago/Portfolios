@@ -13,7 +13,7 @@ export class SceneManager {
         }
 
         this.container = mountElement;
-
+        
         // Core Three.js Components
         this.scene = null;
         this.camera = null;

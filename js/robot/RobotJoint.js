@@ -20,7 +20,7 @@ export class RobotJoint {
         this.axis = config.axis || new THREE.Vector3(0, 1, 0);
         this.minAngle = config.minAngle !== undefined ? config.minAngle : -Math.PI;
         this.maxAngle = config.maxAngle !== undefined ? config.maxAngle : Math.PI;
-
+        
         this.currentAngle = config.initialAngle || 0;
         this.targetAngle = config.initialAngle || 0;
         this.speed = config.speed || 5.0;

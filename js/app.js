@@ -100,7 +100,7 @@ class App {
                 targetElement: document.getElementById('hero-container'),
                 onComplete: this._onBootComplete
             });
-
+            
             // Execute Boot Sequence
             this.bootManager.start();
 
@@ -211,7 +211,7 @@ class App {
 
             // Update Telemetry Coords DOM overlay
             if (this.domElements.telemetryCoords) {
-                this.domElements.telemetryCoords.textContent =
+                this.domElements.telemetryCoords.textContent = 
                     `X:${this.pointerTracker.normalizedX.toFixed(2)} Y:${this.pointerTracker.normalizedY.toFixed(2)}`;
             }
         }
