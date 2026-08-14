@@ -3,15 +3,16 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 2 Workstation)
  */
 
-import { CONFIG, STATES } from './config.js?v=4';
-import { BootManager } from './loader/BootManager.js?v=4';
-import { StateManager } from './state/StateManager.js?v=4';
-import { PointerTracker } from './input/PointerTracker.js?v=4';
-import { SceneManager } from './scene/SceneManager.js?v=4';
-import { Lighting } from './scene/Lighting.js?v=4';
-import { Materials } from './scene/Materials.js?v=4';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=4';
-import { Environment } from './scene/Environment.js?v=4';
+import { CONFIG, STATES } from './config.js?v=7';
+import { BootManager } from './loader/BootManager.js?v=7';
+import { StateManager } from './state/StateManager.js?v=7';
+import { PointerTracker } from './input/PointerTracker.js?v=7';
+import { SceneManager } from './scene/SceneManager.js?v=7';
+import { Lighting } from './scene/Lighting.js?v=7';
+import { Materials } from './scene/Materials.js?v=7';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=7';
+import { Environment } from './scene/Environment.js?v=7';
+import { RobotController } from './robot/RobotController.js?v=7';
 
 class App {
     constructor() {
@@ -26,6 +27,9 @@ class App {
         this.materials = null;
         this.mountingPlatform = null;
         this.environment = null;
+
+        // Phase 3 Robotic Arm Subsystem
+        this.robotController = null;
 
         // Animation Loop Control
         this.lastFrameTime = 0;
@@ -79,6 +83,10 @@ class App {
             this.mountingPlatform = new MountingPlatform(this.materials);
             this.mountingPlatform.addToScene(this.sceneManager.scene);
 
+            // 8.5. Initialize Phase 3 6-DOF Industrial Robotic Arm
+            this.robotController = new RobotController(this.materials);
+            this.robotController.addToScene(this.sceneManager.scene);
+
             // 9. Bind Systems & State Change Listeners
             this._bindEvents();
 
@@ -92,7 +100,7 @@ class App {
                 targetElement: document.getElementById('hero-container'),
                 onComplete: this._onBootComplete
             });
-            
+
             // Execute Boot Sequence
             this.bootManager.start();
 
@@ -203,7 +211,7 @@ class App {
 
             // Update Telemetry Coords DOM overlay
             if (this.domElements.telemetryCoords) {
-                this.domElements.telemetryCoords.textContent = 
+                this.domElements.telemetryCoords.textContent =
                     `X:${this.pointerTracker.normalizedX.toFixed(2)} Y:${this.pointerTracker.normalizedY.toFixed(2)}`;
             }
         }
@@ -211,6 +219,11 @@ class App {
         // 2. Update Workstation Environment & Camera Perspective Parallax
         if (this.environment) {
             this.environment.update(deltaTime, this.pointerTracker);
+        }
+
+        // 3. Update Phase 3 6-DOF Industrial Robotic Arm
+        if (this.robotController) {
+            this.robotController.update(deltaTime, this.pointerTracker, this.stateManager ? this.stateManager.state : 'IDLE');
         }
 
         if (this.sceneManager) {
