@@ -3,15 +3,15 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 2 Workstation)
  */
 
-import { CONFIG, STATES } from './config.js';
-import { BootManager } from './loader/BootManager.js';
-import { StateManager } from './state/StateManager.js';
-import { PointerTracker } from './input/PointerTracker.js';
-import { SceneManager } from './scene/SceneManager.js';
-import { Lighting } from './scene/Lighting.js';
-import { Materials } from './scene/Materials.js';
-import { MountingPlatform } from './scene/MountingPlatform.js';
-import { Environment } from './scene/Environment.js';
+import { CONFIG, STATES } from './config.js?v=4';
+import { BootManager } from './loader/BootManager.js?v=4';
+import { StateManager } from './state/StateManager.js?v=4';
+import { PointerTracker } from './input/PointerTracker.js?v=4';
+import { SceneManager } from './scene/SceneManager.js?v=4';
+import { Lighting } from './scene/Lighting.js?v=4';
+import { Materials } from './scene/Materials.js?v=4';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=4';
+import { Environment } from './scene/Environment.js?v=4';
 
 class App {
     constructor() {
@@ -208,13 +208,15 @@ class App {
             }
         }
 
-        // 2. Update Workstation Environment & Parallax Depth System
+        // 2. Update Workstation Environment & Camera Perspective Parallax
         if (this.environment) {
             this.environment.update(deltaTime, this.pointerTracker);
         }
 
-        // 3. Render WebGL Scene
         if (this.sceneManager) {
+            if (typeof this.sceneManager.updateCameraParallax === 'function') {
+                this.sceneManager.updateCameraParallax(this.pointerTracker);
+            }
             this.sceneManager.render();
         }
 
