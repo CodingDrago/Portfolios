@@ -218,19 +218,9 @@ export class Environment {
             this.particlesGroup.children[0].geometry.attributes.position.needsUpdate = true;
         }
 
-        // 2. Restrained Pointer Parallax Depth Movement
-        if (pointer) {
-            // Background Layer (Slowest Movement)
-            const targetBgX = pointer.smoothX * 0.25;
-            const targetBgY = pointer.smoothY * 0.15;
-            this.backgroundGroup.position.x += (targetBgX - this.backgroundGroup.position.x) * 0.04;
-            this.backgroundGroup.position.y += (targetBgY - this.backgroundGroup.position.y) * 0.04;
-
-            // Midground Floor Layer (Slightly stronger movement)
-            const targetMgX = pointer.smoothX * 0.45;
-            const targetMgY = pointer.smoothY * 0.25;
-            this.midgroundGroup.position.x += (targetMgX - this.midgroundGroup.position.x) * 0.04;
-            this.midgroundGroup.position.y += (targetMgY - this.midgroundGroup.position.y) * 0.04;
-        }
+        // 2. All Environment Meshes remain 100% stationary in world space.
+        // True 3D perspective depth is driven via camera micro-parallax in SceneManager.
+        this.backgroundGroup.position.set(0, 0, 0);
+        this.midgroundGroup.position.set(0, 0, 0);
     }
 }
