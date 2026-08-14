@@ -13,7 +13,7 @@ export class SceneManager {
         }
 
         this.container = mountElement;
-        
+
         // Core Three.js Components
         this.scene = null;
         this.camera = null;
@@ -122,11 +122,11 @@ export class SceneManager {
 
         const basePos = CONFIG.camera.position;
         const targetX = (basePos.x || 0) + pointer.smoothX * 0.45;
-        const targetY = (basePos.y || 0) + pointer.smoothY * 0.25;
+        const targetY = (basePos.y || 0.5) + pointer.smoothY * 0.25;
 
         this.camera.position.x += (targetX - this.camera.position.x) * 0.05;
         this.camera.position.y += (targetY - this.camera.position.y) * 0.05;
-        this.camera.lookAt(0, -0.8, 0);
+        this.camera.lookAt(0, 0.8, 0);
     }
 
     /**
