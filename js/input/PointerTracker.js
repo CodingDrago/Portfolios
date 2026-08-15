@@ -92,12 +92,17 @@ export class PointerTracker {
         this.x = curX;
         this.y = curY;
 
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        // Use interactive canvas/container bounding rectangle for exact full-viewport normalization
+        const rect = (this.container && this.container.getBoundingClientRect)
+            ? this.container.getBoundingClientRect()
+            : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
 
-        // Calculate Normalized Device Coordinates (NDC) [-1 to +1]
-        this.normalizedX = (this.x / width) * 2 - 1;
-        this.normalizedY = -(this.y / height) * 2 + 1; // Top is +1, bottom is -1
+        const localX = curX - rect.left;
+        const localY = curY - rect.top;
+
+        // Normalized Device Coordinates (NDC) [-1.0 to +1.0] across entire interactive canvas
+        this.normalizedX = (localX / Math.max(rect.width, 1)) * 2.0 - 1.0;
+        this.normalizedY = -(localY / Math.max(rect.height, 1)) * 2.0 + 1.0; // Top is +1, bottom is -1
 
         this._updateActivity(true);
     }
@@ -211,11 +216,15 @@ export class PointerTracker {
         this.x = touch.clientX;
         this.y = touch.clientY;
 
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const rect = (this.container && this.container.getBoundingClientRect)
+            ? this.container.getBoundingClientRect()
+            : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
 
-        this.normalizedX = (this.x / width) * 2 - 1;
-        this.normalizedY = -(this.y / height) * 2 + 1;
+        const localX = touch.clientX - rect.left;
+        const localY = touch.clientY - rect.top;
+
+        this.normalizedX = (localX / Math.max(rect.width, 1)) * 2.0 - 1.0;
+        this.normalizedY = -(localY / Math.max(rect.height, 1)) * 2.0 + 1.0;
     }
 
     /**
