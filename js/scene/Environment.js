@@ -50,34 +50,36 @@ export class Environment {
         gridHelper.position.set(0, -1.99, -3);
         this.midgroundGroup.add(gridHelper);
 
-        // Work-Cell Boundary Markings (Amber boundary frame around robot platform)
-        const boundaryWidth = 5.5;
-        const boundaryDepth = 5.5;
-        const thickness = 0.08;
+        // Work-Cell Boundary Markings (Continuous 90-degree square perimeter frame)
+        const CELL_MIN_X = -2.8;
+        const CELL_MAX_X = 2.8;
+        const CELL_MIN_Z = -2.8;
+        const CELL_MAX_Z = 2.8;
+        const lineThickness = 0.06;
 
-        const lineGeomH = new THREE.PlaneGeometry(boundaryWidth, thickness);
-        const lineGeomV = new THREE.PlaneGeometry(thickness, boundaryDepth);
-        const markMat = this.materials.get('cellMarkings');
+        // Create single continuous square ribbon frame with clean mitered corners
+        const frameShape = new THREE.Shape();
+        // Outer loop (clockwise)
+        frameShape.moveTo(CELL_MIN_X - lineThickness / 2, CELL_MIN_Z - lineThickness / 2);
+        frameShape.lineTo(CELL_MAX_X + lineThickness / 2, CELL_MIN_Z - lineThickness / 2);
+        frameShape.lineTo(CELL_MAX_X + lineThickness / 2, CELL_MAX_Z + lineThickness / 2);
+        frameShape.lineTo(CELL_MIN_X - lineThickness / 2, CELL_MAX_Z + lineThickness / 2);
+        frameShape.closePath();
 
-        // Front & Back markings
-        const markNorth = new THREE.Mesh(lineGeomH, markMat);
-        markNorth.rotation.x = -Math.PI / 2;
-        markNorth.position.set(0, -1.98, -2.75);
+        // Inner hole (counter-clockwise)
+        const frameHole = new THREE.Path();
+        frameHole.moveTo(CELL_MIN_X + lineThickness / 2, CELL_MIN_Z + lineThickness / 2);
+        frameHole.lineTo(CELL_MAX_X - lineThickness / 2, CELL_MIN_Z + lineThickness / 2);
+        frameHole.lineTo(CELL_MAX_X - lineThickness / 2, CELL_MAX_Z - lineThickness / 2);
+        frameHole.lineTo(CELL_MIN_X + lineThickness / 2, CELL_MAX_Z - lineThickness / 2);
+        frameHole.closePath();
+        frameShape.holes.push(frameHole);
 
-        const markSouth = new THREE.Mesh(lineGeomH, markMat);
-        markSouth.rotation.x = -Math.PI / 2;
-        markSouth.position.set(0, -1.98, 2.75);
-
-        // Left & Right markings
-        const markEast = new THREE.Mesh(lineGeomV, markMat);
-        markEast.rotation.x = -Math.PI / 2;
-        markEast.position.set(2.75, -1.98, 0);
-
-        const markWest = new THREE.Mesh(lineGeomV, markMat);
-        markWest.rotation.x = -Math.PI / 2;
-        markWest.position.set(-2.75, -1.98, 0);
-
-        this.midgroundGroup.add(markNorth, markSouth, markEast, markWest);
+        const frameGeom = new THREE.ShapeGeometry(frameShape);
+        const frameMesh = new THREE.Mesh(frameGeom, this.materials.get('cellMarkings'));
+        frameMesh.rotation.x = -Math.PI / 2;
+        frameMesh.position.y = -1.98;
+        this.midgroundGroup.add(frameMesh);
     }
 
     /**
@@ -161,7 +163,7 @@ export class Environment {
     }
 
     /**
-     * Create Sparse Ambient Dust Depth Particles
+     * Create Sparse Ambient Dust Depth Particles (outside robot mounting cell)
      * @private
      */
     _initAmbientParticles() {
@@ -169,9 +171,15 @@ export class Environment {
         const positions = new Float32Array(this.particleCount * 3);
 
         for (let i = 0; i < this.particleCount; i++) {
-            positions[i * 3 + 0] = (Math.random() - 0.5) * 16;
+            let px, pz;
+            do {
+                px = (Math.random() - 0.5) * 16;
+                pz = (Math.random() - 0.5) * 12 - 2;
+            } while (Math.sqrt(px * px + pz * pz) < 2.5); // Clear immediate robot workspace radius
+
+            positions[i * 3 + 0] = px;
             positions[i * 3 + 1] = Math.random() * 8 - 1;
-            positions[i * 3 + 2] = (Math.random() - 0.5) * 12 - 2;
+            positions[i * 3 + 2] = pz;
         }
 
         geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
