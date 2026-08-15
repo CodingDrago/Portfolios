@@ -67,10 +67,13 @@ export const CONFIG = {
 
     // Pointer Input parameters
     pointer: {
-        smoothFactor: 0.08,        // Interpolation speed for smooth coordinates
+        smoothFactor: 0.18,        // Crisp & responsive interpolation across full canvas
         inactivityTimeoutMs: 3000  // Duration before auto-transitioning to IDLE state
     },
 
     // Debugging & Development Flags
-    debug: true
+    debug: {
+        enabled: true,
+        showTargetMarker: true // Development target position indicator
+    }
 };
