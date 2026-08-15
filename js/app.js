@@ -3,16 +3,16 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 2 Workstation)
  */
 
-import { CONFIG, STATES } from './config.js?v=9';
-import { BootManager } from './loader/BootManager.js?v=9';
-import { StateManager } from './state/StateManager.js?v=9';
-import { PointerTracker } from './input/PointerTracker.js?v=9';
-import { SceneManager } from './scene/SceneManager.js?v=9';
-import { Lighting } from './scene/Lighting.js?v=9';
-import { Materials } from './scene/Materials.js?v=9';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=9';
-import { Environment } from './scene/Environment.js?v=9';
-import { RobotController } from './robot/RobotController.js?v=9';
+import { CONFIG, STATES } from './config.js?v=18';
+import { BootManager } from './loader/BootManager.js?v=18';
+import { StateManager } from './state/StateManager.js?v=18';
+import { PointerTracker } from './input/PointerTracker.js?v=18';
+import { SceneManager } from './scene/SceneManager.js?v=18';
+import { Lighting } from './scene/Lighting.js?v=18';
+import { Materials } from './scene/Materials.js?v=18';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=18';
+import { Environment } from './scene/Environment.js?v=18';
+import { RobotController } from './robot/RobotController.js?v=18';
 
 class App {
     constructor() {
@@ -230,7 +230,8 @@ class App {
 
         // 3. Update Phase 3 6-DOF Industrial Robotic Arm
         if (this.robotController) {
-            this.robotController.update(deltaTime, this.pointerTracker, this.stateManager ? this.stateManager.state : 'IDLE');
+            const cam = this.sceneManager ? this.sceneManager.camera : null;
+            this.robotController.update(deltaTime, this.pointerTracker, this.stateManager ? this.stateManager.state : 'IDLE', cam);
         }
 
         if (this.sceneManager) {
