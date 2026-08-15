@@ -1,13 +1,14 @@
 /**
  * RobotController - Master 6-DOF Manipulator Controller & IK Solver
  * Manages 3D workspace targeting, analytical 6-DOF IK joint angle solving,
- * mechanical limits enforcement, idle breathing animation, and RAF loop updates.
+ * mechanical limits enforcement, idle breathing animation, and 3D debug target marker.
  */
 
 import * as THREE from 'three';
-import { RobotMaterials } from './RobotMaterials.js';
-import { RobotArm } from './RobotArm.js';
-import { TargetMapper } from './TargetMapper.js';
+import { CONFIG } from '../config.js?v=11';
+import { RobotMaterials } from './RobotMaterials.js?v=11';
+import { RobotArm } from './RobotArm.js?v=11';
+import { TargetMapper } from './TargetMapper.js?v=11';
 
 export class RobotController {
     /**
@@ -17,67 +18,117 @@ export class RobotController {
         this.robotMaterials = new RobotMaterials();
         this.arm = new RobotArm(this.robotMaterials);
         this.targetMapper = new TargetMapper();
+        this.scene = null;
 
         // Idle Motion Control
         this.idleTime = 0;
         this.isTracking = false;
 
-        // Kinematic Link Lengths (matching geometry definitions)
-        this.L1 = 0.75; // Shoulder height offset
-        this.L2 = 1.8;  // Upper arm length
-        this.L3 = 1.6;  // Forearm length
-        this.L4 = 0.6;  // Wrist + Tool offset
+        // Kinematic Link Lengths (calibrated directly to Claw Tip TCP)
+        this.L1 = 1.30;      // Shoulder pivot height (0.55 base + 0.75 yoke)
+        this.L2 = 1.80;      // Upper arm length (J2 to J3)
+        this.Ldistal = 2.80; // Distance from J3 Elbow pivot directly to the grasping Claw Tip TCP
+
+        // 3D Target Debug Marker
+        this.targetMarker = null;
+        this._initDebugMarker();
     }
 
     /**
-     * Add robot assembly to target scene
+     * Initialize development 3D target position marker
+     * @private
+     */
+    _initDebugMarker() {
+        const group = new THREE.Group();
+        group.name = 'TargetDebugMarker';
+
+        // Inner glowing amber sphere
+        const sphereGeom = new THREE.SphereGeometry(0.06, 16, 16);
+        const sphereMat = new THREE.MeshBasicMaterial({ color: 0xffb703 });
+        const sphere = new THREE.Mesh(sphereGeom, sphereMat);
+        group.add(sphere);
+
+        // Outer targeting reticle ring
+        const ringGeom = new THREE.RingGeometry(0.12, 0.14, 24);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color: 0xffb703,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.75
+        });
+        const ring = new THREE.Mesh(ringGeom, ringMat);
+        group.add(ring);
+
+        this.targetMarker = group;
+        const showMarker = CONFIG.debug && (CONFIG.debug.showTargetMarker || CONFIG.debug === true);
+        this.targetMarker.visible = !!showMarker;
+    }
+
+    /**
+     * Add robot assembly and target marker to target scene
      * @param {THREE.Scene} scene 
      */
     addToScene(scene) {
+        if (!scene) return;
+        this.scene = scene;
+
         if (this.arm) {
             this.arm.addToScene(scene);
+        }
+
+        if (this.targetMarker) {
+            scene.add(this.targetMarker);
         }
     }
 
     /**
-     * Solve 6-DOF Analytic IK Joint Angles for 3D Target Vector
-     * Calculates J1 (Base Yaw), J2 (Shoulder Pitch), J3 (Elbow Pitch), J4-J6 (Wrist Roll/Pitch/Roll)
+     * Solve 6-DOF Analytic IK Joint Angles for Claw Tip TCP Target
+     * Directs the actual fingertips / Claw TCP to converge on targetWorld.
+     * Calculates J1 (Base Yaw Y), J2 (Shoulder Pitch X), J3 (Elbow Pitch X - Forward Flex),
+     * J4 (Forearm Roll Y), J5 (Wrist Pitch X), J6 (Tool Roll Y)
      * @param {THREE.Vector3} targetWorld 3D target coordinates in world space
      */
     solveIK(targetWorld) {
         if (!this.arm || !targetWorld) return;
 
-        // Convert target to local coordinates relative to robot base origin (0, -1.48, 0)
-        const localTarget = targetWorld.clone().sub(this.arm.group.position);
+        // Transform target into local unscaled coordinates of RobotArm (scaled by 0.82)
+        const armScale = this.arm.group.scale.x || 0.82;
+        const localTarget = targetWorld.clone().sub(this.arm.group.position).divideScalar(armScale);
 
-        // 1. Solve J1 (Base Yaw): Angle in X-Z plane
+        // 1. Solve J1 (Base Yaw): Angle in X-Z plane around Y-axis
         const j1Angle = Math.atan2(localTarget.x, localTarget.z);
         const j1 = this.arm.getJoint('J1');
         if (j1) j1.setTargetAngle(j1Angle);
 
-        // Radial distance in X-Z plane
+        // 2. Solve Planar IK for Shoulder (J2) and Elbow (J3) around local X-axis
         const r = Math.sqrt(localTarget.x * localTarget.x + localTarget.z * localTarget.z);
-        // Vertical distance relative to shoulder pivot (y = 0.55 + 0.75 = 1.30)
-        const dy = localTarget.y - 1.30;
-
-        // Target distance from shoulder pivot to target
+        const dy = localTarget.y - this.L1; // Relative to shoulder height (y = 1.30)
         const D = Math.sqrt(r * r + dy * dy);
 
-        // 2. Solve 2-Link Arm IK (Upper Arm L2, Forearm L3)
-        // Clamp reach distance D to prevent NaN on out-of-reach targets
-        const maxReach = (this.L2 + this.L3) * 0.98;
-        const minReach = Math.abs(this.L2 - this.L3) * 1.05;
+        // Clamp reach distance D to robot's physical reach capacity
+        const L2 = this.L2;
+        const Ldistal = this.Ldistal;
+        const maxReach = (L2 + Ldistal) * 0.98;
+        const minReach = Math.abs(L2 - Ldistal) * 1.05;
         const clampedD = THREE.MathUtils.clamp(D, minReach, maxReach);
 
-        // Law of Cosines for Elbow angle (J3)
-        const cosElbow = (clampedD * clampedD - this.L2 * this.L2 - this.L3 * this.L3) / (2 * this.L2 * this.L3);
-        const clampedCosElbow = THREE.MathUtils.clamp(cosElbow, -1.0, 1.0);
-        const j3Angle = -Math.acos(clampedCosElbow); // Elbow flex angle
+        // Law of Cosines for Shoulder interior angle psi
+        const cosPsi = (L2 * L2 + clampedD * clampedD - Ldistal * Ldistal) / (2 * L2 * clampedD);
+        const psi = Math.acos(THREE.MathUtils.clamp(cosPsi, -0.9999, 0.9999));
 
-        // Law of Cosines for Shoulder angle (J2)
-        const alpha = Math.atan2(dy, r);
-        const beta = Math.atan2(this.L3 * Math.sin(-j3Angle), this.L2 + this.L3 * Math.cos(-j3Angle));
-        const j2Angle = alpha + beta;
+        // Elevation angle gamma of target relative to horizontal plane
+        const gamma = Math.atan2(dy, Math.max(r, 0.1));
+
+        // Shoulder Pitch J2: (PI/2) - gamma - psi
+        // Tilts forward from vertical +Y towards +Z
+        const j2Angle = (Math.PI * 0.5) - gamma - psi;
+
+        // Law of Cosines for Elbow interior angle beta
+        const cosBeta = (L2 * L2 + Ldistal * Ldistal - clampedD * clampedD) / (2 * L2 * Ldistal);
+        const beta = Math.acos(THREE.MathUtils.clamp(cosBeta, -0.9999, 0.9999));
+
+        // Elbow flex angle J3: Bending FORWARD toward target (positive angle in [0, 115°])
+        const j3Angle = Math.PI - beta;
 
         const j2 = this.arm.getJoint('J2');
         const j3 = this.arm.getJoint('J3');
@@ -85,11 +136,11 @@ export class RobotController {
         if (j2) j2.setTargetAngle(j2Angle);
         if (j3) j3.setTargetAngle(j3Angle);
 
-        // 3. Solve Wrist Articulation (J4 Roll, J5 Pitch, J6 Roll)
-        // Keep end-effector tool pointing forward toward target
-        const j5Angle = -(j2Angle + j3Angle) * 0.7;
-        const j4Angle = -j1Angle * 0.3;
-        const j6Angle = j1Angle * 0.1;
+        // 3. Solve Coherent Wrist Articulation (J4 Roll Y, J5 Pitch X, J6 Tool Roll Y)
+        // J5 maintains rigid coaxial tool alignment with distal link (theta5 = 0) so Claw Tip TCP hits targetWorld exactly
+        const j5Angle = 0;
+        const j4Angle = -j1Angle * 0.25;
+        const j6Angle = j1Angle * 0.15;
 
         const j4 = this.arm.getJoint('J4');
         const j5 = this.arm.getJoint('J5');
@@ -109,18 +160,20 @@ export class RobotController {
         this.idleTime += deltaTime;
         const time = this.idleTime;
 
-        // Extremely small mechanical adjustments (slow, controlled, non-exaggerated)
-        const baseSway = Math.sin(time * 0.8) * 0.04;
-        const shoulderBreathing = Math.cos(time * 1.2) * 0.02;
-        const wristLeveling = Math.sin(time * 1.5) * 0.03;
+        // Extremely small mechanical adjustments in forward-bending pose
+        const baseSway = Math.sin(time * 0.8) * 0.05;
+        const shoulderBreathing = Math.cos(time * 1.1) * 0.03;
+        const elbowBreathing = Math.sin(time * 1.1) * 0.02;
 
         const j1 = this.arm.getJoint('J1');
         const j2 = this.arm.getJoint('J2');
+        const j3 = this.arm.getJoint('J3');
         const j5 = this.arm.getJoint('J5');
 
-        if (j1) j1.setTargetAngle(j1.targetAngle + baseSway * 0.1);
-        if (j2) j2.setTargetAngle(j2.targetAngle + shoulderBreathing * 0.1);
-        if (j5) j5.setTargetAngle(j5.targetAngle + wristLeveling * 0.1);
+        if (j1) j1.setTargetAngle(baseSway);
+        if (j2) j2.setTargetAngle(THREE.MathUtils.degToRad(20) + shoulderBreathing);
+        if (j3) j3.setTargetAngle(THREE.MathUtils.degToRad(35) + elbowBreathing);
+        if (j5) j5.setTargetAngle(0);
 
         if (this.arm.gripper) {
             this.arm.gripper.setState('OPEN');
@@ -132,17 +185,30 @@ export class RobotController {
      * @param {number} deltaTime Time elapsed in seconds
      * @param {Object} pointer PointerTracker instance
      * @param {string} [appState] StateManager state string
+     * @param {THREE.Camera} [camera] Three.js camera for screen-to-world synchronization
      */
-    update(deltaTime, pointer, appState) {
+    update(deltaTime, pointer, appState, camera) {
         if (!this.arm) return;
+
+        // If user is click-and-dragging to orbit the camera, hold current arm posture
+        if (pointer && pointer.isDragging) {
+            this.isTracking = false;
+            this.arm.update(deltaTime);
+            return;
+        }
 
         const isActive = pointer && pointer.active;
 
         if (isActive) {
             this.isTracking = true;
 
-            // 1. Map pointer to 3D target in workspace
-            const targetPos = this.targetMapper.mapPointerToTarget(pointer);
+            // 1. Map pointer to 3D target in workspace (synchronized with camera view)
+            const targetPos = this.targetMapper.mapPointerToTarget(pointer, camera);
+
+            // Update 3D Debug Target Marker Position
+            if (this.targetMarker) {
+                this.targetMarker.position.copy(targetPos);
+            }
 
             // 2. Solve 6-DOF IK joint angles
             this.solveIK(targetPos);
@@ -161,3 +227,5 @@ export class RobotController {
         this.arm.update(deltaTime);
     }
 }
+
+

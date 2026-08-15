@@ -2,12 +2,13 @@
  * RobotArm - 3D 6-DOF Industrial Manipulator Hierarchy Assembly
  * Assembles the complete parent-child Object3D joint hierarchy (J1–J6 + Gripper)
  * anchored directly on top of the Phase 2 MountingPlatform at origin (0, -1.48, 0).
+ * Uses physical rotation axes: J1 (Yaw Y), J2 (Pitch X), J3 (Pitch X), J4 (Roll Y), J5 (Pitch X), J6 (Roll Y).
  */
 
 import * as THREE from 'three';
-import { RobotJoint } from './RobotJoint.js';
-import { RobotGeometry } from './RobotGeometry.js';
-import { Gripper } from './Gripper.js';
+import { RobotJoint } from './RobotJoint.js?v=11';
+import { RobotGeometry } from './RobotGeometry.js?v=11';
+import { Gripper } from './Gripper.js?v=11';
 
 export class RobotArm {
     /**
@@ -43,7 +44,7 @@ export class RobotArm {
         this.group.add(baseMesh);
 
         // -------------------------------------------------------------
-        // JOINT 1: Base Rotation (Yaw - Y axis)
+        // JOINT 1: Base Rotation (Yaw - Y axis at y = 0.55)
         // -------------------------------------------------------------
         const j1PivotNode = new THREE.Group();
         j1PivotNode.name = 'J1_BaseYaw_Pivot';
@@ -66,7 +67,7 @@ export class RobotArm {
         j1PivotNode.add(shoulderYokeMesh);
 
         // -------------------------------------------------------------
-        // JOINT 2: Shoulder Pitch (Pitch - Z axis)
+        // JOINT 2: Shoulder Pitch (Pitch - X axis at y = 0.75 above J1)
         // -------------------------------------------------------------
         const j2PivotNode = new THREE.Group();
         j2PivotNode.name = 'J2_ShoulderPitch_Pivot';
@@ -75,52 +76,52 @@ export class RobotArm {
 
         const j2Joint = new RobotJoint({
             name: 'J2_ShoulderPitch',
-            axis: new THREE.Vector3(0, 0, 1),
+            axis: new THREE.Vector3(1, 0, 0),
             minAngle: THREE.MathUtils.degToRad(-45),
-            maxAngle: THREE.MathUtils.degToRad(75),
-            initialAngle: THREE.MathUtils.degToRad(25),
-            speed: 4.0
+            maxAngle: THREE.MathUtils.degToRad(90),
+            initialAngle: THREE.MathUtils.degToRad(20),
+            speed: 4.5
         });
         j2Joint.attachPivotNode(j2PivotNode);
         this.joints.set('J2', j2Joint);
 
-        // Add Upper Arm Mesh to J2 Pivot
+        // Add Upper Arm Mesh to J2 Pivot (extends along local +Y by 1.8 units)
         const upperArmMesh = this.geometryBuilder.buildUpperArm();
         j2PivotNode.add(upperArmMesh);
 
         // -------------------------------------------------------------
-        // JOINT 3: Elbow Pitch (Pitch - Z axis at upper arm tip y = 1.8)
+        // JOINT 3: Elbow Pitch (Forward Bending Pitch - X axis at y = 1.80)
         // -------------------------------------------------------------
         const j3PivotNode = new THREE.Group();
         j3PivotNode.name = 'J3_ElbowPitch_Pivot';
-        j3PivotNode.position.set(0, 1.8, 0);
+        j3PivotNode.position.set(0, 1.80, 0);
         j2PivotNode.add(j3PivotNode);
 
         const j3Joint = new RobotJoint({
             name: 'J3_ElbowPitch',
-            axis: new THREE.Vector3(0, 0, 1),
-            minAngle: THREE.MathUtils.degToRad(-110),
-            maxAngle: THREE.MathUtils.degToRad(20),
-            initialAngle: THREE.MathUtils.degToRad(-45),
-            speed: 4.0
+            axis: new THREE.Vector3(1, 0, 0),
+            minAngle: THREE.MathUtils.degToRad(-15),
+            maxAngle: THREE.MathUtils.degToRad(120),
+            initialAngle: THREE.MathUtils.degToRad(40),
+            speed: 4.5
         });
         j3Joint.attachPivotNode(j3PivotNode);
         this.joints.set('J3', j3Joint);
 
-        // Add Elbow Housing Mesh to J3 Pivot
+        // Add Elbow Housing Drum to J3 Pivot (centered at (0, 0, 0))
         const elbowHousingMesh = this.geometryBuilder.buildElbowHousing();
         j3PivotNode.add(elbowHousingMesh);
 
-        // Add Forearm Mesh to J3 Pivot
+        // Add Forearm Mesh to J3 Pivot (extends along local +Y by 1.60 units)
         const forearmMesh = this.geometryBuilder.buildForearm();
         j3PivotNode.add(forearmMesh);
 
         // -------------------------------------------------------------
-        // JOINT 4: Wrist Roll (Roll - Y axis at forearm tip y = 1.6)
+        // JOINT 4: Wrist Roll (Roll - Y axis at forearm tip y = 1.60)
         // -------------------------------------------------------------
         const j4PivotNode = new THREE.Group();
         j4PivotNode.name = 'J4_WristRoll_Pivot';
-        j4PivotNode.position.set(0, 1.6, 0);
+        j4PivotNode.position.set(0, 1.60, 0);
         j3PivotNode.add(j4PivotNode);
 
         const j4Joint = new RobotJoint({
@@ -134,21 +135,21 @@ export class RobotArm {
         j4Joint.attachPivotNode(j4PivotNode);
         this.joints.set('J4', j4Joint);
 
-        // Add Wrist Mesh to J4 Pivot
-        const wristMesh = this.geometryBuilder.buildWrist();
-        j4PivotNode.add(wristMesh);
+        // Add Wrist Roll Collar to J4 Pivot
+        const wristRollCollarMesh = this.geometryBuilder.buildWristRollCollar();
+        j4PivotNode.add(wristRollCollarMesh);
 
         // -------------------------------------------------------------
-        // JOINT 5: Wrist Pitch (Pitch - Z axis at y = 0.32)
+        // JOINT 5: Wrist Pitch (Pitch - X axis at y = 0.20 above J4)
         // -------------------------------------------------------------
         const j5PivotNode = new THREE.Group();
         j5PivotNode.name = 'J5_WristPitch_Pivot';
-        j5PivotNode.position.set(0, 0.32, 0);
+        j5PivotNode.position.set(0, 0.20, 0);
         j4PivotNode.add(j5PivotNode);
 
         const j5Joint = new RobotJoint({
             name: 'J5_WristPitch',
-            axis: new THREE.Vector3(0, 0, 1),
+            axis: new THREE.Vector3(1, 0, 0),
             minAngle: THREE.MathUtils.degToRad(-90),
             maxAngle: THREE.MathUtils.degToRad(90),
             initialAngle: THREE.MathUtils.degToRad(20),
@@ -157,12 +158,16 @@ export class RobotArm {
         j5Joint.attachPivotNode(j5PivotNode);
         this.joints.set('J5', j5Joint);
 
+        // Add Wrist Pitch Yoke Fork to J5 Pivot
+        const wristPitchYokeMesh = this.geometryBuilder.buildWristPitchYoke();
+        j5PivotNode.add(wristPitchYokeMesh);
+
         // -------------------------------------------------------------
-        // JOINT 6: End-Effector Roll (Tool Flange Roll - Y axis at y = 0.16)
+        // JOINT 6: Tool Flange Roll (Roll - Y axis at y = 0.18 above J5)
         // -------------------------------------------------------------
         const j6PivotNode = new THREE.Group();
         j6PivotNode.name = 'J6_ToolRoll_Pivot';
-        j6PivotNode.position.set(0, 0.16, 0);
+        j6PivotNode.position.set(0, 0.18, 0);
         j5PivotNode.add(j6PivotNode);
 
         const j6Joint = new RobotJoint({
@@ -175,6 +180,10 @@ export class RobotArm {
         });
         j6Joint.attachPivotNode(j6PivotNode);
         this.joints.set('J6', j6Joint);
+
+        // Add Tool Flange Plate to J6 Pivot
+        const toolFlangeMesh = this.geometryBuilder.buildToolFlange();
+        j6PivotNode.add(toolFlangeMesh);
 
         // -------------------------------------------------------------
         // 3-Finger Industrial Gripper Attachment
@@ -227,3 +236,4 @@ export class RobotArm {
         }
     }
 }
+

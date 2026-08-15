@@ -1,6 +1,7 @@
 /**
  * RobotMaterials - Industrial PBR Material Registry for 6-DOF Manipulator
  * Provides realistic materials for robot chassis, joints, actuators, and mechanical details.
+ * Implements high visual contrast so adjacent assemblies never visually merge.
  */
 
 import * as THREE from 'three';
@@ -13,63 +14,87 @@ export class RobotMaterials {
     }
 
     /**
-     * Initialize material palette matching Phase 2 workstation aesthetic
+     * Initialize high-contrast industrial material palette
      * @private
      */
     _initMaterials() {
-        // 1. Off-White Primary Chassis Paint (Semi-gloss engineering polymer/ceramic finish)
-        this.materials.set('chassisWhite', new THREE.MeshStandardMaterial({
-            color: 0xdddfdc,
+        // 1. Warm Titanium / Light Satin Grey Primary Material (Precision Outer Casing)
+        this.materials.set('chassisPrimary', new THREE.MeshStandardMaterial({
+            color: 0xc2c6ce,
             roughness: 0.35,
-            metalness: 0.15,
-            name: 'RobotChassisWhite'
+            metalness: 0.30,
+            name: 'RobotChassisPrimary'
+        }));
+        // Backwards compatibility alias
+        this.materials.set('chassisWhite', this.materials.get('chassisPrimary'));
+
+        // 2. Medium Metallic Graphite (Structural Ribs & Recessed Side Panels)
+        this.materials.set('chassisSecondary', new THREE.MeshStandardMaterial({
+            color: 0x383e4a,
+            roughness: 0.45,
+            metalness: 0.60,
+            name: 'RobotChassisSecondary'
         }));
 
-        // 2. Graphite Metallic Joint Covers & Housings
-        this.materials.set('jointGraphite', new THREE.MeshStandardMaterial({
-            color: CONFIG.colors.graphite || 0x0d0f13,
-            roughness: 0.5,
-            metalness: 0.7,
-            name: 'RobotJointGraphite'
+        // 3. Cast Gunmetal / Lighter Joint Alloy (Rotary Joint Housings, Turret Platform, Elbow Core)
+        this.materials.set('jointHousing', new THREE.MeshStandardMaterial({
+            color: 0x565e6d,
+            roughness: 0.38,
+            metalness: 0.65,
+            name: 'RobotJointHousing'
         }));
+        // Backwards compatibility alias
+        this.materials.set('jointGraphite', this.materials.get('jointHousing'));
 
-        // 3. Dark Titanium Mechanical Pivots & Actuator Sleeves
-        this.materials.set('darkTitanium', new THREE.MeshStandardMaterial({
-            color: CONFIG.colors.titanium || 0x2d323e,
-            roughness: 0.3,
+        // 4. Dark Titanium Mechanical Pivots, Actuator Sleeves & Motor Canisters
+        this.materials.set('titaniumPivot', new THREE.MeshStandardMaterial({
+            color: 0x242832,
+            roughness: 0.28,
             metalness: 0.85,
-            name: 'RobotDarkTitanium'
+            name: 'RobotTitaniumPivot'
+        }));
+        // Backwards compatibility alias
+        this.materials.set('darkTitanium', this.materials.get('titaniumPivot'));
+
+        // 5. Deep Mechanical Gap / Shadow Gasket (Inner Joint Cavities & Seams)
+        this.materials.set('mechanicalGap', new THREE.MeshStandardMaterial({
+            color: 0x0c0e12,
+            roughness: 0.90,
+            metalness: 0.10,
+            name: 'RobotMechanicalGap'
         }));
 
-        // 4. Brushed Steel Pistons, Bolts & Bearing Rings
-        this.materials.set('brushedMetal', new THREE.MeshStandardMaterial({
-            color: 0xb0b8c4,
-            roughness: 0.25,
-            metalness: 0.9,
-            name: 'RobotBrushedMetal'
+        // 6. Polished & Brushed Steel (Hydraulic Pistons, Bearing Collars, Precision Fasteners, Knuckles)
+        this.materials.set('brushedSteel', new THREE.MeshStandardMaterial({
+            color: 0xc8d1dc,
+            roughness: 0.20,
+            metalness: 0.92,
+            name: 'RobotBrushedSteel'
         }));
+        // Backwards compatibility alias
+        this.materials.set('brushedMetal', this.materials.get('brushedSteel'));
 
-        // 5. Matte Black Cable Conduit Wrap
+        // 7. Textured Matte Black Cable Conduit & High-Grip Contact Pads
         this.materials.set('conduitRubber', new THREE.MeshStandardMaterial({
-            color: 0x14161b,
+            color: 0x16181f,
             roughness: 0.85,
             metalness: 0.05,
             name: 'RobotConduitRubber'
         }));
 
-        // 6. Subtle Amber Technical Accent Ring
+        // 8. Warm Amber Technical Accent Ring
         this.materials.set('amberAccent', new THREE.MeshStandardMaterial({
             color: CONFIG.colors.amber || 0xffb703,
-            roughness: 0.4,
-            metalness: 0.3,
+            roughness: 0.35,
+            metalness: 0.40,
             name: 'RobotAmberAccent'
         }));
 
-        // 7. Amber Emissive Status LED
+        // 9. Emissive Amber Status LED Ring
         this.materials.set('indicatorAmber', new THREE.MeshStandardMaterial({
             color: CONFIG.colors.amber || 0xffb703,
             emissive: CONFIG.colors.amber || 0xffb703,
-            emissiveIntensity: 0.8,
+            emissiveIntensity: 1.0,
             roughness: 0.2,
             metalness: 0.5,
             name: 'RobotIndicatorAmber'
@@ -82,6 +107,7 @@ export class RobotMaterials {
      * @returns {THREE.Material}
      */
     get(key) {
-        return this.materials.get(key) || this.materials.get('chassisWhite');
+        return this.materials.get(key) || this.materials.get('chassisPrimary');
     }
 }
+
