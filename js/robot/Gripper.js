@@ -31,29 +31,29 @@ export class Gripper {
      */
     _initGripper() {
         // 1. Tool Flange Base Plate (Mounts to J6 Roll flange)
-        const baseGeom = new THREE.CylinderGeometry(0.18, 0.22, 0.1, 16);
+        const baseGeom = new THREE.CylinderGeometry(0.24, 0.28, 0.12, 16);
         const baseMesh = new THREE.Mesh(baseGeom, this.mat.get('jointHousing'));
-        baseMesh.position.y = 0.05;
+        baseMesh.position.y = 0.06;
         baseMesh.castShadow = true;
         this.group.add(baseMesh);
 
         // 2. Central Actuator Housing Box
-        const actuatorGeom = new THREE.CylinderGeometry(0.14, 0.16, 0.16, 16);
+        const actuatorGeom = new THREE.CylinderGeometry(0.19, 0.22, 0.20, 16);
         const actuatorMesh = new THREE.Mesh(actuatorGeom, this.mat.get('titaniumPivot'));
-        actuatorMesh.position.y = 0.18;
+        actuatorMesh.position.y = 0.20;
         actuatorMesh.castShadow = true;
         this.group.add(actuatorMesh);
 
         // 3. Status LED Ring around Gripper Base
-        const ledRingGeom = new THREE.TorusGeometry(0.15, 0.016, 8, 24);
+        const ledRingGeom = new THREE.TorusGeometry(0.20, 0.02, 8, 24);
         ledRingGeom.rotateX(Math.PI / 2);
         const ledRingMesh = new THREE.Mesh(ledRingGeom, this.mat.get('indicatorAmber'));
-        ledRingMesh.position.y = 0.26;
+        ledRingMesh.position.y = 0.30;
         this.group.add(ledRingMesh);
 
-        // 4. Construct 3 Articulated Fingers at 120° Intervals
-        const fingerRadius = 0.13;
-        const fingerLength = 0.46;
+        // 4. Construct 3 Articulated Fingers at 120° Intervals (Scaled 30% larger)
+        const fingerRadius = 0.17;
+        const fingerLength = 0.58;
 
         for (let i = 0; i < 3; i++) {
             const radialAngle = (i / 3) * Math.PI * 2;
@@ -63,41 +63,59 @@ export class Gripper {
             pivotGroup.name = `FingerPivot_${i}`;
             pivotGroup.position.set(
                 Math.cos(radialAngle) * fingerRadius,
-                0.26,
+                0.30,
                 Math.sin(radialAngle) * fingerRadius
             );
             pivotGroup.rotation.y = radialAngle;
 
             // Knuckle Base Pin (Polished Brushed Steel)
-            const pinGeom = new THREE.CylinderGeometry(0.022, 0.022, 0.06, 12);
+            const pinGeom = new THREE.CylinderGeometry(0.028, 0.028, 0.08, 12);
             pinGeom.rotateZ(Math.PI / 2);
             const pinMesh = new THREE.Mesh(pinGeom, this.mat.get('brushedSteel'));
             pivotGroup.add(pinMesh);
 
             // Proximal Finger Linkage (Warm Titanium Casing)
-            const proxGeom = new THREE.BoxGeometry(0.045, fingerLength * 0.52, 0.065);
+            const proxGeom = new THREE.BoxGeometry(0.058, fingerLength * 0.52, 0.085);
             const proxMesh = new THREE.Mesh(proxGeom, this.mat.get('chassisPrimary'));
-            proxMesh.position.set(0, fingerLength * 0.26, 0.02);
+            proxMesh.position.set(0, fingerLength * 0.26, 0.025);
             proxMesh.castShadow = true;
             pivotGroup.add(proxMesh);
 
             // Distal Gripping Finger Link (Brushed Steel Core)
-            const distGeom = new THREE.BoxGeometry(0.038, fingerLength * 0.55, 0.05);
+            const distGeom = new THREE.BoxGeometry(0.048, fingerLength * 0.55, 0.065);
             const distMesh = new THREE.Mesh(distGeom, this.mat.get('brushedSteel'));
-            distMesh.position.set(0, fingerLength * 0.66, -0.02);
+            distMesh.position.set(0, fingerLength * 0.66, -0.025);
             distMesh.rotation.x = -0.32; // Inward angle facing center
             distMesh.castShadow = true;
             pivotGroup.add(distMesh);
 
             // Rubberized Contact Grip Tip (Matte Rubber Pad)
-            const tipGeom = new THREE.BoxGeometry(0.042, 0.14, 0.035);
+            const tipGeom = new THREE.BoxGeometry(0.052, 0.18, 0.045);
             const tipMesh = new THREE.Mesh(tipGeom, this.mat.get('conduitRubber'));
-            tipMesh.position.set(0, fingerLength * 0.88, -0.05);
+            tipMesh.position.set(0, fingerLength * 0.88, -0.065);
             pivotGroup.add(tipMesh);
 
             this.group.add(pivotGroup);
             this.fingerNodes.push(pivotGroup);
         }
+
+        // 5. Dedicated Tool Center Point (TCP) Object3D situated between the grasping claw tips
+        this.tcp = new THREE.Object3D();
+        this.tcp.name = 'ToolCenterPoint_TCP';
+        this.tcp.position.set(0, 0.82, 0); // Positioned at the fingertip grasping plane along tool axis
+        this.group.add(this.tcp);
+    }
+
+    /**
+     * Get world position of the actual claw tip TCP
+     * @param {THREE.Vector3} [targetVec]
+     * @returns {THREE.Vector3}
+     */
+    getTCPWorldPosition(targetVec = new THREE.Vector3()) {
+        if (this.tcp) {
+            this.tcp.getWorldPosition(targetVec);
+        }
+        return targetVec;
     }
 
     /**
