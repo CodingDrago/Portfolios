@@ -149,7 +149,7 @@ export class SceneManager {
     updateCameraParallax(pointer) {
         if (!this.camera || !pointer) return;
 
-        // 1. Process drag orbit input
+        // 1. Process drag orbit input (full 360-degree continuous horizontal rotation)
         if (pointer.isDragging) {
             this.targetTheta -= pointer.dragDeltaX * 0.0055;
             this.targetPhi -= pointer.dragDeltaY * 0.0055;
@@ -161,8 +161,7 @@ export class SceneManager {
             pointer.wheelDelta *= 0.85; // Smooth decay
         }
 
-        // 3. Enforce orbit boundaries
-        this.targetTheta = THREE.MathUtils.clamp(this.targetTheta, this.minTheta, this.maxTheta);
+        // 3. Enforce vertical polar and zoom boundaries (No horizontal clamp - full 360° orbit)
         this.targetPhi = THREE.MathUtils.clamp(this.targetPhi, this.minPhi, this.maxPhi);
         this.targetRadius = THREE.MathUtils.clamp(this.targetRadius, this.minRadius, this.maxRadius);
 
@@ -185,7 +184,7 @@ export class SceneManager {
         const rawCamY = this.currentRadius * Math.cos(this.currentPhi) + this.targetFocus.y + parallaxY;
         const camZ = this.currentRadius * sinPhi * Math.cos(this.currentTheta) + this.targetFocus.z;
 
-        // Floor safety clamp (camera never dips below floor y = -1.0)
+        // Floor safety clamp (camera physically cannot pass through the workstation floor)
         const camY = Math.max(rawCamY, -0.4);
 
         this.camera.position.set(camX, camY, camZ);
