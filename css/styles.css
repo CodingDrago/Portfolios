@@ -68,12 +68,14 @@ html, body {
     height: 100%;
     z-index: 1;
     pointer-events: auto;
+    cursor: none;
 }
 
 .canvas-container canvas {
     display: block;
     width: 100% !important;
     height: 100% !important;
+    cursor: none;
 }
 
 /* --- Spatial UI Overlay Layer --- */
@@ -270,6 +272,7 @@ html, body {
 }
 
 /* --- Responsiveness & Media Queries --- */
+
 @media (max-width: 900px) {
     .hero-overlay {
         padding: 1.5rem;
