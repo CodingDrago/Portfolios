@@ -3,16 +3,16 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 2 Workstation)
  */
 
-import { CONFIG, STATES } from './config.js?v=7';
-import { BootManager } from './loader/BootManager.js?v=7';
-import { StateManager } from './state/StateManager.js?v=7';
-import { PointerTracker } from './input/PointerTracker.js?v=7';
-import { SceneManager } from './scene/SceneManager.js?v=7';
-import { Lighting } from './scene/Lighting.js?v=7';
-import { Materials } from './scene/Materials.js?v=7';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=7';
-import { Environment } from './scene/Environment.js?v=7';
-import { RobotController } from './robot/RobotController.js?v=7';
+import { CONFIG, STATES } from './config.js?v=9';
+import { BootManager } from './loader/BootManager.js?v=9';
+import { StateManager } from './state/StateManager.js?v=9';
+import { PointerTracker } from './input/PointerTracker.js?v=9';
+import { SceneManager } from './scene/SceneManager.js?v=9';
+import { Lighting } from './scene/Lighting.js?v=9';
+import { Materials } from './scene/Materials.js?v=9';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=9';
+import { Environment } from './scene/Environment.js?v=9';
+import { RobotController } from './robot/RobotController.js?v=9';
 
 class App {
     constructor() {
@@ -172,6 +172,13 @@ class App {
                 this.stateManager.setState(STATES.TRACKING);
             } else {
                 this.stateManager.setState(STATES.IDLE);
+            }
+        });
+
+        // Camera Reset Listener -> Reset 3D Orbit View to Default
+        this.pointerTracker.onResetCamera(() => {
+            if (this.sceneManager && typeof this.sceneManager.resetCamera === 'function') {
+                this.sceneManager.resetCamera();
             }
         });
     }
