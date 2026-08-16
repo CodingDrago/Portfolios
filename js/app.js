@@ -3,16 +3,18 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 2 Workstation)
  */
 
-import { CONFIG, STATES } from './config.js?v=18';
-import { BootManager } from './loader/BootManager.js?v=18';
-import { StateManager } from './state/StateManager.js?v=18';
-import { PointerTracker } from './input/PointerTracker.js?v=18';
-import { SceneManager } from './scene/SceneManager.js?v=18';
-import { Lighting } from './scene/Lighting.js?v=18';
-import { Materials } from './scene/Materials.js?v=18';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=18';
-import { Environment } from './scene/Environment.js?v=18';
-import { RobotController } from './robot/RobotController.js?v=18';
+import { CONFIG, STATES } from './config.js?v=20';
+import { BootManager } from './loader/BootManager.js?v=20';
+import { StateManager } from './state/StateManager.js?v=20';
+import { PointerTracker } from './input/PointerTracker.js?v=20';
+import { SceneManager } from './scene/SceneManager.js?v=20';
+import { Lighting } from './scene/Lighting.js?v=20';
+import { Materials } from './scene/Materials.js?v=20';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=20';
+import { Environment } from './scene/Environment.js?v=20';
+import { Workbench } from './scene/Workbench.js?v=20';
+import { SpatialInterfaces } from './scene/SpatialInterfaces.js?v=20';
+import { RobotController } from './robot/RobotController.js?v=20';
 
 class App {
     constructor() {
@@ -23,10 +25,12 @@ class App {
         this.sceneManager = null;
         this.lighting = null;
 
-        // Phase 2 Workstation Environment Subsystems
+        // Phase 2 & 4 Workstation Environment Subsystems
         this.materials = null;
         this.mountingPlatform = null;
         this.environment = null;
+        this.workbench = null;
+        this.spatialInterfaces = null;
 
         // Phase 3 Robotic Arm Subsystem
         this.robotController = null;
@@ -78,6 +82,14 @@ class App {
             // 7. Initialize 3D Workstation Environment (Floor plates, wall panels, parallax)
             this.environment = new Environment(this.materials);
             this.environment.addToScene(this.sceneManager.scene);
+
+            // 7.5. Initialize Physical Engineering Workbench (Electronics, Instruments, PCBs, Tools)
+            this.workbench = new Workbench(this.materials);
+            this.workbench.addToScene(this.sceneManager.scene);
+
+            // 7.8. Initialize Futuristic Spatial Computing Telemetry & Holographic Interfaces
+            this.spatialInterfaces = new SpatialInterfaces(this.materials);
+            this.spatialInterfaces.addToScene(this.sceneManager.scene);
 
             // 8. Initialize Central Robot Mounting Platform (Origin: 0, -2.0, 0)
             this.mountingPlatform = new MountingPlatform(this.materials);
@@ -228,10 +240,20 @@ class App {
             this.environment.update(deltaTime, this.pointerTracker);
         }
 
+        // 2.5. Update Physical Workbench (Oscilloscope CRT waveform, LED indicators)
+        if (this.workbench) {
+            this.workbench.update(deltaTime);
+        }
+
+        // 2.8. Update Futuristic Spatial Computing Holograms & Live Telemetry
+        if (this.spatialInterfaces) {
+            this.spatialInterfaces.update(deltaTime, this.robotController, this.pointerTracker);
+        }
+
         // 3. Update Phase 3 6-DOF Industrial Robotic Arm
         if (this.robotController) {
             const cam = this.sceneManager ? this.sceneManager.camera : null;
-            this.robotController.update(deltaTime, this.pointerTracker, this.stateManager ? this.stateManager.state : 'IDLE', cam);
+            this.robotController.update(deltaTime, this.pointerTracker, this.stateManager ? this.stateManager.getState() : 'IDLE', cam);
         }
 
         if (this.sceneManager) {

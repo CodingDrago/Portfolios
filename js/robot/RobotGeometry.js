@@ -203,7 +203,7 @@ export class RobotGeometry {
         group.add(neckMesh);
 
         // 2. Primary Structural Upper Arm Body (Warm Titanium - Muscular & Substantial)
-        const armGeom = new THREE.BoxGeometry(0.38, length * 0.68, 0.42);
+        const armGeom = new THREE.BoxGeometry(0.38, length * 0.68, 0.40);
         const armMesh = new THREE.Mesh(armGeom, this.mat.get('chassisPrimary'));
         armMesh.position.y = length * 0.46;
         armMesh.castShadow = true;
@@ -217,18 +217,30 @@ export class RobotGeometry {
         panelMesh.castShadow = true;
         group.add(panelMesh);
 
-        // 4. Heavy Hydraulic Piston Damper (Mounted along front spine)
-        const cylBarrelGeom = new THREE.CylinderGeometry(0.060, 0.060, length * 0.44, 16);
-        const cylBarrel = new THREE.Mesh(cylBarrelGeom, this.mat.get('titaniumPivot'));
-        cylBarrel.position.set(0, length * 0.35, 0.24);
-        cylBarrel.castShadow = true;
+        // 4. Rear-Mounted Upper Arm Conduit & Linear Damper (Solidly mounted on BACK side with visible air gap)
+        const upperChannelGeom = new THREE.BoxGeometry(0.14, length * 0.60, 0.08);
+        const upperChannelMesh = new THREE.Mesh(upperChannelGeom, this.mat.get('chassisSecondary'));
+        upperChannelMesh.position.set(0, length * 0.48, -0.25);
+        upperChannelMesh.castShadow = true;
 
-        const pistonRodGeom = new THREE.CylinderGeometry(0.035, 0.035, length * 0.36, 16);
-        const pistonRod = new THREE.Mesh(pistonRodGeom, this.mat.get('brushedSteel'));
-        pistonRod.position.set(0, length * 0.65, 0.24);
-        pistonRod.castShadow = true;
+        const upperPistonGeom = new THREE.CylinderGeometry(0.024, 0.024, length * 0.56, 12);
+        const upperPiston = new THREE.Mesh(upperPistonGeom, this.mat.get('brushedSteel'));
+        upperPiston.position.set(0, length * 0.48, -0.29);
+        upperPiston.castShadow = true;
 
-        group.add(cylBarrel, pistonRod);
+        // Solid Mechanical Standoff Clamps (Anchors conduit firmly into upper arm rear housing)
+        const upperClampGeom = new THREE.BoxGeometry(0.16, 0.04, 0.09);
+        const upperClampMat = this.mat.get('jointHousing');
+
+        const upperClampTop = new THREE.Mesh(upperClampGeom, upperClampMat);
+        upperClampTop.position.set(0, length * 0.72, -0.24);
+        upperClampTop.castShadow = true;
+
+        const upperClampBottom = new THREE.Mesh(upperClampGeom, upperClampMat);
+        upperClampBottom.position.set(0, length * 0.24, -0.24);
+        upperClampBottom.castShadow = true;
+
+        group.add(upperChannelMesh, upperPiston, upperClampTop, upperClampBottom);
 
         // 5. Upper Elbow Transition Neck (Stops cleanly at y = 1.55 before fork opening)
         const upperNeckGeom = new THREE.BoxGeometry(0.30, 0.10, 0.32);
@@ -263,7 +275,7 @@ export class RobotGeometry {
         group.add(leftEar, rightEar, leftRing, rightRing);
 
         // 6. Amber Technical Indicator Band
-        const bandGeom = new THREE.BoxGeometry(0.40, 0.03, 0.44);
+        const bandGeom = new THREE.BoxGeometry(0.40, 0.03, 0.42);
         const bandMesh = new THREE.Mesh(bandGeom, this.mat.get('amberAccent'));
         bandMesh.position.y = length * 0.74;
         group.add(bandMesh);

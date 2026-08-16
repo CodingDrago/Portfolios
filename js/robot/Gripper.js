@@ -51,9 +51,8 @@ export class Gripper {
         ledRingMesh.position.y = 0.30;
         this.group.add(ledRingMesh);
 
-        // 4. Construct 3 Articulated Fingers at 120° Intervals (Scaled 30% larger)
-        const fingerRadius = 0.17;
-        const fingerLength = 0.58;
+        // 4. Construct 3 Articulated Fingers at 120° Intervals (Scaled with distinct mechanical separation)
+        const fingerRadius = 0.18;
 
         for (let i = 0; i < 3; i++) {
             const radialAngle = (i / 3) * Math.PI * 2;
@@ -68,31 +67,52 @@ export class Gripper {
             );
             pivotGroup.rotation.y = radialAngle;
 
-            // Knuckle Base Pin (Polished Brushed Steel)
-            const pinGeom = new THREE.CylinderGeometry(0.028, 0.028, 0.08, 12);
+            // A. Base Knuckle Clevis Mount (Cast Gunmetal bracket anchored to actuator)
+            const clevisGeom = new THREE.BoxGeometry(0.062, 0.06, 0.06);
+            const clevisMesh = new THREE.Mesh(clevisGeom, this.mat.get('jointHousing'));
+            clevisMesh.position.set(0, 0.03, 0);
+            clevisMesh.castShadow = true;
+            pivotGroup.add(clevisMesh);
+
+            // B. Transverse Knuckle Pivot Pin (Polished Brushed Steel)
+            const pinGeom = new THREE.CylinderGeometry(0.016, 0.016, 0.082, 12);
             pinGeom.rotateZ(Math.PI / 2);
             const pinMesh = new THREE.Mesh(pinGeom, this.mat.get('brushedSteel'));
+            pinMesh.position.set(0, 0.035, 0);
             pivotGroup.add(pinMesh);
 
-            // Proximal Finger Linkage (Warm Titanium Casing)
-            const proxGeom = new THREE.BoxGeometry(0.058, fingerLength * 0.52, 0.085);
+            // C. Proximal Finger Linkage (Warm Titanium Casing)
+            const proxGeom = new THREE.BoxGeometry(0.046, 0.20, 0.055);
             const proxMesh = new THREE.Mesh(proxGeom, this.mat.get('chassisPrimary'));
-            proxMesh.position.set(0, fingerLength * 0.26, 0.025);
+            proxMesh.position.set(0, 0.15, 0.012);
             proxMesh.castShadow = true;
             pivotGroup.add(proxMesh);
 
-            // Distal Gripping Finger Link (Brushed Steel Core)
-            const distGeom = new THREE.BoxGeometry(0.048, fingerLength * 0.55, 0.065);
+            // D. Mid-Knuckle Articulation Bushing & Shadow Washers
+            const midBushingGeom = new THREE.CylinderGeometry(0.014, 0.014, 0.054, 12);
+            midBushingGeom.rotateZ(Math.PI / 2);
+            const midBushing = new THREE.Mesh(midBushingGeom, this.mat.get('brushedSteel'));
+            midBushing.position.set(0, 0.26, 0.005);
+            pivotGroup.add(midBushing);
+
+            const washerGeom = new THREE.CylinderGeometry(0.018, 0.018, 0.060, 12);
+            washerGeom.rotateZ(Math.PI / 2);
+            const washerMesh = new THREE.Mesh(washerGeom, this.mat.get('mechanicalGap'));
+            washerMesh.position.set(0, 0.26, 0.005);
+            pivotGroup.add(washerMesh);
+
+            // E. Distal Gripping Claw Finger Link (Brushed Steel Core, Angled Inward)
+            const distGeom = new THREE.BoxGeometry(0.038, 0.24, 0.042);
             const distMesh = new THREE.Mesh(distGeom, this.mat.get('brushedSteel'));
-            distMesh.position.set(0, fingerLength * 0.66, -0.025);
-            distMesh.rotation.x = -0.32; // Inward angle facing center
+            distMesh.position.set(0, 0.38, -0.024);
+            distMesh.rotation.x = -0.32; // Inward angle facing tool axis
             distMesh.castShadow = true;
             pivotGroup.add(distMesh);
 
-            // Rubberized Contact Grip Tip (Matte Rubber Pad)
-            const tipGeom = new THREE.BoxGeometry(0.052, 0.18, 0.045);
+            // F. Inner Rubberized Contact Grip Pad (Matte Black Rubber on contact face)
+            const tipGeom = new THREE.BoxGeometry(0.040, 0.14, 0.018);
             const tipMesh = new THREE.Mesh(tipGeom, this.mat.get('conduitRubber'));
-            tipMesh.position.set(0, fingerLength * 0.88, -0.065);
+            tipMesh.position.set(0, 0.49, -0.050);
             pivotGroup.add(tipMesh);
 
             this.group.add(pivotGroup);
