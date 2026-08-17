@@ -1,8 +1,7 @@
 /**
- * SpatialInterfaces - Futuristic Spatial Computing & Holographic Telemetry Layer
- * Constructs floating translucent engineering schematics, embedded architecture diagrams,
- * dynamic kinematic telemetry panels, workcell polar/Cartesian targeting grids,
- * and 3D spatial coordinate compass.
+ * SpatialInterfaces - Contextual Holographic Telemetry & Spatial Discovery System
+ * Manages the initial interactive introduction hologram, contextual high-contrast
+ * inspection panels with camera billboarding, spatial leader lines, and workcell floor grids.
  */
 
 import * as THREE from 'three';
@@ -13,132 +12,200 @@ export class SpatialInterfaces {
         this.group = new THREE.Group();
         this.group.name = 'SpatialInterfacesGroup';
 
-        // Animation Time & State
         this.time = 0;
 
-        // Kinematic Hologram Panel References
-        this.kinCanvas = null;
-        this.kinContext = null;
-        this.kinTexture = null;
-        this.kinPanelMesh = null;
+        // 1. Intro Hologram References
+        this.introGroup = null;
+        this.introCanvas = null;
+        this.introContext = null;
+        this.introTexture = null;
+        this.introOpacity = 1.0;
 
-        // Embedded Architecture Hologram References
-        this.embedCanvas = null;
-        this.embedContext = null;
-        this.embedTexture = null;
-        this.embedPanelMesh = null;
+        // 2. Contextual Inspection Hologram References
+        this.inspectGroup = null;
+        this.inspectCanvas = null;
+        this.inspectContext = null;
+        this.inspectTexture = null;
+        this.inspectDataMesh = null;
+        this.inspectGlassMesh = null;
+        this.inspectFrameMesh = null;
+        this.inspectLine = null;
+        this.activeTargetId = null;
 
-        // Projected Floor Grid
+        // 3. Projected Floor Grid
         this.projectedGridMesh = null;
 
-        this._initKinematicHologram();
-        this._initEmbeddedArchitectureHologram();
+        this._initIntroHologram();
+        this._initContextualInspectionPanel();
         this._initWorkcellTargetingGrid();
         this._initSpatialCoordinateCompass();
     }
 
     /**
-     * Build Upper Right Floating Kinematic Telemetry Hologram
+     * Build Initial Floating Introduction Hologram
      * @private
      */
-    _initKinematicHologram() {
-        const panelGroup = new THREE.Group();
-        panelGroup.name = 'KinematicHoloPanel';
-        panelGroup.position.set(2.8, 1.7, -2.4);
-        panelGroup.rotation.y = -0.26; // Angled 15° toward viewer
+    _initIntroHologram() {
+        const group = new THREE.Group();
+        group.name = 'IntroHologram';
+        group.position.set(0, 2.2, -0.8); // Positioned comfortably above robot shoulder
 
-        // 1. Smoked Translucent Glass Backplane (1.7 x 1.15)
-        const glassGeom = new THREE.PlaneGeometry(1.7, 1.15);
-        const glassMesh = new THREE.Mesh(glassGeom, this.materials.get('smokedGlassHolo'));
-        panelGroup.add(glassMesh);
-
-        // 2. Crisp Amber Holographic Border Frame
-        const wireGeom = new THREE.EdgesGeometry(glassGeom);
-        const wireMesh = new THREE.LineSegments(wireGeom, this.materials.get('holoLineAmber'));
-        panelGroup.add(wireMesh);
-
-        // 3. Dynamic HTML5 Canvas Texture for Kinematic Data (512x340 resolution)
-        this.kinCanvas = document.createElement('canvas');
-        this.kinCanvas.width = 512;
-        this.kinCanvas.height = 340;
-        this.kinContext = this.kinCanvas.getContext('2d');
-
-        this.kinTexture = new THREE.CanvasTexture(this.kinCanvas);
-        this.kinTexture.minFilter = THREE.LinearFilter;
-
-        const dataMat = new THREE.MeshBasicMaterial({
-            map: this.kinTexture,
+        // Glass Backplane (3.0 x 1.4)
+        const geom = new THREE.PlaneGeometry(3.0, 1.4);
+        const glassMat = new THREE.MeshBasicMaterial({
+            color: 0x060a12,
             transparent: true,
             opacity: 0.92,
-            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide,
             depthWrite: false
         });
-        const dataMesh = new THREE.Mesh(glassGeom, dataMat);
-        dataMesh.position.z = 0.005;
-        panelGroup.add(dataMesh);
+        const glassMesh = new THREE.Mesh(geom, glassMat);
+        group.add(glassMesh);
 
-        // 4. Fine Spatial Connector Line to Robot Base/Shoulder
-        const lineGeom = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(0, -0.58, 0),
-            new THREE.Vector3(-1.0, -1.8, 1.2)
-        ]);
-        const lineMesh = new THREE.Line(lineGeom, this.materials.get('holoLineAmber'));
-        panelGroup.add(lineMesh);
+        // Amber Wireframe Border
+        const wireGeom = new THREE.EdgesGeometry(geom);
+        const wireMat = new THREE.LineBasicMaterial({
+            color: 0xff9d00,
+            transparent: true,
+            opacity: 0.95
+        });
+        const wireMesh = new THREE.LineSegments(wireGeom, wireMat);
+        group.add(wireMesh);
 
-        this.kinPanelMesh = panelGroup;
-        this.group.add(panelGroup);
+        // Canvas for High-Resolution Text (1024x512)
+        this.introCanvas = document.createElement('canvas');
+        this.introCanvas.width = 1024;
+        this.introCanvas.height = 512;
+        this.introContext = this.introCanvas.getContext('2d');
+
+        this.introTexture = new THREE.CanvasTexture(this.introCanvas);
+        this.introTexture.minFilter = THREE.LinearFilter;
+
+        const textMat = new THREE.MeshBasicMaterial({
+            map: this.introTexture,
+            transparent: true,
+            opacity: 0.98,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const textMesh = new THREE.Mesh(geom, textMat);
+        textMesh.position.z = 0.006;
+        group.add(textMesh);
+
+        this.introGroup = group;
+        this.group.add(group);
+        this._renderIntroCanvas();
     }
 
     /**
-     * Build Upper Left Floating Embedded Systems Circuit Architecture Hologram
+     * Render Text on Introduction Hologram Canvas
      * @private
      */
-    _initEmbeddedArchitectureHologram() {
-        const panelGroup = new THREE.Group();
-        panelGroup.name = 'EmbeddedArchitectureHolo';
-        panelGroup.position.set(-2.8, 1.7, -2.4);
-        panelGroup.rotation.y = 0.26; // Angled 15° toward viewer
+    _renderIntroCanvas() {
+        const ctx = this.introContext;
+        if (!ctx) return;
 
-        // 1. Smoked Translucent Glass Backplane (1.7 x 1.15)
-        const glassGeom = new THREE.PlaneGeometry(1.7, 1.15);
-        const glassMesh = new THREE.Mesh(glassGeom, this.materials.get('smokedGlassHolo'));
-        panelGroup.add(glassMesh);
+        ctx.clearRect(0, 0, 1024, 512);
 
-        // 2. Crisp Amber Holographic Border Frame
-        const wireGeom = new THREE.EdgesGeometry(glassGeom);
-        const wireMesh = new THREE.LineSegments(wireGeom, this.materials.get('holoLineAmber'));
-        panelGroup.add(wireMesh);
+        // Dark Smoked Opaque Background
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.95)';
+        ctx.fillRect(0, 0, 1024, 512);
 
-        // 3. Dynamic HTML5 Canvas Texture for Embedded Block Diagram (512x340)
-        this.embedCanvas = document.createElement('canvas');
-        this.embedCanvas.width = 512;
-        this.embedCanvas.height = 340;
-        this.embedContext = this.embedCanvas.getContext('2d');
+        // Header Tag
+        ctx.fillStyle = '#ff9d00';
+        ctx.font = 'bold 28px monospace';
+        ctx.fillText('[ WORKSTATION ONLINE // SPATIAL R&D LAB ]', 48, 70);
 
-        this.embedTexture = new THREE.CanvasTexture(this.embedCanvas);
-        this.embedTexture.minFilter = THREE.LinearFilter;
+        // Divider
+        ctx.strokeStyle = '#ff9d00';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(48, 90);
+        ctx.lineTo(976, 90);
+        ctx.stroke();
+
+        // Main Title (Large, bold, ultra-high contrast)
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 44px monospace';
+        ctx.fillText('HOVER OVER HARDWARE TO INSPECT', 48, 175);
+
+        // Subtitle
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '28px monospace';
+        ctx.fillText('Move cursor across instruments, boards & robot to reveal telemetry', 48, 240);
+
+        // Interactive Targets Prompt
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 24px monospace';
+        ctx.fillText('TARGETS: [OSCILLOSCOPE] [MCU PROTOTYPE] [6-DOF ROBOT] [BENCH SUPPLY]', 48, 340);
+
+        // Instructions Footer
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 26px monospace';
+        ctx.fillText('● SYSTEM READY — 360° SPATIAL ORBIT ACTIVE', 48, 445);
+
+        this.introTexture.needsUpdate = true;
+    }
+
+    /**
+     * Build Dynamic Contextual Inspection Hologram Panel
+     * @private
+     */
+    _initContextualInspectionPanel() {
+        const group = new THREE.Group();
+        group.name = 'ContextualInspectionPanel';
+        group.position.set(0, 2.0, -1.5);
+        group.visible = false;
+
+        const geom = new THREE.PlaneGeometry(2.8, 1.7);
+
+        // 1. High-Resolution Dynamic Canvas Texture (1024x640)
+        this.inspectCanvas = document.createElement('canvas');
+        this.inspectCanvas.width = 1024;
+        this.inspectCanvas.height = 640;
+        this.inspectContext = this.inspectCanvas.getContext('2d');
+
+        this.inspectTexture = new THREE.CanvasTexture(this.inspectCanvas);
+        this.inspectTexture.minFilter = THREE.LinearFilter;
 
         const dataMat = new THREE.MeshBasicMaterial({
-            map: this.embedTexture,
+            map: this.inspectTexture,
             transparent: true,
-            opacity: 0.92,
-            blending: THREE.AdditiveBlending,
+            opacity: 0.98,
+            side: THREE.DoubleSide,
             depthWrite: false
         });
-        const dataMesh = new THREE.Mesh(glassGeom, dataMat);
-        dataMesh.position.z = 0.005;
-        panelGroup.add(dataMesh);
+        this.inspectDataMesh = new THREE.Mesh(geom, dataMat);
+        this.inspectDataMesh.renderOrder = 10;
+        group.add(this.inspectDataMesh);
 
-        // 4. Fine Spatial Connector Line to Electronics Bench MCU
+        // 2. Crisp Glowing Amber Frame
+        const wireGeom = new THREE.EdgesGeometry(geom);
+        const wireMat = new THREE.LineBasicMaterial({
+            color: 0xff9d00,
+            transparent: true,
+            opacity: 0.98
+        });
+        this.inspectFrameMesh = new THREE.LineSegments(wireGeom, wireMat);
+        this.inspectFrameMesh.renderOrder = 11;
+        group.add(this.inspectFrameMesh);
+
+        // 3. Spatial Leader Line Connecting Panel to Hovered Target
         const lineGeom = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(0, -0.58, 0),
-            new THREE.Vector3(0.0, -1.8, 0.6)
+            new THREE.Vector3(0, -0.85, 0),
+            new THREE.Vector3(0, -2.0, 0)
         ]);
-        const lineMesh = new THREE.Line(lineGeom, this.materials.get('holoLineAmber'));
-        panelGroup.add(lineMesh);
+        const lineMat = new THREE.LineBasicMaterial({
+            color: 0xff9d00,
+            transparent: true,
+            opacity: 0.90
+        });
+        this.inspectLine = new THREE.Line(lineGeom, lineMat);
+        this.inspectLine.renderOrder = 9;
+        group.add(this.inspectLine);
 
-        this.embedPanelMesh = panelGroup;
-        this.group.add(panelGroup);
+        this.inspectGroup = group;
+        this.group.add(group);
     }
 
     /**
@@ -148,7 +215,7 @@ export class SpatialInterfaces {
     _initWorkcellTargetingGrid() {
         const gridGroup = new THREE.Group();
         gridGroup.name = 'WorkcellTargetingGrid';
-        gridGroup.position.set(0, -1.97, 0); // Flat on floor plane
+        gridGroup.position.set(0, -1.97, 0);
 
         // Concentric Holographic Range Rings (r = 1.4, 2.4, 3.4)
         const ringRadii = [1.4, 2.4, 3.4];
@@ -191,13 +258,12 @@ export class SpatialInterfaces {
         compassGroup.name = 'SpatialCompass';
         compassGroup.position.set(-1.8, -1.42, 1.4);
 
-        // Subtle XYZ Axis Lines (Length 0.3)
         const axisX = new THREE.Line(
             new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.3, 0, 0)]),
             new THREE.LineBasicMaterial({ color: 0xef4444, linewidth: 2 })
         );
         const axisY = new THREE.Line(
-            new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0.3, 0)]),
+            new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.3, 0, 0)]),
             new THREE.LineBasicMaterial({ color: 0x10b981, linewidth: 2 })
         );
         const axisZ = new THREE.Line(
@@ -210,7 +276,111 @@ export class SpatialInterfaces {
     }
 
     /**
-     * Add entire spatial interfaces subsystem to target scene
+     * Render Contextual Technical Telemetry to Inspection Panel Canvas with layered scanline assembly
+     * @private
+     * @param {Object} target Target configuration
+     * @param {Object} robotController 
+     */
+    _renderInspectionCanvas(target, robotController) {
+        const ctx = this.inspectContext;
+        if (!ctx || !target) return;
+
+        ctx.clearRect(0, 0, 1024, 640);
+
+        // 1. Dark Opaque Backing for 100% Text Legibility
+        ctx.fillStyle = 'rgba(6, 10, 16, 0.95)';
+        ctx.fillRect(0, 0, 1024, 640);
+
+        // 2. Subtle Background Engineering Scanline Grid
+        ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+        ctx.lineWidth = 1;
+        for (let y = 30; y < 640; y += 40) {
+            ctx.beginPath(); ctx.moveTo(20, y); ctx.lineTo(1004, y); ctx.stroke();
+        }
+
+        // 3. Corner Accent Brackets
+        ctx.strokeStyle = '#ff9d00';
+        ctx.lineWidth = 3;
+        const bLen = 24;
+        // Top-Left
+        ctx.beginPath(); ctx.moveTo(14, 14 + bLen); ctx.lineTo(14, 14); ctx.lineTo(14 + bLen, 14); ctx.stroke();
+        // Top-Right
+        ctx.beginPath(); ctx.moveTo(1010 - bLen, 14); ctx.lineTo(1010, 14); ctx.lineTo(1010, 14 + bLen); ctx.stroke();
+        // Bottom-Left
+        ctx.beginPath(); ctx.moveTo(14, 626 - bLen); ctx.lineTo(14, 626); ctx.lineTo(14 + bLen, 626); ctx.stroke();
+        // Bottom-Right
+        ctx.beginPath(); ctx.moveTo(1010 - bLen, 626); ctx.lineTo(1010, 626); ctx.lineTo(1010, 626 - bLen); ctx.stroke();
+
+        // 4. Header Category Banner
+        ctx.fillStyle = '#ff9d00';
+        ctx.font = 'bold 22px monospace';
+        ctx.fillText(`[ ${target.category || 'HARDWARE SUBSYSTEM'} ]`, 36, 52);
+
+        // 5. Target Title (Large, Bold & High Contrast)
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 34px monospace';
+        ctx.fillText(target.title || 'DEVICE TELEMETRY', 36, 96);
+
+        // 6. Glowing Amber Divider Line
+        ctx.strokeStyle = '#ff9d00';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(36, 116);
+        ctx.lineTo(988, 116);
+        ctx.stroke();
+
+        // 7. Dynamic Technical Rows
+        let rows = [];
+        if (target.getData) {
+            rows = target.getData(robotController);
+        } else {
+            rows = [
+                ['STATUS:', 'ONLINE [NOMINAL]', '#10b981'],
+                ['BUS PROTOCOL:', 'SPI / I2C REGULATED', '#ff9d00'],
+                ['TELEMETRY:', 'STREAMING 60 Hz', '#38bdf8']
+            ];
+        }
+
+        ctx.font = '24px monospace';
+        rows.forEach((r, i) => {
+            const y = 175 + i * 48;
+
+            // Indicator Bullet
+            ctx.fillStyle = r[2] || '#ff9d00';
+            ctx.fillRect(38, y - 18, 12, 12);
+
+            // Label
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillText(r[0], 62, y - 6);
+
+            // Value
+            ctx.fillStyle = r[2] || '#ff9d00';
+            ctx.font = 'bold 24px monospace';
+            ctx.fillText(r[1], 460, y - 6);
+            ctx.font = '24px monospace';
+        });
+
+        // 8. Bottom Footer Status
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 20px monospace';
+        ctx.fillText(`HARDWARE ID: ${target.id.toUpperCase()} // LATENCY: 0.4ms // R&D BENCH-01`, 38, 595);
+
+        // 9. Restrained Scanline Assembly Glitch (First 100ms of activation)
+        if (this.glitchTimer > 0) {
+            const scanY = (1.0 - (this.glitchTimer / 0.12)) * 640;
+            ctx.fillStyle = 'rgba(255, 157, 0, 0.25)';
+            ctx.fillRect(0, scanY - 10, 1024, 20);
+
+            // Subtle RGB chromatic displacement slice
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.20)';
+            ctx.fillRect(10, scanY + 15, 1004, 6);
+        }
+
+        this.inspectTexture.needsUpdate = true;
+    }
+
+    /**
+     * Add spatial interface elements to target scene
      * @param {THREE.Scene} scene 
      */
     addToScene(scene) {
@@ -221,203 +391,130 @@ export class SpatialInterfaces {
 
     /**
      * Per-frame animation update:
-     * - Refreshes live joint angles and kinematic telemetry
-     * - Animates embedded architecture signal flow pulses
-     * - Updates floating hover breathing
+     * - Handles Intro Hologram fade-out once user explores
+     * - Manages Contextual Inspection Panel adaptive scaling, dynamic positioning, camera billboarding, and scanline glitch
+     * - Animates floor targeting grid
      * @param {number} deltaTime 
      * @param {Object} robotController 
      * @param {Object} pointerTracker 
+     * @param {Object} hoverManager 
+     * @param {THREE.Camera} camera 
      */
-    update(deltaTime, robotController, pointerTracker) {
+    update(deltaTime, robotController, pointerTracker, hoverManager, camera) {
         this.time += deltaTime;
 
-        // 1. Subtle Floating Hover Breathing Motion
-        const hoverOffset = Math.sin(this.time * 1.4) * 0.025;
-        if (this.kinPanelMesh) this.kinPanelMesh.position.y = 1.7 + hoverOffset;
-        if (this.embedPanelMesh) this.embedPanelMesh.position.y = 1.7 - hoverOffset;
-
-        // 2. Render Live Kinematic Telemetry Hologram
-        if (this.kinContext && this.kinTexture) {
-            const ctx = this.kinContext;
-            ctx.clearRect(0, 0, 512, 340);
-
-            // Subtle Background Scan Matrix
-            ctx.fillStyle = 'rgba(8, 14, 22, 0.75)';
-            ctx.fillRect(0, 0, 512, 340);
-
-            // Header Banner
-            ctx.fillStyle = '#ff9d00';
-            ctx.font = 'bold 16px monospace';
-            ctx.fillText('SYS.KINEMATICS // 6-DOF TELEMETRY', 20, 32);
-
-            ctx.strokeStyle = '#ff9d00';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(20, 42);
-            ctx.lineTo(492, 42);
-            ctx.stroke();
-
-            // Extract Live Angles from RobotController if available
-            let j1 = 0, j2 = 0, j3 = 0, j4 = 0, j5 = 0, j6 = 0;
-            if (robotController && robotController.arm) {
-                const j1Node = robotController.arm.getJoint('J1');
-                const j2Node = robotController.arm.getJoint('J2');
-                const j3Node = robotController.arm.getJoint('J3');
-                const j4Node = robotController.arm.getJoint('J4');
-                const j5Node = robotController.arm.getJoint('J5');
-                const j6Node = robotController.arm.getJoint('J6');
-
-                if (j1Node) j1 = THREE.MathUtils.radToDeg(j1Node.currentAngle);
-                if (j2Node) j2 = THREE.MathUtils.radToDeg(j2Node.currentAngle);
-                if (j3Node) j3 = THREE.MathUtils.radToDeg(j3Node.currentAngle);
-                if (j4Node) j4 = THREE.MathUtils.radToDeg(j4Node.currentAngle);
-                if (j5Node) j5 = THREE.MathUtils.radToDeg(j5Node.currentAngle);
-                if (j6Node) j6 = THREE.MathUtils.radToDeg(j6Node.currentAngle);
+        // 1. Manage Intro Hologram Fade
+        if (hoverManager && this.introGroup) {
+            const { hasInteractedOnce } = hoverManager.getActiveState();
+            if (hasInteractedOnce) {
+                this.introOpacity = Math.max(0.0, this.introOpacity - deltaTime * 3.0);
             }
+            this.introGroup.visible = this.introOpacity > 0.001;
 
-            // Kinematic Tree List
-            const joints = [
-                ['J1 BASE YAW', `${j1.toFixed(1)}°`, '±160° RANGE'],
-                ['J2 SHOULDER', `${j2.toFixed(1)}°`, 'LAW OF COSINES'],
-                ['J3 ELBOW PITCH', `${j3.toFixed(1)}°`, 'PLANAR FLEX'],
-                ['J4 WRIST ROLL', `${j4.toFixed(1)}°`, 'COAXIAL SYNC'],
-                ['J5 WRIST PITCH', `${j5.toFixed(1)}°`, 'TOOL LOCK'],
-                ['J6 TOOL ROLL', `${j6.toFixed(1)}°`, 'TCP FLANGE']
-            ];
+            if (this.introGroup.visible) {
+                // Gentle breathing hover
+                this.introGroup.position.y = 2.2 + Math.sin(this.time * 1.5) * 0.02;
 
-            ctx.font = '13px monospace';
-            joints.forEach((j, i) => {
-                const y = 74 + i * 34;
+                // Subtle Billboard alignment to camera
+                if (camera) {
+                    this.introGroup.quaternion.copy(camera.quaternion);
+                }
 
-                // Node marker
-                ctx.fillStyle = '#ff9d00';
-                ctx.fillRect(24, y - 10, 6, 6);
-
-                ctx.fillStyle = '#e2e8f0';
-                ctx.fillText(j[0], 38, y - 4);
-
-                ctx.fillStyle = '#ff9d00';
-                ctx.fillText(j[1], 200, y - 4);
-
-                ctx.fillStyle = '#64748b';
-                ctx.fillText(j[2], 310, y - 4);
-            });
-
-            // Footer Status
-            ctx.fillStyle = '#10b981';
-            ctx.font = 'bold 12px monospace';
-            ctx.fillText('IK SOLVER: ACTIVE [CONVERGED 60Hz]', 24, 305);
-
-            ctx.fillStyle = '#ff9d00';
-            const px = pointerTracker ? pointerTracker.normalizedX.toFixed(2) : '0.00';
-            const py = pointerTracker ? pointerTracker.normalizedY.toFixed(2) : '0.00';
-            ctx.fillText(`TARGET NDC: [X:${px}, Y:${py}]`, 280, 305);
-
-            this.kinTexture.needsUpdate = true;
+                // Apply opacity
+                this.introGroup.children.forEach(c => {
+                    if (c.material) c.material.opacity = this.introOpacity * 0.94;
+                });
+            }
         }
 
-        // 3. Render Embedded Architecture Hologram
-        if (this.embedContext && this.embedTexture) {
-            const ctx = this.embedContext;
-            ctx.clearRect(0, 0, 512, 340);
+        // 2. Manage Contextual Inspection Panel
+        if (hoverManager && this.inspectGroup) {
+            const { target, progress } = hoverManager.getActiveState();
 
-            // Background
-            ctx.fillStyle = 'rgba(8, 14, 22, 0.75)';
-            ctx.fillRect(0, 0, 512, 340);
+            if (progress > 0.001 && target) {
+                this.inspectGroup.visible = true;
 
-            // Header Banner
-            ctx.fillStyle = '#ff9d00';
-            ctx.font = 'bold 16px monospace';
-            ctx.fillText('EMBEDDED ARCHITECTURE // CORE-01', 20, 32);
+                // Trigger brief scanline glitch pulse on new target activation
+                if (this.lastTarget !== target) {
+                    this.glitchTimer = 0.12; // 120ms scanline assembly pulse
+                } else if (this.glitchTimer > 0) {
+                    this.glitchTimer = Math.max(0, this.glitchTimer - deltaTime);
+                }
 
-            ctx.strokeStyle = '#ff9d00';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(20, 42);
-            ctx.lineTo(492, 42);
-            ctx.stroke();
+                // Render dynamic telemetry
+                this._renderInspectionCanvas(target, robotController);
 
-            // Block Diagram Visuals
-            const blocks = [
-                { name: 'HOST I/O', sub: 'WEBGL / NDC', x: 30, y: 70, w: 100, h: 48 },
-                { name: 'MCU CORE', sub: 'CORTEX-M7', x: 190, y: 70, w: 120, h: 48 },
-                { name: 'ACTUATORS', sub: '6x SERVO BUS', x: 370, y: 70, w: 110, h: 48 }
-            ];
+                // Compute Dynamic Object Anchor Point
+                let anchor = target.anchorPoint ? target.anchorPoint.clone() : new THREE.Vector3(0, 0, 0);
 
-            // Draw Block Boxes
-            blocks.forEach(b => {
-                ctx.strokeStyle = '#ff9d00';
-                ctx.fillStyle = '#101620';
-                ctx.fillRect(b.x, b.y, b.w, b.h);
-                ctx.strokeRect(b.x, b.y, b.w, b.h);
+                // If target is robot, track the live shoulder/arm world position
+                if (target.id === 'robot' && robotController && robotController.arm) {
+                    const shoulder = robotController.arm.getJoint('J2');
+                    if (shoulder && shoulder.group) {
+                        anchor = shoulder.group.getWorldPosition(new THREE.Vector3());
+                    }
+                }
 
-                ctx.fillStyle = '#e2e8f0';
-                ctx.font = 'bold 12px monospace';
-                ctx.fillText(b.name, b.x + 12, b.y + 20);
+                // Camera-Aware Spatial Offset: Keep panel on the side relative to camera view
+                let targetPos;
+                if (target.id === 'robot' && camera) {
+                    const camDir = new THREE.Vector3();
+                    camera.getWorldDirection(camDir);
+                    const camRight = new THREE.Vector3().crossVectors(camDir, camera.up).normalize();
+                    // Place robot panel offset to the right in camera view space
+                    targetPos = anchor.clone().add(camRight.clone().multiplyScalar(2.2)).add(new THREE.Vector3(0, 1.4, 0));
+                } else {
+                    const offset = target.panelOffset || new THREE.Vector3(0, 1.4, 0.4);
+                    targetPos = new THREE.Vector3().addVectors(anchor, offset);
+                }
 
-                ctx.fillStyle = '#64748b';
-                ctx.font = '10px monospace';
-                ctx.fillText(b.sub, b.x + 12, b.y + 36);
-            });
+                // Subtle floating breathing animation
+                targetPos.y += Math.sin(this.time * 2.0) * 0.02;
 
-            // Draw Connecting Data Arrows
-            ctx.strokeStyle = '#38bdf8';
-            ctx.lineWidth = 2;
+                if (!this.lastTarget || this.lastTarget !== target) {
+                    this.inspectGroup.position.copy(targetPos);
+                    this.lastTarget = target;
+                } else {
+                    this.inspectGroup.position.lerp(targetPos, 0.25);
+                }
 
-            // Arrow 1: HOST -> MCU (SPI)
-            ctx.beginPath();
-            ctx.moveTo(130, 94);
-            ctx.lineTo(190, 94);
-            ctx.stroke();
+                // Intelligent Billboarding: Face the camera directly
+                if (camera) {
+                    this.inspectGroup.quaternion.copy(camera.quaternion);
 
-            // Arrow 2: MCU -> ACTUATORS (CAN)
-            ctx.beginPath();
-            ctx.moveTo(310, 94);
-            ctx.lineTo(370, 94);
-            ctx.stroke();
+                    // Adaptive Distance Scaling: Keep text readable at all camera distances
+                    const camDist = this.inspectGroup.position.distanceTo(camera.position);
+                    const adaptiveScale = THREE.MathUtils.clamp(camDist / 5.2, 0.80, 1.30);
+                    this.inspectGroup.scale.set(adaptiveScale, adaptiveScale, adaptiveScale);
+                }
+                this.inspectGroup.updateMatrixWorld(true);
 
-            // Animated Signal Pulses traversing arrows
-            const pulsePos1 = 130 + ((this.time * 80) % 60);
-            ctx.fillStyle = '#ff9d00';
-            ctx.beginPath();
-            ctx.arc(pulsePos1, 94, 3, 0, Math.PI * 2);
-            ctx.fill();
+                // Update Spatial Leader Line from Panel Bottom to Target Anchor
+                if (this.inspectLine) {
+                    const localAnchor = this.inspectGroup.worldToLocal(anchor.clone());
+                    const positions = this.inspectLine.geometry.attributes.position.array;
+                    positions[0] = 0;
+                    positions[1] = -0.85;
+                    positions[2] = 0;
+                    positions[3] = localAnchor.x;
+                    positions[4] = localAnchor.y;
+                    positions[5] = localAnchor.z;
+                    this.inspectLine.geometry.attributes.position.needsUpdate = true;
+                }
 
-            const pulsePos2 = 310 + ((this.time * 80) % 60);
-            ctx.fillStyle = '#10b981';
-            ctx.beginPath();
-            ctx.arc(pulsePos2, 94, 3, 0, Math.PI * 2);
-            ctx.fill();
+                // Apply Smooth Transition Opacity
+                if (this.inspectFrameMesh) this.inspectFrameMesh.material.opacity = progress * 0.98;
+                if (this.inspectDataMesh) this.inspectDataMesh.material.opacity = progress * 0.98;
+                if (this.inspectLine) this.inspectLine.material.opacity = progress * 0.90;
 
-            // Sensor Bus Telemetry Readouts
-            ctx.fillStyle = '#e2e8f0';
-            ctx.font = '13px monospace';
-            ctx.fillText('BUS STATUS & TELEMETRY:', 24, 160);
-
-            const tele = [
-                ['I2C BUS [0x68]:', '6-AXIS IMU STREAM', '1000 Hz [OK]'],
-                ['SPI BUS [0x01]:', 'OPTICAL ENCODER', '4096 CPR [OK]'],
-                ['CAN 2.0B [1Mbps]:', '6-NODE MOTOR DRIVE', '14.2% BUS LOAD'],
-                ['V_BUS / CURRENT:', '24.00 V / 03.50 A', 'REGULATED'],
-                ['CORE TEMP / CLK:', '32.4°C / 480 MHz', 'OPTIMAL']
-            ];
-
-            tele.forEach((t, i) => {
-                const y = 188 + i * 24;
-                ctx.fillStyle = '#ff9d00';
-                ctx.fillText(t[0], 24, y);
-
-                ctx.fillStyle = '#e2e8f0';
-                ctx.fillText(t[1], 180, y);
-
-                ctx.fillStyle = '#10b981';
-                ctx.fillText(t[2], 360, y);
-            });
-
-            this.embedTexture.needsUpdate = true;
+            } else {
+                this.inspectGroup.visible = false;
+                this.lastTarget = null;
+                this.glitchTimer = 0;
+            }
         }
 
-        // 4. Subtle Ambient Pulsing of Projected Floor Grid
+        // 3. Subtle Ambient Pulsing of Projected Floor Grid
         if (this.projectedGridMesh) {
             const gridOpacity = 0.20 + Math.sin(this.time * 2.0) * 0.06;
             this.projectedGridMesh.children.forEach(child => {

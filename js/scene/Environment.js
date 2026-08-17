@@ -25,7 +25,58 @@ export class Environment {
         this._initBackgroundWall();
         this._initStructuralColumns();
         this._initCableConduits();
+        this._initOverheadGantry();
         this._initAmbientParticles();
+    }
+
+    /**
+     * Create Overhead Structural Lighting Gantry & Task Fixtures (360 completeness)
+     * @private
+     */
+    _initOverheadGantry() {
+        const gantryGroup = new THREE.Group();
+        gantryGroup.name = 'OverheadGantry';
+
+        // Longitudinal Aluminum Extrusion Rails (x = ±3.5, y = 5.2)
+        const railGeom = new THREE.BoxGeometry(0.12, 0.12, 12);
+        const railMat = this.materials.get('structuralSteel');
+
+        const leftRail = new THREE.Mesh(railGeom, railMat);
+        leftRail.position.set(-3.5, 5.2, -3);
+        const rightRail = new THREE.Mesh(railGeom, railMat);
+        rightRail.position.set(3.5, 5.2, -3);
+        gantryGroup.add(leftRail, rightRail);
+
+        // Transverse Cross Spanners
+        const spanGeom = new THREE.BoxGeometry(7.12, 0.10, 0.10);
+        for (let z = -7; z <= 1; z += 4) {
+            const span = new THREE.Mesh(spanGeom, railMat);
+            span.position.set(0, 5.2, z);
+            gantryGroup.add(span);
+        }
+
+        // Suspended Cylindrical Downlight Fixtures
+        const lampGeom = new THREE.CylinderGeometry(0.08, 0.12, 0.20, 12);
+        const lampMat = this.materials.get('instrumentChassis');
+        const lensMat = this.materials.get('ledAmber');
+
+        const lampPositions = [
+            [-3.5, 5.0, -2.4],
+            [3.5, 5.0, -2.4],
+            [0.0, 5.0, -4.5]
+        ];
+
+        lampPositions.forEach(([lx, ly, lz]) => {
+            const lamp = new THREE.Mesh(lampGeom, lampMat);
+            lamp.position.set(lx, ly, lz);
+            const lens = new THREE.Mesh(new THREE.CircleGeometry(0.10, 12), lensMat);
+            lens.rotation.x = Math.PI / 2;
+            lens.position.set(0, -0.101, 0);
+            lamp.add(lens);
+            gantryGroup.add(lamp);
+        });
+
+        this.backgroundGroup.add(gantryGroup);
     }
 
     /**

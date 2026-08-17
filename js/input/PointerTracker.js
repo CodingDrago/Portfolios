@@ -36,6 +36,7 @@ export class PointerTracker {
 
         // Pointer Activity Flags & Timer
         this.active = false;
+        this.hasMovedEver = false;
         this.lastMovedTime = 0;
         this.inactivityTimeout = CONFIG.pointer.inactivityTimeoutMs || 3000;
 
@@ -233,6 +234,9 @@ export class PointerTracker {
      */
     _updateActivity(isActive) {
         this.lastMovedTime = performance.now();
+        if (isActive) {
+            this.hasMovedEver = true;
+        }
 
         if (this.active !== isActive) {
             this.active = isActive;

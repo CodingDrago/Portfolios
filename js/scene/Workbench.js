@@ -22,6 +22,16 @@ export class Workbench {
         // Animated LED References
         this.blinkingLEDs = [];
 
+        // Interactive Object Registry References
+        this.interactiveObjects = {
+            oscilloscope: null,
+            powerSupply: null,
+            reworkStation: null,
+            mcuPrototype: null,
+            opticalBreadboard: null,
+            logicAnalyzer: null
+        };
+
         this._initLeftElectronicsBench();
         this._initRightRoboticsBench();
     }
@@ -160,6 +170,7 @@ export class Workbench {
         scopeGroup.add(ledMesh);
 
         parent.add(scopeGroup);
+        this.interactiveObjects.oscilloscope = scopeGroup;
     }
 
     /**
@@ -222,6 +233,7 @@ export class Workbench {
         psuGroup.add(redJack, blackJack, greenJack);
 
         parent.add(psuGroup);
+        this.interactiveObjects.powerSupply = psuGroup;
     }
 
     /**
@@ -262,6 +274,7 @@ export class Workbench {
         reworkGroup.add(ironMesh);
 
         parent.add(reworkGroup);
+        this.interactiveObjects.reworkStation = reworkGroup;
     }
 
     /**
@@ -329,6 +342,7 @@ export class Workbench {
         pcbGroup.add(ribbonMesh);
 
         parent.add(pcbGroup);
+        this.interactiveObjects.mcuPrototype = pcbGroup;
     }
 
     /**
@@ -412,6 +426,7 @@ export class Workbench {
         breadboardMesh.castShadow = true;
         breadboardMesh.receiveShadow = true;
         rightGroup.add(breadboardMesh);
+        this.interactiveObjects.opticalBreadboard = breadboardMesh;
 
         // 4. Optical Target Calibration Fiducial Cube
         const cubeGeom = new THREE.BoxGeometry(0.24, 0.24, 0.24);
@@ -453,6 +468,7 @@ export class Workbench {
         }
 
         rightGroup.add(logicGroup);
+        this.interactiveObjects.logicAnalyzer = logicGroup;
 
         this.group.add(rightGroup);
     }

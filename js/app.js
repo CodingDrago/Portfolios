@@ -3,18 +3,20 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 2 Workstation)
  */
 
-import { CONFIG, STATES } from './config.js?v=20';
-import { BootManager } from './loader/BootManager.js?v=20';
-import { StateManager } from './state/StateManager.js?v=20';
-import { PointerTracker } from './input/PointerTracker.js?v=20';
-import { SceneManager } from './scene/SceneManager.js?v=20';
-import { Lighting } from './scene/Lighting.js?v=20';
-import { Materials } from './scene/Materials.js?v=20';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=20';
-import { Environment } from './scene/Environment.js?v=20';
-import { Workbench } from './scene/Workbench.js?v=20';
-import { SpatialInterfaces } from './scene/SpatialInterfaces.js?v=20';
-import { RobotController } from './robot/RobotController.js?v=20';
+import { CONFIG, STATES } from './config.js?v=24';
+import { BootManager } from './loader/BootManager.js?v=24';
+import { StateManager } from './state/StateManager.js?v=24';
+import { PointerTracker } from './input/PointerTracker.js?v=24';
+import { SceneManager } from './scene/SceneManager.js?v=24';
+import { Lighting } from './scene/Lighting.js?v=24';
+import { Materials } from './scene/Materials.js?v=24';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=24';
+import { Environment } from './scene/Environment.js?v=24';
+import { Workbench } from './scene/Workbench.js?v=24';
+import { SpatialInterfaces } from './scene/SpatialInterfaces.js?v=24';
+import { SpatialHoverManager } from './scene/SpatialHoverManager.js?v=24';
+import { RobotController } from './robot/RobotController.js?v=24';
+import * as THREE from 'three';
 
 class App {
     constructor() {
@@ -31,6 +33,7 @@ class App {
         this.environment = null;
         this.workbench = null;
         this.spatialInterfaces = null;
+        this.hoverManager = null;
 
         // Phase 3 Robotic Arm Subsystem
         this.robotController = null;
@@ -98,6 +101,10 @@ class App {
             // 8.5. Initialize Phase 3 6-DOF Industrial Robotic Arm
             this.robotController = new RobotController(this.materials);
             this.robotController.addToScene(this.sceneManager.scene);
+
+            // 8.8. Initialize Spatial Hover Raycasting & Discovery Subsystem
+            this.hoverManager = new SpatialHoverManager(this.sceneManager.camera, this.sceneManager.scene);
+            this._registerSpatialHoverTargets();
 
             // 9. Bind Systems & State Change Listeners
             this._bindEvents();
@@ -213,22 +220,180 @@ class App {
     }
 
     /**
-     * Master Animation Frame Callback
+     * Register interactive hardware targets with SpatialHoverManager
+     * @private
+     */
+    _registerSpatialHoverTargets() {
+        if (!this.hoverManager) return;
+
+        // 1. Oscilloscope
+        if (this.workbench && this.workbench.interactiveObjects.oscilloscope) {
+            this.hoverManager.registerTarget({
+                id: 'oscilloscope',
+                title: 'DUAL-CHANNEL DIGITAL STORAGE OSCILLOSCOPE',
+                category: 'SIGNAL DIAGNOSTICS // BENCH-01',
+                mesh: this.workbench.interactiveObjects.oscilloscope,
+                anchorPoint: new THREE.Vector3(-3.85, -0.74, -2.5),
+                hitboxSize: new THREE.Vector3(1.2, 0.9, 0.9),
+                panelOffset: new THREE.Vector3(0.4, 1.4, 0.4),
+                getData: () => [
+                    ['CHANNEL 1:', 'PWM 100 kHz [3.3V LVCMOS]', '#ff9d00'],
+                    ['CHANNEL 2:', 'ANALOG SINE [IMU_RAW]', '#38bdf8'],
+                    ['SAMPLING RATE:', '2.5 GS/s [REAL-TIME DSP]', '#10b981'],
+                    ['TRIGGER MODE:', 'AUTO-LOCK EDGE (CH1)', '#f8fafc'],
+                    ['BUS INTEGRITY:', '0.00% JITTER / PASS', '#10b981']
+                ]
+            });
+        }
+
+        // 2. Microcontroller Prototype & PCB
+        if (this.workbench && this.workbench.interactiveObjects.mcuPrototype) {
+            this.hoverManager.registerTarget({
+                id: 'mcuPrototype',
+                title: 'ARM CORTEX-M7 EMBEDDED CONTROL NODE',
+                category: 'EMBEDDED SYSTEMS // CORE-01',
+                mesh: this.workbench.interactiveObjects.mcuPrototype,
+                anchorPoint: new THREE.Vector3(-2.8, -0.94, -1.8),
+                hitboxSize: new THREE.Vector3(1.0, 0.8, 0.8),
+                panelOffset: new THREE.Vector3(0.2, 1.3, 0.4),
+                getData: () => [
+                    ['MCU CORE:', 'ARM Cortex-M7 @ 480 MHz', '#ff9d00'],
+                    ['RTOS KERNEL:', 'FreeRTOS v10.4 [PREEMPTIVE]', '#38bdf8'],
+                    ['I2C BUS [0x68]:', '6-AXIS IMU STREAM 1kHz', '#10b981'],
+                    ['SPI BUS [0x01]:', 'OPTICAL ENCODER 4096 CPR', '#10b981'],
+                    ['MEMORY MAP:', '32KB SRAM / 128KB FLASH', '#f8fafc']
+                ]
+            });
+        }
+
+        // 3. Bench Power Supply
+        if (this.workbench && this.workbench.interactiveObjects.powerSupply) {
+            this.hoverManager.registerTarget({
+                id: 'powerSupply',
+                title: 'PROGRAMMABLE LINEAR DC BENCH SUPPLY',
+                category: 'POWER MANAGEMENT // RAIL-01',
+                mesh: this.workbench.interactiveObjects.powerSupply,
+                anchorPoint: new THREE.Vector3(-3.05, -0.80, -2.8),
+                hitboxSize: new THREE.Vector3(1.0, 0.8, 0.8),
+                panelOffset: new THREE.Vector3(0.3, 1.4, 0.4),
+                getData: () => [
+                    ['OUTPUT VOLTAGE:', '24.00 V DC [REGULATED]', '#ff9d00'],
+                    ['OUTPUT CURRENT:', '03.50 A [LOAD: 42.0%]', '#10b981'],
+                    ['RIPPLE & NOISE:', '< 1.2 mV RMS LOW NOISE', '#38bdf8'],
+                    ['CURRENT LIMIT:', '05.00 A [OVP/OCP ARMED]', '#f8fafc'],
+                    ['ACTIVE EFFICIENCY:', '94.6% PFC REGULATED', '#10b981']
+                ]
+            });
+        }
+
+        // 4. Soldering & SMD Rework Station
+        if (this.workbench && this.workbench.interactiveObjects.reworkStation) {
+            this.hoverManager.registerTarget({
+                id: 'reworkStation',
+                title: 'CLOSED-LOOP SMD SOLDERING STATION',
+                category: 'HARDWARE PROTOTYPING // FAB-01',
+                mesh: this.workbench.interactiveObjects.reworkStation,
+                anchorPoint: new THREE.Vector3(-4.0, -0.85, -2.8),
+                hitboxSize: new THREE.Vector3(1.0, 0.8, 0.8),
+                panelOffset: new THREE.Vector3(0.3, 1.4, 0.4),
+                getData: () => [
+                    ['SET TEMPERATURE:', '380°C [CLOSED-LOOP PID]', '#ff9d00'],
+                    ['ACTUAL TIP TEMP:', '380.2°C [STABLE ±0.5°C]', '#10b981'],
+                    ['TIP GEOMETRY:', '0.2mm CONICAL ESD-SAFE', '#38bdf8'],
+                    ['HEATING POWER:', '65 W RAPID THERMAL RECOVERY', '#f8fafc'],
+                    ['SAFETY SLEEP:', 'AUTO STANDBY 10 MIN', '#94a3b8']
+                ]
+            });
+        }
+
+        // 5. 6-DOF Industrial Robotic Manipulator
+        if (this.robotController && this.robotController.arm && this.robotController.arm.group) {
+            this.hoverManager.registerTarget({
+                id: 'robot',
+                title: '6-DOF ARTICULATED ROBOTIC MANIPULATOR',
+                category: 'ROBOTICS & KINEMATICS // ARM-01',
+                mesh: this.robotController.arm.group,
+                anchorPoint: new THREE.Vector3(0, 0.4, 0),
+                hitboxSize: new THREE.Vector3(1.6, 2.4, 1.6),
+                panelOffset: new THREE.Vector3(2.4, 1.4, 0.6),
+                getData: (rc) => {
+                    let j1 = 0, j2 = 0, j3 = 0, j4 = 0, j5 = 0, j6 = 0;
+                    if (rc && rc.arm) {
+                        const getDeg = (name) => {
+                            const j = rc.arm.getJoint(name);
+                            return j ? THREE.MathUtils.radToDeg(j.currentAngle).toFixed(1) : '0.0';
+                        };
+                        j1 = getDeg('J1'); j2 = getDeg('J2'); j3 = getDeg('J3');
+                        j4 = getDeg('J4'); j5 = getDeg('J5'); j6 = getDeg('J6');
+                    }
+                    return [
+                        ['J1 BASE YAW:', `${j1}° [±160° SERVO RANGE]`, '#ff9d00'],
+                        ['J2 SHOULDER:', `${j2}° [ANALYTIC IK PIVOT]`, '#ff9d00'],
+                        ['J3 ELBOW PITCH:', `${j3}° [PLANAR FLEXION]`, '#ff9d00'],
+                        ['J4-J6 WRIST TRIPLE:', `R:${j4}° P:${j5}° T:${j6}°`, '#38bdf8'],
+                        ['IK SOLVER STATE:', 'LAW OF COSINES [CONVERGED 60Hz]', '#10b981']
+                    ];
+                }
+            });
+        }
+
+        // 6. Precision Optical Breadboard Matrix
+        if (this.workbench && this.workbench.interactiveObjects.opticalBreadboard) {
+            this.hoverManager.registerTarget({
+                id: 'opticalBreadboard',
+                title: 'PRECISION OPTICAL CALIBRATION RIG',
+                category: 'SPATIAL CALIBRATION // RIG-01',
+                mesh: this.workbench.interactiveObjects.opticalBreadboard,
+                anchorPoint: new THREE.Vector3(3.4, -0.85, -2.2),
+                hitboxSize: new THREE.Vector3(1.8, 0.8, 1.4),
+                panelOffset: new THREE.Vector3(-0.3, 1.4, 0.4),
+                getData: () => [
+                    ['SURFACE MATRIX:', 'M6 THREADED 25mm PITCH', '#ff9d00'],
+                    ['FIDUCIAL TARGET:', 'SUB-MILLIMETER OPTICAL CUBE', '#10b981'],
+                    ['MATERIAL ALLOY:', 'ANODIZED AIRCRAFT ALUMINUM', '#f8fafc'],
+                    ['SURFACE FLATNESS:', '< 0.05mm OVER 1000mm', '#38bdf8'],
+                    ['WORLD COORDINATE:', 'REGISTERED TO ORIGIN (0,0,0)', '#10b981']
+                ]
+            });
+        }
+
+        // 7. High-Speed Logic & CAN Bus Analyzer
+        if (this.workbench && this.workbench.interactiveObjects.logicAnalyzer) {
+            this.hoverManager.registerTarget({
+                id: 'logicAnalyzer',
+                title: 'HIGH-SPEED LOGIC & CAN BUS ANALYZER',
+                category: 'BUS PROTOCOLS // ANALYZER-01',
+                mesh: this.workbench.interactiveObjects.logicAnalyzer,
+                anchorPoint: new THREE.Vector3(3.8, -0.85, -2.5),
+                hitboxSize: new THREE.Vector3(1.0, 0.8, 0.8),
+                panelOffset: new THREE.Vector3(-0.4, 1.4, 0.4),
+                getData: () => [
+                    ['CAN 2.0B BUS:', '1.000 Mbps [TRAFFIC: 14.2%]', '#10b981'],
+                    ['DIGITAL CHANNELS:', '8-CH LOGIC PROBES @ 500MHz', '#ff9d00'],
+                    ['PACKET DECODER:', 'MOTOR_SYNC / IMU_TELEM_ACK', '#38bdf8'],
+                    ['FRAME ERROR RATE:', '0.000% [ZERO DROPPED FRAMES]', '#10b981'],
+                    ['TRIGGER PATTERN:', 'CAN ID 0x120 [MATCH OK]', '#f8fafc']
+                ]
+            });
+        }
+    }
+
+    /**
+     * Master Animation Render Loop (RequestAnimationFrame)
      * @private
      * @param {number} currentTime High-resolution timestamp
      */
     _onFrame(currentTime) {
         if (!this.isLoopRunning) return;
 
-        // Calculate frame delta time in seconds
+        // Calculate Delta Time in seconds
         const deltaTime = Math.min((currentTime - this.lastFrameTime) / 1000, 0.1);
         this.lastFrameTime = currentTime;
 
-        // 1. Update Pointer Tracker smooth coordinate interpolation
+        // 1. Update Pointer Tracking & Telemetry Readouts
         if (this.pointerTracker) {
             this.pointerTracker.update(deltaTime);
 
-            // Update Telemetry Coords DOM overlay
             if (this.domElements.telemetryCoords) {
                 this.domElements.telemetryCoords.textContent = 
                     `X:${this.pointerTracker.normalizedX.toFixed(2)} Y:${this.pointerTracker.normalizedY.toFixed(2)}`;
@@ -245,9 +410,15 @@ class App {
             this.workbench.update(deltaTime);
         }
 
-        // 2.8. Update Futuristic Spatial Computing Holograms & Live Telemetry
+        // 2.7. Update Spatial Hover Raycasting & Discovery Subsystem
+        if (this.hoverManager) {
+            this.hoverManager.update(deltaTime, this.pointerTracker);
+        }
+
+        // 2.8. Update Contextual Holographic Telemetry & Spatial Discovery
         if (this.spatialInterfaces) {
-            this.spatialInterfaces.update(deltaTime, this.robotController, this.pointerTracker);
+            const cam = this.sceneManager ? this.sceneManager.camera : null;
+            this.spatialInterfaces.update(deltaTime, this.robotController, this.pointerTracker, this.hoverManager, cam);
         }
 
         // 3. Update Phase 3 6-DOF Industrial Robotic Arm
