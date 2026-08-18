@@ -5,12 +5,14 @@
 
 // Application States Enum
 export const STATES = Object.freeze({
+    NORMAL: 'NORMAL',
+    HOVERED: 'HOVERED',
+    CLICKED: 'CLICKED',
+    ENTERING_EXPLORATION: 'ENTERING_EXPLORATION',
+    EXPLORING: 'EXPLORING',
+    EXITING_EXPLORATION: 'EXITING_EXPLORATION',
     IDLE: 'IDLE',
-    TRACKING: 'TRACKING',
-    REACHING: 'REACHING',
-    GRABBING: 'GRABBING',
-    EXPANDED: 'EXPANDED',
-    RELEASING: 'RELEASING'
+    TRACKING: 'TRACKING'
 });
 
 // System Configuration Object
@@ -71,9 +73,13 @@ export const CONFIG = {
         inactivityTimeoutMs: 3000  // Duration before auto-transitioning to IDLE state
     },
 
-    // Debugging & Development Flags
-    debug: {
-        enabled: true,
-        showTargetMarker: true // Development target position indicator
+    // Spatial Object Exploration Settings
+    inspection: {
+        transitionDuration: 0.85, // Smooth seconds for object movement into inspection position
+        inspectionDistance: 4.8,   // Default camera distance during inspection
+        dimLevel: 0.28,           // Ambient workstation lighting dim factor during exploration
+        orbitSensitivity: 0.0055, // Horizontal / vertical orbit speed
+        zoomSensitivity: 0.12     // Wheel zoom speed
     }
 };
+
