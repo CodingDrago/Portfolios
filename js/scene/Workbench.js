@@ -52,6 +52,18 @@ export class Workbench {
         tableTopMesh.receiveShadow = true;
         leftGroup.add(tableTopMesh);
 
+        // 1.5. Antistatic ESD Bench Mat (Dark Blue-Grey with grounded snap)
+        const esdMatGeom = new THREE.BoxGeometry(2.3, 0.01, 2.0);
+        const esdMatMesh = new THREE.Mesh(esdMatGeom, this.materials.get('esdMat'));
+        esdMatMesh.position.set(-3.4, -0.955, -2.4);
+        leftGroup.add(esdMatMesh);
+
+        // Grounding Snap Rivet
+        const snapGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.015, 12);
+        const snap = new THREE.Mesh(snapGeom, this.materials.get('brushedSteel'));
+        snap.position.set(-2.4, -0.945, -1.5);
+        leftGroup.add(snap);
+
         // 2. Extruded Black Anodized T-Slot Aluminum Legs & Frame
         const legGeom = new THREE.BoxGeometry(0.08, 0.96, 0.08);
         const legMat = this.materials.get('workbenchFrame');
@@ -119,10 +131,10 @@ export class Workbench {
         bezelMesh.position.z = 0.165;
         scopeGroup.add(bezelMesh);
 
-        // Live CRT Screen Canvas (256x160 resolution)
+        // Live CRT Screen Canvas (512x320 high resolution)
         this.scopeCanvas = document.createElement('canvas');
-        this.scopeCanvas.width = 256;
-        this.scopeCanvas.height = 160;
+        this.scopeCanvas.width = 512;
+        this.scopeCanvas.height = 320;
         this.scopeContext = this.scopeCanvas.getContext('2d');
 
         this.scopeTexture = new THREE.CanvasTexture(this.scopeCanvas);
@@ -382,6 +394,31 @@ export class Workbench {
         caliperMesh.rotation.y = 0.35;
         toolsGroup.add(caliperMesh);
 
+        // Digital Multimeter (DMM) with Holster
+        const dmmGeom = new THREE.BoxGeometry(0.16, 0.06, 0.26);
+        const dmmMesh = new THREE.Mesh(dmmGeom, this.materials.get('instrumentChassis'));
+        dmmMesh.position.set(-3.3, -0.92, -1.4);
+        dmmMesh.rotation.y = -0.2;
+        toolsGroup.add(dmmMesh);
+
+        // DMM LCD Screen
+        const dmmScreen = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.11, 0.06),
+            new THREE.MeshBasicMaterial({ color: 0x0a1410 })
+        );
+        dmmScreen.rotation.x = -Math.PI / 2;
+        dmmScreen.position.set(-3.3, -0.888, -1.45);
+        toolsGroup.add(dmmScreen);
+
+        // Coiled Probe Leads (Red + Black)
+        const leadGeom = new THREE.CylinderGeometry(0.006, 0.006, 0.18, 8);
+        leadGeom.rotateX(0.4);
+        const redLead = new THREE.Mesh(leadGeom, new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+        redLead.position.set(-3.18, -0.90, -1.35);
+        const blackLead = new THREE.Mesh(leadGeom, new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+        blackLead.position.set(-3.22, -0.90, -1.35);
+        toolsGroup.add(redLead, blackLead);
+
         parent.add(toolsGroup);
     }
 
@@ -400,6 +437,12 @@ export class Workbench {
         tableTopMesh.castShadow = true;
         tableTopMesh.receiveShadow = true;
         rightGroup.add(tableTopMesh);
+
+        // 1.5. Antistatic ESD Bench Mat (Dark Blue-Grey with grounded snap)
+        const esdMatGeom = new THREE.BoxGeometry(2.3, 0.01, 2.0);
+        const esdMatMesh = new THREE.Mesh(esdMatGeom, this.materials.get('esdMat'));
+        esdMatMesh.position.set(3.4, -0.955, -2.4);
+        rightGroup.add(esdMatMesh);
 
         // 2. Extruded Black Anodized T-Slot Aluminum Legs
         const legGeom = new THREE.BoxGeometry(0.08, 0.96, 0.08);
@@ -490,26 +533,26 @@ export class Workbench {
     update(deltaTime) {
         this.scopeTime += deltaTime;
 
-        // 1. Render Dynamic CRT Oscilloscope Waveforms
+        // 1. Render Dynamic CRT Oscilloscope Waveforms (512x320)
         if (this.scopeContext && this.scopeTexture) {
             const ctx = this.scopeContext;
             const w = this.scopeCanvas.width;
             const h = this.scopeCanvas.height;
 
             // Clear Screen (CRT Dark Greenish-Black)
-            ctx.fillStyle = '#060d09';
+            ctx.fillStyle = '#050c08';
             ctx.fillRect(0, 0, w, h);
 
             // Subtle Grid Reticle (8x5 divisions)
             ctx.strokeStyle = '#0e2418';
-            ctx.lineWidth = 1;
-            for (let gx = 0; gx < w; gx += 32) {
+            ctx.lineWidth = 1.5;
+            for (let gx = 0; gx < w; gx += 64) {
                 ctx.beginPath();
                 ctx.moveTo(gx, 0);
                 ctx.lineTo(gx, h);
                 ctx.stroke();
             }
-            for (let gy = 0; gy < h; gy += 32) {
+            for (let gy = 0; gy < h; gy += 64) {
                 ctx.beginPath();
                 ctx.moveTo(0, gy);
                 ctx.lineTo(w, gy);
@@ -518,12 +561,12 @@ export class Workbench {
 
             // Channel 1: High-Speed Digital PWM Pulse Train (Crisp Amber Glow)
             ctx.strokeStyle = '#ff9d00';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
             ctx.beginPath();
             const t = this.scopeTime * 6;
             for (let x = 0; x < w; x++) {
-                const phase = (x * 0.08 + t) % 4;
-                const y = (phase < 2) ? 50 : 80;
+                const phase = (x * 0.04 + t) % 4;
+                const y = (phase < 2) ? 100 : 160;
                 if (x === 0) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
             }
@@ -531,21 +574,21 @@ export class Workbench {
 
             // Channel 2: Analog Sensor Signal Sine Wave with harmonic noise (Green)
             ctx.strokeStyle = '#10b981';
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = 2.5;
             ctx.beginPath();
             for (let x = 0; x < w; x++) {
-                const y = 120 + Math.sin(x * 0.05 + this.scopeTime * 4) * 20 + Math.sin(x * 0.15) * 4;
+                const y = 240 + Math.sin(x * 0.025 + this.scopeTime * 4) * 40 + Math.sin(x * 0.075) * 8;
                 if (x === 0) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
             }
             ctx.stroke();
 
             // Header Telemetry text
-            ctx.font = '9px monospace';
+            ctx.font = 'bold 18px "JetBrains Mono", monospace';
             ctx.fillStyle = '#10b981';
-            ctx.fillText('CH1: 3.3V PWM  100kHz', 8, 14);
+            ctx.fillText('CH1: 3.3V PWM  100kHz', 16, 28);
             ctx.fillStyle = '#ff9d00';
-            ctx.fillText('CH2: SPI_MOSI [TRIG:OK]', 130, 14);
+            ctx.fillText('CH2: SPI_MOSI [TRIG:OK]', 260, 28);
 
             this.scopeTexture.needsUpdate = true;
         }
