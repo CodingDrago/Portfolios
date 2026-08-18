@@ -28,44 +28,10 @@ export class RobotController {
         this.L1 = 1.30;      // Shoulder pivot height (0.55 base + 0.75 yoke)
         this.L2 = 1.80;      // Upper arm length (J2 to J3)
         this.Ldistal = 2.80; // Distance from J3 Elbow pivot directly to the grasping Claw Tip TCP
-
-        // 3D Target Debug Marker
-        this.targetMarker = null;
-        this._initDebugMarker();
     }
 
     /**
-     * Initialize development 3D target position marker
-     * @private
-     */
-    _initDebugMarker() {
-        const group = new THREE.Group();
-        group.name = 'TargetDebugMarker';
-
-        // Inner glowing amber sphere
-        const sphereGeom = new THREE.SphereGeometry(0.06, 16, 16);
-        const sphereMat = new THREE.MeshBasicMaterial({ color: 0xffb703 });
-        const sphere = new THREE.Mesh(sphereGeom, sphereMat);
-        group.add(sphere);
-
-        // Outer targeting reticle ring
-        const ringGeom = new THREE.RingGeometry(0.12, 0.14, 24);
-        const ringMat = new THREE.MeshBasicMaterial({
-            color: 0xffb703,
-            side: THREE.DoubleSide,
-            transparent: true,
-            opacity: 0.75
-        });
-        const ring = new THREE.Mesh(ringGeom, ringMat);
-        group.add(ring);
-
-        this.targetMarker = group;
-        const showMarker = CONFIG.debug && (CONFIG.debug.showTargetMarker || CONFIG.debug === true);
-        this.targetMarker.visible = !!showMarker;
-    }
-
-    /**
-     * Add robot assembly and target marker to target scene
+     * Add robot assembly to target scene
      * @param {THREE.Scene} scene 
      */
     addToScene(scene) {
@@ -74,10 +40,6 @@ export class RobotController {
 
         if (this.arm) {
             this.arm.addToScene(scene);
-        }
-
-        if (this.targetMarker) {
-            scene.add(this.targetMarker);
         }
     }
 
@@ -204,11 +166,6 @@ export class RobotController {
 
             // 1. Map pointer to 3D target in workspace (synchronized with camera view)
             const targetPos = this.targetMapper.mapPointerToTarget(pointer, camera);
-
-            // Update 3D Debug Target Marker Position
-            if (this.targetMarker) {
-                this.targetMarker.position.copy(targetPos);
-            }
 
             // 2. Solve 6-DOF IK joint angles
             this.solveIK(targetPos);
