@@ -1,21 +1,28 @@
 /**
  * Main Application Bootstrap & Master Controller
- * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 2 Workstation)
+ * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 4 Spatial Exploration)
  */
 
-import { CONFIG, STATES } from './config.js?v=27';
-import { BootManager } from './loader/BootManager.js?v=27';
-import { StateManager } from './state/StateManager.js?v=27';
-import { PointerTracker } from './input/PointerTracker.js?v=27';
-import { SceneManager } from './scene/SceneManager.js?v=27';
-import { Lighting } from './scene/Lighting.js?v=27';
-import { Materials } from './scene/Materials.js?v=27';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=27';
-import { Environment } from './scene/Environment.js?v=27';
-import { Workbench } from './scene/Workbench.js?v=27';
-import { SpatialInterfaces } from './scene/SpatialInterfaces.js?v=27';
-import { SpatialHoverManager } from './scene/SpatialHoverManager.js?v=27';
-import { RobotController } from './robot/RobotController.js?v=27';
+import { CONFIG, STATES } from './config.js?v=30';
+import { BootManager } from './loader/BootManager.js?v=30';
+import { StateManager } from './state/StateManager.js?v=30';
+import { PointerTracker } from './input/PointerTracker.js?v=30';
+import { SpatialCursor } from './input/SpatialCursor.js?v=30';
+import { SceneManager } from './scene/SceneManager.js?v=30';
+import { Lighting } from './scene/Lighting.js?v=30';
+import { Materials } from './scene/Materials.js?v=30';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=30';
+import { Environment } from './scene/Environment.js?v=30';
+import { Workbench } from './scene/Workbench.js?v=30';
+import { RobotController } from './robot/RobotController.js?v=30';
+import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=30';
+import { HolographicInspector } from './scene/HolographicInspector.js?v=30';
+import { InspectionCamera } from './scene/InspectionCamera.js?v=30';
+import { InspectionMode } from './scene/InspectionMode.js?v=30';
+import { WallFrontAbout } from './scene/WallFrontAbout.js?v=30';
+import { WallLeftProjects } from './scene/WallLeftProjects.js?v=30';
+import { WallRightSocial } from './scene/WallRightSocial.js?v=30';
+import { WallBackGames } from './scene/WallBackGames.js?v=30';
 import * as THREE from 'three';
 
 class App {
@@ -24,19 +31,29 @@ class App {
         this.bootManager = null;
         this.stateManager = null;
         this.pointerTracker = null;
+        this.spatialCursor = null;
         this.sceneManager = null;
         this.lighting = null;
 
-        // Phase 2 & 4 Workstation Environment Subsystems
+        // Workstation Environment & 4 Wall Subsystems
         this.materials = null;
         this.mountingPlatform = null;
         this.environment = null;
         this.workbench = null;
-        this.spatialInterfaces = null;
-        this.hoverManager = null;
+        this.wallFrontAbout = null;
+        this.wallLeftProjects = null;
+        this.wallRightSocial = null;
+        this.wallBackGames = null;
 
         // Phase 3 Robotic Arm Subsystem
         this.robotController = null;
+
+        // Phase 4 Spatial Object Exploration Subsystems
+        this.interactionManager = null;
+        this.holographicInspector = null;
+        this.inspectionCamera = null;
+        this.inspectionMode = null;
+
 
         // Animation Loop Control
         this.lastFrameTime = 0;
@@ -59,17 +76,18 @@ class App {
      * Bootstrap Workstation Architecture & Boot Subsystem
      */
     async init() {
-        console.log('[App] Initializing Phase 2 Workstation Architecture...');
+        console.log('[App] Initializing Phase 4 Spatial Exploration Architecture...');
 
         try {
             // 1. Initialize DOM Telemetry Handles
             this._initDOMHandles();
 
             // 2. Initialize Finite State Machine
-            this.stateManager = new StateManager(STATES.IDLE);
+            this.stateManager = new StateManager(STATES.NORMAL);
 
-            // 3. Initialize Pointer Input Abstraction
+            // 3. Initialize Pointer Input Abstraction & Orange Spatial Cursor
             this.pointerTracker = new PointerTracker(window);
+            this.spatialCursor = new SpatialCursor();
 
             // 4. Initialize Three.js Viewport & Canvas Mount
             const canvasContainer = document.getElementById('canvas-container');
@@ -90,9 +108,18 @@ class App {
             this.workbench = new Workbench(this.materials);
             this.workbench.addToScene(this.sceneManager.scene);
 
-            // 7.8. Initialize Futuristic Spatial Computing Telemetry & Holographic Interfaces
-            this.spatialInterfaces = new SpatialInterfaces(this.materials);
-            this.spatialInterfaces.addToScene(this.sceneManager.scene);
+            // 7.8. Initialize Four Functional Laboratory Walls
+            this.wallFrontAbout = new WallFrontAbout(this.materials);
+            this.wallFrontAbout.addToScene(this.sceneManager.scene);
+
+            this.wallLeftProjects = new WallLeftProjects(this.materials);
+            this.wallLeftProjects.addToScene(this.sceneManager.scene);
+
+            this.wallRightSocial = new WallRightSocial(this.materials);
+            this.wallRightSocial.addToScene(this.sceneManager.scene);
+
+            this.wallBackGames = new WallBackGames(this.materials);
+            this.wallBackGames.addToScene(this.sceneManager.scene);
 
             // 8. Initialize Central Robot Mounting Platform (Origin: 0, -2.0, 0)
             this.mountingPlatform = new MountingPlatform(this.materials);
@@ -102,17 +129,34 @@ class App {
             this.robotController = new RobotController(this.materials);
             this.robotController.addToScene(this.sceneManager.scene);
 
-            // 8.8. Initialize Spatial Hover Raycasting & Discovery Subsystem
-            this.hoverManager = new SpatialHoverManager(this.sceneManager.camera, this.sceneManager.scene);
-            this._registerSpatialHoverTargets();
+            // 8.8. Initialize Phase 4 Spatial Object Interaction Subsystems
+            this.interactionManager = new ObjectInteractionManager(this.sceneManager.camera, this.sceneManager.scene);
+            this.holographicInspector = new HolographicInspector();
+            this.holographicInspector.addToScene(this.sceneManager.scene);
+
+            this.inspectionCamera = new InspectionCamera(this.sceneManager.camera);
+
+            this.inspectionMode = new InspectionMode({
+                scene: this.sceneManager.scene,
+                camera: this.sceneManager.camera,
+                lighting: this.lighting,
+                stateManager: this.stateManager,
+                spatialCursor: this.spatialCursor,
+                interactionManager: this.interactionManager,
+                holographicInspector: this.holographicInspector,
+                inspectionCamera: this.inspectionCamera
+            });
+
+            // Register all 7 interactive hardware targets
+            this._registerSpatialTargets();
 
             // 9. Bind Systems & State Change Listeners
             this._bindEvents();
 
-            // 10. Start Master RAF Animation Loop (Renders 3D environment underneath loader)
+            // 10. Start Master RAF Animation Loop
             this.startLoop();
 
-            // 11. Instantiate & Execute BootManager (extracted from loading.html)
+            // 11. Instantiate & Execute BootManager
             this.bootManager = new BootManager({
                 loaderElement: document.getElementById('loader'),
                 flashElement: document.getElementById('flash'),
@@ -141,7 +185,7 @@ class App {
         if (this.isInteractive) return;
         this.isInteractive = true;
 
-        console.log('[App] BOOT_COMPLETE Event Received. Workstation Environment Fully Operational.');
+        console.log('[App] BOOT_COMPLETE Event Received. Spatial Exploration Active.');
 
         // Activate telemetry status
         if (this.domElements.telemetryStatus) {
@@ -149,9 +193,9 @@ class App {
             this.domElements.telemetryStatus.style.color = CONFIG.colors.amber;
         }
 
-        // Activate state machine to initial IDLE state
+        // Activate state machine to initial NORMAL state
         if (this.stateManager) {
-            this.stateManager.setState(STATES.IDLE);
+            this.stateManager.setState(STATES.NORMAL);
         }
     }
 
@@ -178,7 +222,7 @@ class App {
             }
         });
 
-        // Pointer Activity Listener -> Drive State Machine Transitions (Only after BOOT_COMPLETE)
+        // Pointer Activity Listener -> Update tracking telemetry
         this.pointerTracker.onActivityChange((isActive) => {
             if (!this.isInteractive) return;
 
@@ -186,17 +230,15 @@ class App {
                 this.domElements.trackingDisplay.textContent = isActive ? 'ACTIVE' : 'IDLE';
                 this.domElements.trackingDisplay.style.color = isActive ? CONFIG.colors.amber : '#7a889b';
             }
-
-            if (isActive) {
-                this.stateManager.setState(STATES.TRACKING);
-            } else {
-                this.stateManager.setState(STATES.IDLE);
-            }
         });
 
-        // Camera Reset Listener -> Reset 3D Orbit View to Default
+        // Camera Reset Listener -> Reset Active Camera View
         this.pointerTracker.onResetCamera(() => {
-            if (this.sceneManager && typeof this.sceneManager.resetCamera === 'function') {
+            if (this.inspectionMode && this.inspectionMode.isExploring) {
+                if (this.inspectionCamera) {
+                    this.inspectionCamera.reset();
+                }
+            } else if (this.sceneManager && typeof this.sceneManager.resetCamera === 'function') {
                 this.sceneManager.resetCamera();
             }
         });
@@ -220,23 +262,35 @@ class App {
     }
 
     /**
-     * Register interactive hardware targets with SpatialHoverManager
+     * Register all 7 interactive hardware targets with rich technical metadata
      * @private
      */
-    _registerSpatialHoverTargets() {
-        if (!this.hoverManager) return;
+    _registerSpatialTargets() {
+        if (!this.interactionManager) return;
 
         // 1. Oscilloscope
         if (this.workbench && this.workbench.interactiveObjects.oscilloscope) {
-            this.hoverManager.registerTarget({
+            this.interactionManager.registerTarget({
                 id: 'oscilloscope',
                 title: 'DUAL-CHANNEL DIGITAL STORAGE OSCILLOSCOPE',
                 category: 'SIGNAL DIAGNOSTICS // BENCH-01',
                 description: 'Dual-channel 2.5 GS/s mixed-signal analysis for SPI/I2C bus timing & waveform capture.',
+                features: [
+                    '2.5 GS/s Real-time equivalent-time DSP sampling rate',
+                    'Hardware-accelerated SPI / I2C bus protocol decoder',
+                    'Low-noise differential analog frontend (<1.2mV RMS)',
+                    'Auto-trigger lock edge tracking on Channel 1 (PWM 100kHz)'
+                ],
+                technicalData: {
+                    'SAMPLING RATE': '2.5 GS/s [REAL-TIME DSP]',
+                    'BANDWIDTH': '200 MHz DUAL-CHANNEL',
+                    'INPUT IMPEDANCE': '1 MΩ // 15 pF',
+                    'TRIGGER MODE': 'AUTO-LOCK EDGE (CH1)',
+                    'BUS INTEGRITY': '0.00% JITTER / PASS'
+                },
                 mesh: this.workbench.interactiveObjects.oscilloscope,
-                anchorPoint: new THREE.Vector3(-3.85, -0.74, -2.5),
+                anchorPoint: new THREE.Vector3(-3.9, -0.78, -2.7),
                 boundsSize: new THREE.Vector3(0.7, 0.5, 0.5),
-                panelOffset: new THREE.Vector3(0.4, 1.4, 0.4),
                 getData: () => [
                     ['CHANNEL 1:', 'PWM 100 kHz [3.3V LVCMOS]', '#ff9d00'],
                     ['CHANNEL 2:', 'ANALOG SINE [IMU_RAW]', '#38bdf8'],
@@ -249,15 +303,27 @@ class App {
 
         // 2. Microcontroller Prototype & PCB
         if (this.workbench && this.workbench.interactiveObjects.mcuPrototype) {
-            this.hoverManager.registerTarget({
+            this.interactionManager.registerTarget({
                 id: 'mcuPrototype',
                 title: 'ARM CORTEX-M7 EMBEDDED CONTROL NODE',
                 category: 'EMBEDDED SYSTEMS // CORE-01',
-                description: '480 MHz real-time embedded core with dual CAN 2.0B & SPI encoder buses.',
+                description: '480 MHz real-time embedded core with dual CAN 2.0B & SPI optical encoder buses.',
+                features: [
+                    '480 MHz ARM Cortex-M7 with Double-Precision Hardware FPU',
+                    'Preemptive FreeRTOS v10.4 deterministic task kernel',
+                    '6-Axis IMU sensor fusion streaming at 1 kHz over I2C',
+                    '4096 CPR optical quadrature encoder feedback interface'
+                ],
+                technicalData: {
+                    'MCU CORE': 'ARM Cortex-M7 @ 480 MHz',
+                    'RTOS KERNEL': 'FreeRTOS v10.4 [PREEMPTIVE]',
+                    'I2C BUS [0x68]': '6-AXIS IMU STREAM 1kHz',
+                    'SPI BUS [0x01]': 'OPTICAL ENCODER 4096 CPR',
+                    'MEMORY MAP': '32KB SRAM / 128KB FLASH'
+                },
                 mesh: this.workbench.interactiveObjects.mcuPrototype,
                 anchorPoint: new THREE.Vector3(-2.8, -0.94, -1.8),
                 boundsSize: new THREE.Vector3(0.5, 0.3, 0.4),
-                panelOffset: new THREE.Vector3(0.2, 1.3, 0.4),
                 getData: () => [
                     ['MCU CORE:', 'ARM Cortex-M7 @ 480 MHz', '#ff9d00'],
                     ['RTOS KERNEL:', 'FreeRTOS v10.4 [PREEMPTIVE]', '#38bdf8'],
@@ -270,15 +336,27 @@ class App {
 
         // 3. Bench Power Supply
         if (this.workbench && this.workbench.interactiveObjects.powerSupply) {
-            this.hoverManager.registerTarget({
+            this.interactionManager.registerTarget({
                 id: 'powerSupply',
                 title: 'PROGRAMMABLE LINEAR DC BENCH SUPPLY',
                 category: 'POWER MANAGEMENT // RAIL-01',
                 description: 'Precision linear DC rail (24.0V / 3.5A) with isolated ground and active current limiting.',
+                features: [
+                    '0-30V / 0-5A Ultra-low ripple linear regulator (<1.2mV RMS)',
+                    'Over-voltage (OVP) and over-current (OCP) safety interlocks',
+                    'Isolated floating ground with precision 4-wire Kelvin sensing',
+                    '94.6% active power factor correction (PFC)'
+                ],
+                technicalData: {
+                    'OUTPUT VOLTAGE': '24.00 V DC [REGULATED]',
+                    'OUTPUT CURRENT': '03.50 A [LOAD: 42.0%]',
+                    'RIPPLE & NOISE': '< 1.2 mV RMS LOW NOISE',
+                    'CURRENT LIMIT': '05.00 A [OVP/OCP ARMED]',
+                    'ACTIVE EFFICIENCY': '94.6% PFC REGULATED'
+                },
                 mesh: this.workbench.interactiveObjects.powerSupply,
                 anchorPoint: new THREE.Vector3(-3.05, -0.80, -2.8),
                 boundsSize: new THREE.Vector3(0.6, 0.4, 0.4),
-                panelOffset: new THREE.Vector3(0.3, 1.4, 0.4),
                 getData: () => [
                     ['OUTPUT VOLTAGE:', '24.00 V DC [REGULATED]', '#ff9d00'],
                     ['OUTPUT CURRENT:', '03.50 A [LOAD: 42.0%]', '#10b981'],
@@ -291,15 +369,27 @@ class App {
 
         // 4. Soldering & SMD Rework Station
         if (this.workbench && this.workbench.interactiveObjects.reworkStation) {
-            this.hoverManager.registerTarget({
+            this.interactionManager.registerTarget({
                 id: 'reworkStation',
                 title: 'CLOSED-LOOP SMD SOLDERING STATION',
                 category: 'HARDWARE PROTOTYPING // FAB-01',
                 description: 'Closed-loop PID thermal control for SMD component rework & micro-soldering.',
+                features: [
+                    'Closed-loop PID thermal sensor loop with ±0.5°C stability',
+                    '65W ceramic heating element with rapid thermal recovery',
+                    'ESD-safe 0.2mm conical micro-soldering tip assembly',
+                    'Automatic sleep & standby thermal shutdown timer'
+                ],
+                technicalData: {
+                    'SET TEMPERATURE': '380°C [CLOSED-LOOP PID]',
+                    'ACTUAL TIP TEMP': '380.2°C [STABLE ±0.5°C]',
+                    'TIP GEOMETRY': '0.2mm CONICAL ESD-SAFE',
+                    'HEATING POWER': '65 W RAPID THERMAL RECOVERY',
+                    'SAFETY SLEEP': 'AUTO STANDBY 10 MIN'
+                },
                 mesh: this.workbench.interactiveObjects.reworkStation,
-                anchorPoint: new THREE.Vector3(-4.0, -0.85, -2.8),
+                anchorPoint: new THREE.Vector3(-4.2, -0.84, -1.9),
                 boundsSize: new THREE.Vector3(0.5, 0.4, 0.4),
-                panelOffset: new THREE.Vector3(0.3, 1.4, 0.4),
                 getData: () => [
                     ['SET TEMPERATURE:', '380°C [CLOSED-LOOP PID]', '#ff9d00'],
                     ['ACTUAL TIP TEMP:', '380.2°C [STABLE ±0.5°C]', '#10b981'],
@@ -312,20 +402,32 @@ class App {
 
         // 5. 6-DOF Industrial Robotic Manipulator
         if (this.robotController && this.robotController.arm && this.robotController.arm.group) {
-            this.hoverManager.registerTarget({
+            this.interactionManager.registerTarget({
                 id: 'robot',
                 title: '6-DOF ARTICULATED ROBOTIC MANIPULATOR',
                 category: 'ROBOTICS & KINEMATICS // ARM-01',
                 description: 'High-precision 6-axis articulated arm for automated PCB probing & spatial manipulation.',
+                features: [
+                    '6 Degrees of Freedom with analytical Inverse Kinematics',
+                    'Harmonic drive gearboxes with zero mechanical backlash',
+                    'Dual-finger adaptive servo gripper with tactile feedback',
+                    'Real-time 60 Hz trajectory convergence via Law of Cosines'
+                ],
+                technicalData: {
+                    'DEGREES OF FREEDOM': '6-DOF ARTICULATED',
+                    'ACTUATION': 'BRUSHLESS SERVO + HARMONIC DRIVE',
+                    'PAYLOAD CAPACITY': '1.5 kg @ MAXIMUM EXTENSION',
+                    'REPEATABILITY': '± 0.05 mm ISO 9283 CALIBRATED',
+                    'SOLVER FREQUENCY': '60 Hz ANALYTIC IK LOOP'
+                },
                 mesh: this.robotController.arm.group,
                 anchorPoint: new THREE.Vector3(0, 0.4, 0),
-                boundsSize: new THREE.Vector3(1.2, 1.8, 1.2),
-                panelOffset: new THREE.Vector3(2.4, 1.4, 0.6),
-                getData: (rc) => {
+                boundsSize: new THREE.Vector3(1.4, 2.2, 1.4),
+                getData: () => {
                     let j1 = 0, j2 = 0, j3 = 0, j4 = 0, j5 = 0, j6 = 0;
-                    if (rc && rc.arm) {
+                    if (this.robotController && this.robotController.arm) {
                         const getDeg = (name) => {
-                            const j = rc.arm.getJoint(name);
+                            const j = this.robotController.arm.getJoint(name);
                             return j ? THREE.MathUtils.radToDeg(j.currentAngle).toFixed(1) : '0.0';
                         };
                         j1 = getDeg('J1'); j2 = getDeg('J2'); j3 = getDeg('J3');
@@ -344,15 +446,27 @@ class App {
 
         // 6. Precision Optical Breadboard Matrix
         if (this.workbench && this.workbench.interactiveObjects.opticalBreadboard) {
-            this.hoverManager.registerTarget({
+            this.interactionManager.registerTarget({
                 id: 'opticalBreadboard',
                 title: 'PRECISION OPTICAL CALIBRATION RIG',
                 category: 'SPATIAL CALIBRATION // RIG-01',
                 description: 'M6 threaded matrix fixture with optical fiducial alignment for robotic TCP calibration.',
+                features: [
+                    'Solid anodized aircraft-grade aluminum alloy plate',
+                    'Precision M6 threaded grid on 25mm center pitch',
+                    'Sub-millimeter optical fiducial cube alignment target',
+                    'Calibrated surface flatness <0.05mm over 1000mm'
+                ],
+                technicalData: {
+                    'SURFACE MATRIX': 'M6 THREADED 25mm PITCH',
+                    'FIDUCIAL TARGET': 'SUB-MILLIMETER OPTICAL CUBE',
+                    'MATERIAL ALLOY': 'ANODIZED AIRCRAFT ALUMINUM',
+                    'SURFACE FLATNESS': '< 0.05mm OVER 1000mm',
+                    'WORLD COORDINATE': 'REGISTERED TO ORIGIN (0,0,0)'
+                },
                 mesh: this.workbench.interactiveObjects.opticalBreadboard,
                 anchorPoint: new THREE.Vector3(3.4, -0.85, -2.2),
                 boundsSize: new THREE.Vector3(1.8, 0.4, 1.4),
-                panelOffset: new THREE.Vector3(-0.3, 1.4, 0.4),
                 getData: () => [
                     ['SURFACE MATRIX:', 'M6 THREADED 25mm PITCH', '#ff9d00'],
                     ['FIDUCIAL TARGET:', 'SUB-MILLIMETER OPTICAL CUBE', '#10b981'],
@@ -365,15 +479,27 @@ class App {
 
         // 7. High-Speed Logic & CAN Bus Analyzer
         if (this.workbench && this.workbench.interactiveObjects.logicAnalyzer) {
-            this.hoverManager.registerTarget({
+            this.interactionManager.registerTarget({
                 id: 'logicAnalyzer',
                 title: 'HIGH-SPEED LOGIC & CAN BUS ANALYZER',
                 category: 'BUS PROTOCOLS // ANALYZER-01',
                 description: '8-channel logic probe streaming 1.0 Mbps CAN 2.0B traffic and protocol decoding.',
+                features: [
+                    '8 digital channels sampling at 500 MHz hardware clock',
+                    'Real-time CAN 2.0B frame parsing and packet decoding',
+                    'Synchronous trigger matching on CAN ID and mask',
+                    'Zero dropped frames / 0.000% error rate telemetry stream'
+                ],
+                technicalData: {
+                    'CAN 2.0B BUS': '1.000 Mbps [TRAFFIC: 14.2%]',
+                    'DIGITAL CHANNELS': '8-CH LOGIC PROBES @ 500MHz',
+                    'PACKET DECODER': 'MOTOR_SYNC / IMU_TELEM_ACK',
+                    'FRAME ERROR RATE': '0.000% [ZERO DROPPED FRAMES]',
+                    'TRIGGER PATTERN': 'CAN ID 0x120 [MATCH OK]'
+                },
                 mesh: this.workbench.interactiveObjects.logicAnalyzer,
                 anchorPoint: new THREE.Vector3(3.8, -0.85, -2.5),
                 boundsSize: new THREE.Vector3(0.5, 0.3, 0.4),
-                panelOffset: new THREE.Vector3(-0.4, 1.4, 0.4),
                 getData: () => [
                     ['CAN 2.0B BUS:', '1.000 Mbps [TRAFFIC: 14.2%]', '#10b981'],
                     ['DIGITAL CHANNELS:', '8-CH LOGIC PROBES @ 500MHz', '#ff9d00'],
@@ -407,37 +533,57 @@ class App {
             }
         }
 
-        // 2. Update Workstation Environment & Camera Perspective Parallax
+        // 2. Update Workstation Environment
         if (this.environment) {
             this.environment.update(deltaTime, this.pointerTracker);
         }
 
-        // 2.5. Update Physical Workbench (Oscilloscope CRT waveform, LED indicators)
+        // 3. Update Physical Workbench (Oscilloscope CRT waveform, LED indicators)
         if (this.workbench) {
             this.workbench.update(deltaTime);
         }
 
-        // 2.7. Update Spatial Hover Raycasting & Discovery Subsystem
-        if (this.hoverManager) {
-            this.hoverManager.update(deltaTime, this.pointerTracker);
+        // 3.5. Update 4 Laboratory Walls (Schematic sweeps, telemetry streams, LEDs)
+        if (this.wallFrontAbout) {
+            this.wallFrontAbout.update(deltaTime);
+        }
+        if (this.wallLeftProjects) {
+            this.wallLeftProjects.update(deltaTime);
+        }
+        if (this.wallRightSocial) {
+            this.wallRightSocial.update(deltaTime);
+        }
+        if (this.wallBackGames) {
+            this.wallBackGames.update(deltaTime);
         }
 
-        // 2.8. Update Contextual Holographic Telemetry & Spatial Discovery
-        if (this.spatialInterfaces) {
-            const cam = this.sceneManager ? this.sceneManager.camera : null;
-            this.spatialInterfaces.update(deltaTime, this.hoverManager, cam, this.robotController, this.pointerTracker);
-        }
+        const isExploring = this.inspectionMode && this.inspectionMode.isExploring;
 
-        // 3. Update Phase 3 6-DOF Industrial Robotic Arm
-        if (this.robotController) {
-            const cam = this.sceneManager ? this.sceneManager.camera : null;
-            this.robotController.update(deltaTime, this.pointerTracker, this.stateManager ? this.stateManager.getState() : 'IDLE', cam);
-        }
+        // 4. Update Interaction / Inspection Modes
+        if (isExploring) {
+            // In Exploration Mode: update master inspection controller (transitions, 360° camera orbit)
+            this.inspectionMode.update(deltaTime, this.pointerTracker);
+        } else {
+            // In Normal Mode: update hover raycasting & small spatial prompt
+            if (this.interactionManager) {
+                this.interactionManager.update(deltaTime, this.pointerTracker, this.spatialCursor);
+            }
 
-        if (this.sceneManager) {
-            if (typeof this.sceneManager.updateCameraParallax === 'function') {
+            // Update Robotic Arm tracking / breathing
+            if (this.robotController) {
+                const cam = this.sceneManager ? this.sceneManager.camera : null;
+                const state = this.stateManager ? this.stateManager.getState() : 'IDLE';
+                this.robotController.update(deltaTime, this.pointerTracker, state, cam);
+            }
+
+            // Update Workstation Camera Micro-Parallax
+            if (this.sceneManager && typeof this.sceneManager.updateCameraParallax === 'function') {
                 this.sceneManager.updateCameraParallax(this.pointerTracker);
             }
+        }
+
+        // Render Active Scene
+        if (this.sceneManager) {
             this.sceneManager.render();
         }
 
