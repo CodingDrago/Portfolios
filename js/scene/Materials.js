@@ -203,6 +203,116 @@ export class Materials {
             blending: THREE.AdditiveBlending,
             depthWrite: false
         });
+
+        // 24. Ceiling Structural Panels & Tiles
+        this.materials.ceilingTile = new THREE.MeshStandardMaterial({
+            color: 0x090b0f,
+            roughness: 0.85,
+            metalness: 0.3,
+            flatShading: true
+        });
+
+        // 25. Ventilation Louvers & Grilles
+        this.materials.ventilationLouver = new THREE.MeshStandardMaterial({
+            color: 0x141820,
+            roughness: 0.45,
+            metalness: 0.75
+        });
+
+        // 26. Spotlight Fixture Metal Body & Brackets
+        this.materials.spotlightHousing = new THREE.MeshStandardMaterial({
+            color: 0x101318,
+            roughness: 0.35,
+            metalness: 0.85
+        });
+
+        // 27. Spotlight Glowing Fresnel Lens Glass
+        this.materials.spotlightLens = new THREE.MeshStandardMaterial({
+            color: 0xfff4e0,
+            emissive: 0xffe8c0,
+            emissiveIntensity: 0.9,
+            roughness: 0.1,
+            metalness: 0.1
+        });
+
+        // 28. Server Rack & Equipment Cabinet Enclosures
+        this.materials.serverRack = new THREE.MeshStandardMaterial({
+            color: 0x11141a,
+            roughness: 0.55,
+            metalness: 0.65
+        });
+
+        // 29. Server Rack Modular Drawers & Panels
+        this.materials.serverUnit = new THREE.MeshStandardMaterial({
+            color: 0x171c24,
+            roughness: 0.4,
+            metalness: 0.7
+        });
+
+        // 30. Antistatic ESD Workbench Top Mat
+        this.materials.esdMat = new THREE.MeshStandardMaterial({
+            color: 0x121822,
+            roughness: 0.75,
+            metalness: 0.15
+        });
+
+        // 31. Copper & Bronze Heat Sinks
+        this.materials.copperHeatSink = new THREE.MeshStandardMaterial({
+            color: 0xc87533,
+            roughness: 0.3,
+            metalness: 0.9
+        });
+
+        // 32. Additional PCB Solder Masks (Blue & Red)
+        this.materials.pcbBlue = new THREE.MeshStandardMaterial({
+            color: 0x0a1c2e,
+            roughness: 0.4,
+            metalness: 0.3
+        });
+
+        this.materials.pcbRed = new THREE.MeshStandardMaterial({
+            color: 0x2e0c12,
+            roughness: 0.4,
+            metalness: 0.3
+        });
+
+        // 33. Flexible Industrial Wiring Conduits
+        this.materials.wireBlack = new THREE.MeshStandardMaterial({
+            color: 0x080a0d,
+            roughness: 0.7,
+            metalness: 0.15
+        });
+
+        this.materials.wireAmber = new THREE.MeshStandardMaterial({
+            color: 0xff9d00,
+            roughness: 0.5,
+            metalness: 0.2
+        });
+
+        this.materials.wireCyan = new THREE.MeshStandardMaterial({
+            color: 0x00b4d8,
+            roughness: 0.5,
+            metalness: 0.2
+        });
+
+        // 34. Smoked Transparent Acrylic Covers
+        this.materials.acrylicCover = new THREE.MeshPhysicalMaterial({
+            color: 0x0c121c,
+            transparent: true,
+            opacity: 0.45,
+            roughness: 0.1,
+            metalness: 0.8,
+            transmission: 0.7,
+            ior: 1.45,
+            depthWrite: false
+        });
+
+        // 35. White Engineering Surface
+        this.materials.whiteChassis = new THREE.MeshStandardMaterial({
+            color: 0xdde2ea,
+            roughness: 0.35,
+            metalness: 0.2
+        });
     }
 
     /**
