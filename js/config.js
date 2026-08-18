@@ -20,8 +20,8 @@ export const CONFIG = {
         fov: 45,
         near: 0.1,
         far: 1000,
-        position: { x: 0, y: 0, z: 8 },
-        lookAt: { x: 0, y: 0, z: 0 }
+        position: { x: 0, y: 0.5, z: 11.5 },
+        lookAt: { x: 0, y: 0.8, z: 0 }
     },
 
     // Renderer settings
@@ -67,10 +67,13 @@ export const CONFIG = {
 
     // Pointer Input parameters
     pointer: {
-        smoothFactor: 0.08,        // Interpolation speed for smooth coordinates
+        smoothFactor: 0.18,        // Crisp & responsive interpolation across full canvas
         inactivityTimeoutMs: 3000  // Duration before auto-transitioning to IDLE state
     },
 
     // Debugging & Development Flags
-    debug: true
+    debug: {
+        enabled: true,
+        showTargetMarker: true // Development target position indicator
+    }
 };

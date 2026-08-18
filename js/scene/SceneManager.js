@@ -1,6 +1,7 @@
 /**
  * SceneManager - WebGL Engine & Viewport Controller
- * Manages Three.js Scene, PerspectiveCamera, WebGLRenderer, and responsive resizing
+ * Manages Three.js Scene, PerspectiveCamera, WebGLRenderer, responsive resizing,
+ * and professional 3D CAD-style spherical orbit inspection with smooth damping and limits.
  */
 
 import * as THREE from 'three';
@@ -13,12 +14,36 @@ export class SceneManager {
         }
 
         this.container = mountElement;
-        
+
         // Core Three.js Components
         this.scene = null;
         this.camera = null;
         this.renderer = null;
         this.resizeObserver = null;
+
+        // Orbit Camera Spherical Coordinate System
+        this.targetFocus = new THREE.Vector3(0, 0.8, 0);
+
+        this.defaultRadius = CONFIG.camera.position.z || 11.5;
+        this.defaultTheta = 0.0; // Azimuth angle (horizontal)
+        this.defaultPhi = Math.PI * 0.44; // Polar angle (~79° elevation)
+
+        this.targetRadius = this.defaultRadius;
+        this.currentRadius = this.defaultRadius;
+
+        this.targetTheta = this.defaultTheta;
+        this.currentTheta = this.defaultTheta;
+
+        this.targetPhi = this.defaultPhi;
+        this.currentPhi = this.defaultPhi;
+
+        // Orbit & Zoom Limits
+        this.minRadius = 6.5;
+        this.maxRadius = 15.5;
+        this.minTheta = -Math.PI * 0.45; // -81°
+        this.maxTheta = Math.PI * 0.45;  // +81°
+        this.minPhi = 0.25;             // High overhead angle (~14°)
+        this.maxPhi = Math.PI * 0.47;   // Low floor grazing angle (~84.6°, floor-safe)
 
         this._initScene();
         this._initCamera();
@@ -69,7 +94,7 @@ export class SceneManager {
         const height = this.container.clientHeight || window.innerHeight;
         this.renderer.setSize(width, height);
 
-        // Shadow map configuration (prepared for Phase 2 physical shadows)
+        // Shadow map configuration
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -78,7 +103,7 @@ export class SceneManager {
     }
 
     /**
-     * Setup ResizeObserver for robust responsive layout resizing across mobile, tablet, desktop
+     * Setup ResizeObserver for responsive layout resizing
      * @private
      */
     _initResizeObserver() {
@@ -103,30 +128,67 @@ export class SceneManager {
     resize(width, height) {
         if (!width || !height) return;
 
-        // Update Camera Aspect Ratio
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
-
-        // Update WebGL Renderer Size
         this.renderer.setSize(width, height);
     }
 
     /**
-     * Update camera position micro-parallax based on pointer input
-     * Keeps all 3D meshes (floor, platform, wall) 100% stationary in world space,
-     * while creating natural 3D perspective depth as the camera shifts slightly.
+     * Reset camera orbit to default workstation framing
+     */
+    resetCamera() {
+        this.targetTheta = this.defaultTheta;
+        this.targetPhi = this.defaultPhi;
+        this.targetRadius = this.defaultRadius;
+    }
+
+    /**
+     * Update camera position with smooth orbit inspection and subtle parallax
      * @param {Object} pointer PointerTracker instance
      */
     updateCameraParallax(pointer) {
         if (!this.camera || !pointer) return;
 
-        const basePos = CONFIG.camera.position;
-        const targetX = (basePos.x || 0) + pointer.smoothX * 0.45;
-        const targetY = (basePos.y || 0) + pointer.smoothY * 0.25;
+        // 1. Process drag orbit input (full 360-degree continuous horizontal rotation)
+        if (pointer.isDragging) {
+            this.targetTheta -= pointer.dragDeltaX * 0.0055;
+            this.targetPhi -= pointer.dragDeltaY * 0.0055;
+        }
 
-        this.camera.position.x += (targetX - this.camera.position.x) * 0.05;
-        this.camera.position.y += (targetY - this.camera.position.y) * 0.05;
-        this.camera.lookAt(0, -0.8, 0);
+        // 2. Process wheel zoom input
+        if (Math.abs(pointer.wheelDelta) > 0.001) {
+            this.targetRadius += pointer.wheelDelta * 0.15;
+            pointer.wheelDelta *= 0.85; // Smooth decay
+        }
+
+        // 3. Enforce vertical polar and zoom boundaries (No horizontal clamp - full 360° orbit)
+        this.targetPhi = THREE.MathUtils.clamp(this.targetPhi, this.minPhi, this.maxPhi);
+        this.targetRadius = THREE.MathUtils.clamp(this.targetRadius, this.minRadius, this.maxRadius);
+
+        // 4. Smooth Damping Interpolation
+        this.currentTheta += (this.targetTheta - this.currentTheta) * 0.08;
+        this.currentPhi += (this.targetPhi - this.currentPhi) * 0.08;
+        this.currentRadius += (this.targetRadius - this.currentRadius) * 0.08;
+
+        // 5. Subtle micro-parallax shift when NOT dragging
+        let parallaxX = 0;
+        let parallaxY = 0;
+        if (!pointer.isDragging) {
+            parallaxX = pointer.smoothX * 0.35;
+            parallaxY = pointer.smoothY * 0.20;
+        }
+
+        // 6. Convert spherical coordinates to Cartesian camera position
+        const sinPhi = Math.sin(this.currentPhi);
+        const camX = this.currentRadius * sinPhi * Math.sin(this.currentTheta) + this.targetFocus.x + parallaxX;
+        const rawCamY = this.currentRadius * Math.cos(this.currentPhi) + this.targetFocus.y + parallaxY;
+        const camZ = this.currentRadius * sinPhi * Math.cos(this.currentTheta) + this.targetFocus.z;
+
+        // Floor safety clamp (camera physically cannot pass through the workstation floor)
+        const camY = Math.max(rawCamY, -0.4);
+
+        this.camera.position.set(camX, camY, camZ);
+        this.camera.lookAt(this.targetFocus);
     }
 
     /**
@@ -154,3 +216,4 @@ export class SceneManager {
         }
     }
 }
+

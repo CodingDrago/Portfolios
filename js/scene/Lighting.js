@@ -76,6 +76,22 @@ export class Lighting {
             8
         );
         this.practicalLight.position.set(0, -1.2, 0.5);
+
+        // 6. Left Electronics Workbench Task Light
+        this.leftBenchLight = new THREE.PointLight(
+            CONFIG.colors.amber || 0xffb703,
+            0.45,
+            6
+        );
+        this.leftBenchLight.position.set(-3.4, -0.4, -2.0);
+
+        // 7. Right Robotics Bench Task Light
+        this.rightBenchLight = new THREE.PointLight(
+            0xe2e8f0,
+            0.35,
+            6
+        );
+        this.rightBenchLight.position.set(3.4, -0.4, -2.0);
     }
 
     /**
@@ -89,5 +105,7 @@ export class Lighting {
         scene.add(this.fillLight);
         scene.add(this.rimLight);
         scene.add(this.practicalLight);
+        scene.add(this.leftBenchLight);
+        scene.add(this.rightBenchLight);
     }
 }

@@ -92,6 +92,117 @@ export class Materials {
             roughness: 0.6,
             metalness: 0.5
         });
+
+        // 11. Physical Engineering Workbench Desktop (Matte Dark Industrial Composite)
+        this.materials.workbenchTop = new THREE.MeshStandardMaterial({
+            color: 0x14181f,
+            roughness: 0.7,
+            metalness: 0.2,
+            flatShading: false
+        });
+
+        // 12. Extruded T-Slot Anodized Aluminum Frame
+        this.materials.workbenchFrame = new THREE.MeshStandardMaterial({
+            color: 0x101317,
+            roughness: 0.35,
+            metalness: 0.85
+        });
+
+        // 13. Test Instruments Dark Casing (Oscilloscope, Power Supply, Rework Station)
+        this.materials.instrumentChassis = new THREE.MeshStandardMaterial({
+            color: 0x1a202c,
+            roughness: 0.45,
+            metalness: 0.6
+        });
+
+        // 14. Instrument Front Bezels & Dials (Brushed Steel & Gunmetal)
+        this.materials.instrumentDial = new THREE.MeshStandardMaterial({
+            color: 0x2d3748,
+            roughness: 0.3,
+            metalness: 0.8
+        });
+
+        // 15. Active Prototype Circuit Board (FR4 Dark Green/Black Solder Mask)
+        this.materials.pcbSubstrate = new THREE.MeshStandardMaterial({
+            color: 0x0c1512,
+            roughness: 0.4,
+            metalness: 0.3
+        });
+
+        // 16. PCB Gold-Plated Solder Test Pads & Traces
+        this.materials.pcbGold = new THREE.MeshStandardMaterial({
+            color: 0xd4af37,
+            roughness: 0.25,
+            metalness: 0.95
+        });
+
+        // 17. SMD IC Chips & Microcontrollers (Matte Epoxy Resin)
+        this.materials.icEpoxy = new THREE.MeshStandardMaterial({
+            color: 0x080a0c,
+            roughness: 0.8,
+            metalness: 0.1
+        });
+
+        // 18. Optical Calibration Breadboard Matrix (Anodized Aluminum with Precision Matrix)
+        this.materials.opticalBreadboard = new THREE.MeshStandardMaterial({
+            color: 0x1e242d,
+            roughness: 0.3,
+            metalness: 0.75
+        });
+
+        // 19. Status Indicator LEDs (Amber, Green, Blue)
+        this.materials.ledGreen = new THREE.MeshBasicMaterial({
+            color: 0x10b981
+        });
+
+        this.materials.ledBlue = new THREE.MeshBasicMaterial({
+            color: 0x38bdf8
+        });
+
+        this.materials.ledAmber = new THREE.MeshBasicMaterial({
+            color: CONFIG.colors.amber || 0xffb703
+        });
+
+        // 20. Futuristic Spatial Interface Smoked Translucent Glass
+        this.materials.smokedGlassHolo = new THREE.MeshPhysicalMaterial({
+            color: 0x080c12,
+            transparent: true,
+            opacity: 0.42,
+            roughness: 0.12,
+            metalness: 0.85,
+            transmission: 0.6,
+            ior: 1.45,
+            reflectivity: 0.5,
+            depthWrite: false
+        });
+
+        // 21. Spatial Holographic Vector Lines (Glowing Amber)
+        this.materials.holoLineAmber = new THREE.LineBasicMaterial({
+            color: CONFIG.colors.amber || 0xffb703,
+            transparent: true,
+            opacity: 0.85,
+            blending: THREE.AdditiveBlending,
+            linewidth: 1
+        });
+
+        // 22. Spatial Holographic Vector Lines (Crisp Off-White)
+        this.materials.holoLineWhite = new THREE.LineBasicMaterial({
+            color: 0xe2e8f0,
+            transparent: true,
+            opacity: 0.65,
+            blending: THREE.AdditiveBlending,
+            linewidth: 1
+        });
+
+        // 23. Spatial Projected Grid Surface (Additive Amber Glow)
+        this.materials.projectedGrid = new THREE.MeshBasicMaterial({
+            color: CONFIG.colors.amber || 0xffb703,
+            transparent: true,
+            opacity: 0.22,
+            wireframe: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
     }
 
     /**

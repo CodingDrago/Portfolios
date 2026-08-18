@@ -25,7 +25,58 @@ export class Environment {
         this._initBackgroundWall();
         this._initStructuralColumns();
         this._initCableConduits();
+        this._initOverheadGantry();
         this._initAmbientParticles();
+    }
+
+    /**
+     * Create Overhead Structural Lighting Gantry & Task Fixtures (360 completeness)
+     * @private
+     */
+    _initOverheadGantry() {
+        const gantryGroup = new THREE.Group();
+        gantryGroup.name = 'OverheadGantry';
+
+        // Longitudinal Aluminum Extrusion Rails (x = ±3.5, y = 5.2)
+        const railGeom = new THREE.BoxGeometry(0.12, 0.12, 12);
+        const railMat = this.materials.get('structuralSteel');
+
+        const leftRail = new THREE.Mesh(railGeom, railMat);
+        leftRail.position.set(-3.5, 5.2, -3);
+        const rightRail = new THREE.Mesh(railGeom, railMat);
+        rightRail.position.set(3.5, 5.2, -3);
+        gantryGroup.add(leftRail, rightRail);
+
+        // Transverse Cross Spanners
+        const spanGeom = new THREE.BoxGeometry(7.12, 0.10, 0.10);
+        for (let z = -7; z <= 1; z += 4) {
+            const span = new THREE.Mesh(spanGeom, railMat);
+            span.position.set(0, 5.2, z);
+            gantryGroup.add(span);
+        }
+
+        // Suspended Cylindrical Downlight Fixtures
+        const lampGeom = new THREE.CylinderGeometry(0.08, 0.12, 0.20, 12);
+        const lampMat = this.materials.get('instrumentChassis');
+        const lensMat = this.materials.get('ledAmber');
+
+        const lampPositions = [
+            [-3.5, 5.0, -2.4],
+            [3.5, 5.0, -2.4],
+            [0.0, 5.0, -4.5]
+        ];
+
+        lampPositions.forEach(([lx, ly, lz]) => {
+            const lamp = new THREE.Mesh(lampGeom, lampMat);
+            lamp.position.set(lx, ly, lz);
+            const lens = new THREE.Mesh(new THREE.CircleGeometry(0.10, 12), lensMat);
+            lens.rotation.x = Math.PI / 2;
+            lens.position.set(0, -0.101, 0);
+            lamp.add(lens);
+            gantryGroup.add(lamp);
+        });
+
+        this.backgroundGroup.add(gantryGroup);
     }
 
     /**
@@ -50,38 +101,40 @@ export class Environment {
         gridHelper.position.set(0, -1.99, -3);
         this.midgroundGroup.add(gridHelper);
 
-        // Work-Cell Boundary Markings (Amber boundary frame around robot platform)
-        const boundaryWidth = 5.5;
-        const boundaryDepth = 5.5;
-        const thickness = 0.08;
+        // Work-Cell Boundary Markings (Continuous 90-degree square perimeter frame)
+        const CELL_MIN_X = -2.8;
+        const CELL_MAX_X = 2.8;
+        const CELL_MIN_Z = -2.8;
+        const CELL_MAX_Z = 2.8;
+        const lineThickness = 0.06;
 
-        const lineGeomH = new THREE.PlaneGeometry(boundaryWidth, thickness);
-        const lineGeomV = new THREE.PlaneGeometry(thickness, boundaryDepth);
-        const markMat = this.materials.get('cellMarkings');
+        // Create single continuous square ribbon frame with clean mitered corners
+        const frameShape = new THREE.Shape();
+        // Outer loop (clockwise)
+        frameShape.moveTo(CELL_MIN_X - lineThickness / 2, CELL_MIN_Z - lineThickness / 2);
+        frameShape.lineTo(CELL_MAX_X + lineThickness / 2, CELL_MIN_Z - lineThickness / 2);
+        frameShape.lineTo(CELL_MAX_X + lineThickness / 2, CELL_MAX_Z + lineThickness / 2);
+        frameShape.lineTo(CELL_MIN_X - lineThickness / 2, CELL_MAX_Z + lineThickness / 2);
+        frameShape.closePath();
 
-        // Front & Back markings
-        const markNorth = new THREE.Mesh(lineGeomH, markMat);
-        markNorth.rotation.x = -Math.PI / 2;
-        markNorth.position.set(0, -1.98, -2.75);
+        // Inner hole (counter-clockwise)
+        const frameHole = new THREE.Path();
+        frameHole.moveTo(CELL_MIN_X + lineThickness / 2, CELL_MIN_Z + lineThickness / 2);
+        frameHole.lineTo(CELL_MAX_X - lineThickness / 2, CELL_MIN_Z + lineThickness / 2);
+        frameHole.lineTo(CELL_MAX_X - lineThickness / 2, CELL_MAX_Z - lineThickness / 2);
+        frameHole.lineTo(CELL_MIN_X + lineThickness / 2, CELL_MAX_Z - lineThickness / 2);
+        frameHole.closePath();
+        frameShape.holes.push(frameHole);
 
-        const markSouth = new THREE.Mesh(lineGeomH, markMat);
-        markSouth.rotation.x = -Math.PI / 2;
-        markSouth.position.set(0, -1.98, 2.75);
-
-        // Left & Right markings
-        const markEast = new THREE.Mesh(lineGeomV, markMat);
-        markEast.rotation.x = -Math.PI / 2;
-        markEast.position.set(2.75, -1.98, 0);
-
-        const markWest = new THREE.Mesh(lineGeomV, markMat);
-        markWest.rotation.x = -Math.PI / 2;
-        markWest.position.set(-2.75, -1.98, 0);
-
-        this.midgroundGroup.add(markNorth, markSouth, markEast, markWest);
+        const frameGeom = new THREE.ShapeGeometry(frameShape);
+        const frameMesh = new THREE.Mesh(frameGeom, this.materials.get('cellMarkings'));
+        frameMesh.rotation.x = -Math.PI / 2;
+        frameMesh.position.y = -1.98;
+        this.midgroundGroup.add(frameMesh);
     }
 
     /**
-     * Create Background Graphite Wall Panels (z = -12.0)
+     * Create Background Graphite Wall Panels with Modular R&D Laboratory Architecture (z = -12.0)
      * @private
      */
     _initBackgroundWall() {
@@ -96,7 +149,7 @@ export class Environment {
         wallMesh.receiveShadow = true;
         this.backgroundGroup.add(wallMesh);
 
-        // Recessed Modular Wall Panels (3x2 Grid)
+        // Recessed Modular Architectural Panels (3x2 Grid)
         const panelGeom = new THREE.BoxGeometry(7.5, 5.5, 0.2);
         const panelMat = this.materials.get('graphiteWall');
 
@@ -108,6 +161,16 @@ export class Environment {
                 this.backgroundGroup.add(panel);
             }
         }
+
+        // Horizontal Aluminum Equipment Mounting T-Slot Rails
+        const railGeom = new THREE.BoxGeometry(24, 0.08, 0.08);
+        const railMat = this.materials.get('brushedSteel');
+
+        const rail1 = new THREE.Mesh(railGeom, railMat);
+        rail1.position.set(0, 5.2, wallDepthZ + 0.25);
+        const rail2 = new THREE.Mesh(railGeom, railMat);
+        rail2.position.set(0, 1.8, wallDepthZ + 0.25);
+        this.backgroundGroup.add(rail1, rail2);
     }
 
     /**
@@ -161,7 +224,7 @@ export class Environment {
     }
 
     /**
-     * Create Sparse Ambient Dust Depth Particles
+     * Create Sparse Ambient Dust Depth Particles (outside robot mounting cell)
      * @private
      */
     _initAmbientParticles() {
@@ -169,9 +232,15 @@ export class Environment {
         const positions = new Float32Array(this.particleCount * 3);
 
         for (let i = 0; i < this.particleCount; i++) {
-            positions[i * 3 + 0] = (Math.random() - 0.5) * 16;
+            let px, pz;
+            do {
+                px = (Math.random() - 0.5) * 16;
+                pz = (Math.random() - 0.5) * 12 - 2;
+            } while (Math.sqrt(px * px + pz * pz) < 2.5); // Clear immediate robot workspace radius
+
+            positions[i * 3 + 0] = px;
             positions[i * 3 + 1] = Math.random() * 8 - 1;
-            positions[i * 3 + 2] = (Math.random() - 0.5) * 12 - 2;
+            positions[i * 3 + 2] = pz;
         }
 
         geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
