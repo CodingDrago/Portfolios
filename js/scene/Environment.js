@@ -1,7 +1,7 @@
 /**
- * Environment - 3D Industrial Workstation Environment & Parallax Subsystem
- * Constructs 3D floor plates, work-cell markings, graphite wall panels,
- * structural columns, cable trays, ambient dust particles, and pointer parallax depth.
+ * Environment - 3D Futuristic Robotics R&D Laboratory Architecture & Parallax Subsystem
+ * Constructs 3D floor plates, work-cell markings, complete ceiling structural gantry,
+ * ventilation ducting, cable raceways, 5 physical ceiling spotlight assemblies, and ambient dust particles.
  */
 
 import * as THREE from 'three';
@@ -10,119 +10,65 @@ export class Environment {
     constructor(materials) {
         this.materials = materials;
 
-        // Group Hierarchy for Parallax Depth Separation
+        // Group Hierarchy for Parallax & Rendering Order
         this.backgroundGroup = new THREE.Group();
         this.midgroundGroup = new THREE.Group();
+        this.ceilingGroup = new THREE.Group();
         this.particlesGroup = new THREE.Group();
 
         this.backgroundGroup.name = 'EnvBackgroundGroup';
         this.midgroundGroup.name = 'EnvMidgroundGroup';
+        this.ceilingGroup.name = 'EnvCeilingGroup';
 
         this.particlePositions = null;
-        this.particleCount = 40;
+        this.particleCount = 50;
 
         this._initFloor();
-        this._initBackgroundWall();
-        this._initStructuralColumns();
-        this._initCableConduits();
-        this._initOverheadGantry();
+        this._initCeilingStructure();
+        this._initSpotlightFixtures();
         this._initAmbientParticles();
     }
 
     /**
-     * Create Overhead Structural Lighting Gantry & Task Fixtures (360 completeness)
-     * @private
-     */
-    _initOverheadGantry() {
-        const gantryGroup = new THREE.Group();
-        gantryGroup.name = 'OverheadGantry';
-
-        // Longitudinal Aluminum Extrusion Rails (x = ±3.5, y = 5.2)
-        const railGeom = new THREE.BoxGeometry(0.12, 0.12, 12);
-        const railMat = this.materials.get('structuralSteel');
-
-        const leftRail = new THREE.Mesh(railGeom, railMat);
-        leftRail.position.set(-3.5, 5.2, -3);
-        const rightRail = new THREE.Mesh(railGeom, railMat);
-        rightRail.position.set(3.5, 5.2, -3);
-        gantryGroup.add(leftRail, rightRail);
-
-        // Transverse Cross Spanners
-        const spanGeom = new THREE.BoxGeometry(7.12, 0.10, 0.10);
-        for (let z = -7; z <= 1; z += 4) {
-            const span = new THREE.Mesh(spanGeom, railMat);
-            span.position.set(0, 5.2, z);
-            gantryGroup.add(span);
-        }
-
-        // Suspended Cylindrical Downlight Fixtures
-        const lampGeom = new THREE.CylinderGeometry(0.08, 0.12, 0.20, 12);
-        const lampMat = this.materials.get('instrumentChassis');
-        const lensMat = this.materials.get('ledAmber');
-
-        const lampPositions = [
-            [-3.5, 5.0, -2.4],
-            [3.5, 5.0, -2.4],
-            [0.0, 5.0, -4.5]
-        ];
-
-        lampPositions.forEach(([lx, ly, lz]) => {
-            const lamp = new THREE.Mesh(lampGeom, lampMat);
-            lamp.position.set(lx, ly, lz);
-            const lens = new THREE.Mesh(new THREE.CircleGeometry(0.10, 12), lensMat);
-            lens.rotation.x = Math.PI / 2;
-            lens.position.set(0, -0.101, 0);
-            lamp.add(lens);
-            gantryGroup.add(lamp);
-        });
-
-        this.backgroundGroup.add(gantryGroup);
-    }
-
-    /**
-     * Create 3D Floor Plane & Work-Cell Boundary Markings
+     * Create 3D Floor Plane & Work-Cell Boundary Markings (y = -2.0)
      * @private
      */
     _initFloor() {
-        // Main Floor Plane (y = -2.0)
-        const floorWidth = 24;
-        const floorDepth = 18;
+        // Full Room Modular Floor (26 x 26)
+        const floorWidth = 26;
+        const floorDepth = 26;
         const floorGeom = new THREE.PlaneGeometry(floorWidth, floorDepth);
 
         const floorMesh = new THREE.Mesh(floorGeom, this.materials.get('floorPlates'));
         floorMesh.rotation.x = -Math.PI / 2;
-        floorMesh.position.set(0, -2.0, -3);
+        floorMesh.position.set(0, -2.0, 0);
         floorMesh.receiveShadow = true;
-
         this.midgroundGroup.add(floorMesh);
 
-        // Modular Floor Plate Seam Grid Lines
-        const gridHelper = new THREE.GridHelper(24, 12, 0x161a22, 0x12151c);
-        gridHelper.position.set(0, -1.99, -3);
+        // Modular Floor Seam Grid Lines (26x26 with 2m grid subdivisions)
+        const gridHelper = new THREE.GridHelper(26, 13, 0x181e28, 0x10141c);
+        gridHelper.position.set(0, -1.99, 0);
         this.midgroundGroup.add(gridHelper);
 
-        // Work-Cell Boundary Markings (Continuous 90-degree square perimeter frame)
-        const CELL_MIN_X = -2.8;
-        const CELL_MAX_X = 2.8;
-        const CELL_MIN_Z = -2.8;
-        const CELL_MAX_Z = 2.8;
+        // Central Robot Work-Cell Boundary Markings (2.8m x 2.8m continuous amber square)
+        const CELL_MIN = -2.8;
+        const CELL_MAX = 2.8;
         const lineThickness = 0.06;
 
-        // Create single continuous square ribbon frame with clean mitered corners
         const frameShape = new THREE.Shape();
         // Outer loop (clockwise)
-        frameShape.moveTo(CELL_MIN_X - lineThickness / 2, CELL_MIN_Z - lineThickness / 2);
-        frameShape.lineTo(CELL_MAX_X + lineThickness / 2, CELL_MIN_Z - lineThickness / 2);
-        frameShape.lineTo(CELL_MAX_X + lineThickness / 2, CELL_MAX_Z + lineThickness / 2);
-        frameShape.lineTo(CELL_MIN_X - lineThickness / 2, CELL_MAX_Z + lineThickness / 2);
+        frameShape.moveTo(CELL_MIN - lineThickness / 2, CELL_MIN - lineThickness / 2);
+        frameShape.lineTo(CELL_MAX + lineThickness / 2, CELL_MIN - lineThickness / 2);
+        frameShape.lineTo(CELL_MAX + lineThickness / 2, CELL_MAX + lineThickness / 2);
+        frameShape.lineTo(CELL_MIN - lineThickness / 2, CELL_MAX + lineThickness / 2);
         frameShape.closePath();
 
         // Inner hole (counter-clockwise)
         const frameHole = new THREE.Path();
-        frameHole.moveTo(CELL_MIN_X + lineThickness / 2, CELL_MIN_Z + lineThickness / 2);
-        frameHole.lineTo(CELL_MAX_X - lineThickness / 2, CELL_MIN_Z + lineThickness / 2);
-        frameHole.lineTo(CELL_MAX_X - lineThickness / 2, CELL_MAX_Z - lineThickness / 2);
-        frameHole.lineTo(CELL_MIN_X + lineThickness / 2, CELL_MAX_Z - lineThickness / 2);
+        frameHole.moveTo(CELL_MIN + lineThickness / 2, CELL_MIN + lineThickness / 2);
+        frameHole.lineTo(CELL_MAX - lineThickness / 2, CELL_MIN + lineThickness / 2);
+        frameHole.lineTo(CELL_MAX - lineThickness / 2, CELL_MAX - lineThickness / 2);
+        frameHole.lineTo(CELL_MIN + lineThickness / 2, CELL_MAX - lineThickness / 2);
         frameHole.closePath();
         frameShape.holes.push(frameHole);
 
@@ -134,97 +80,166 @@ export class Environment {
     }
 
     /**
-     * Create Background Graphite Wall Panels with Modular R&D Laboratory Architecture (z = -12.0)
+     * Create Complete Futuristic Laboratory Ceiling Architecture (y = 7.2)
+     * Structural I-Beams, Cable Trays, Ventilation Conduits, Recessed Panels
      * @private
      */
-    _initBackgroundWall() {
-        const wallWidth = 28;
-        const wallHeight = 16;
-        const wallDepthZ = -12.0;
+    _initCeilingStructure() {
+        const ceiling = this.ceilingGroup;
 
-        // Main Wall Backplane
-        const wallGeom = new THREE.PlaneGeometry(wallWidth, wallHeight);
-        const wallMesh = new THREE.Mesh(wallGeom, this.materials.get('graphiteWall'));
-        wallMesh.position.set(0, 4, wallDepthZ);
-        wallMesh.receiveShadow = true;
-        this.backgroundGroup.add(wallMesh);
+        // 1. Main Ceiling Backplane Panels (y = 7.2)
+        const ceilingGeom = new THREE.PlaneGeometry(26, 26);
+        const ceilingMesh = new THREE.Mesh(ceilingGeom, this.materials.get('ceilingTile'));
+        ceilingMesh.rotation.x = Math.PI / 2;
+        ceilingMesh.position.set(0, 7.2, 0);
+        ceilingMesh.receiveShadow = true;
+        ceiling.add(ceilingMesh);
 
-        // Recessed Modular Architectural Panels (3x2 Grid)
-        const panelGeom = new THREE.BoxGeometry(7.5, 5.5, 0.2);
-        const panelMat = this.materials.get('graphiteWall');
+        // 2. Structural Steel I-Beam Cross Grid (y = 7.0)
+        const beamMat = this.materials.get('structuralSteel');
 
-        for (let row = 0; row < 2; row++) {
-            for (let col = -1; col <= 1; col++) {
-                const panel = new THREE.Mesh(panelGeom, panelMat);
-                panel.position.set(col * 8.2, row * 6.5 + 1.2, wallDepthZ + 0.1);
-                panel.receiveShadow = true;
-                this.backgroundGroup.add(panel);
-            }
-        }
+        // Longitudinal Main Rails (x = ±3.5, x = ±8.5, span z = -13 to +13)
+        const longBeamGeom = new THREE.BoxGeometry(0.20, 0.35, 26);
+        [-8.5, -3.5, 3.5, 8.5].forEach(xPos => {
+            const beam = new THREE.Mesh(longBeamGeom, beamMat);
+            beam.position.set(xPos, 7.0, 0);
+            beam.castShadow = true;
+            ceiling.add(beam);
+        });
 
-        // Horizontal Aluminum Equipment Mounting T-Slot Rails
-        const railGeom = new THREE.BoxGeometry(24, 0.08, 0.08);
-        const railMat = this.materials.get('brushedSteel');
+        // Transverse Spanner Beams (z = -8, -4, 0, 4, 8, span x = -13 to +13)
+        const transBeamGeom = new THREE.BoxGeometry(26, 0.25, 0.20);
+        [-8, -4, 0, 4, 8].forEach(zPos => {
+            const span = new THREE.Mesh(transBeamGeom, beamMat);
+            span.position.set(0, 7.05, zPos);
+            span.castShadow = true;
+            ceiling.add(span);
+        });
 
-        const rail1 = new THREE.Mesh(railGeom, railMat);
-        rail1.position.set(0, 5.2, wallDepthZ + 0.25);
-        const rail2 = new THREE.Mesh(railGeom, railMat);
-        rail2.position.set(0, 1.8, wallDepthZ + 0.25);
-        this.backgroundGroup.add(rail1, rail2);
+        // 3. Overhead HVAC Ventilation Ducts
+        const ductMat = this.materials.get('conduitPipe');
+        const louverMat = this.materials.get('ventilationLouver');
+
+        // Main Longitudinal Air Duct (x = -6.0, y = 6.7, length = 24)
+        const ductGeom = new THREE.CylinderGeometry(0.35, 0.35, 24, 16);
+        ductGeom.rotateX(Math.PI / 2);
+        const mainDuct = new THREE.Mesh(ductGeom, ductMat);
+        mainDuct.position.set(-6.0, 6.7, 0);
+        ceiling.add(mainDuct);
+
+        // Ventilation Intake Louver Grilles hanging below duct
+        const louverGeom = new THREE.BoxGeometry(0.70, 0.15, 0.70);
+        [-6, 0, 6].forEach(zPos => {
+            const louver = new THREE.Mesh(louverGeom, louverMat);
+            louver.position.set(-6.0, 6.3, zPos);
+            ceiling.add(louver);
+        });
+
+        // Secondary Air Duct on Right (x = +6.0)
+        const ductRight = new THREE.Mesh(ductGeom, ductMat);
+        ductRight.position.set(6.0, 6.7, 0);
+        ceiling.add(ductRight);
+
+        // 4. Overhead Industrial Cable Raceways (Wire Trays)
+        const trayGeom = new THREE.BoxGeometry(0.40, 0.06, 24);
+        const trayMat = this.materials.get('serverRack');
+
+        const trayLeft = new THREE.Mesh(trayGeom, trayMat);
+        trayLeft.position.set(-1.8, 6.85, 0);
+        const trayRight = new THREE.Mesh(trayGeom, trayMat);
+        trayRight.position.set(1.8, 6.85, 0);
+        ceiling.add(trayLeft, trayRight);
+
+        // Colored Power & Fiber Bundles in Cable Trays
+        const cableGeom = new THREE.CylinderGeometry(0.04, 0.04, 24, 8);
+        cableGeom.rotateX(Math.PI / 2);
+
+        const cableAmber = new THREE.Mesh(cableGeom, this.materials.get('wireAmber'));
+        cableAmber.position.set(-1.7, 6.9, 0);
+        const cableCyan = new THREE.Mesh(cableGeom, this.materials.get('wireCyan'));
+        cableCyan.position.set(-1.9, 6.9, 0);
+        const cableBlack = new THREE.Mesh(cableGeom, this.materials.get('wireBlack'));
+        cableBlack.position.set(1.8, 6.9, 0);
+        ceiling.add(cableAmber, cableCyan, cableBlack);
     }
 
     /**
-     * Create Structural Steel I-Beams & Frame Columns
+     * Construct 5 Physical Industrial Ceiling Spotlight Assemblies
+     * Mounted at: Center, Front, Left, Right, Back
      * @private
      */
-    _initStructuralColumns() {
-        const columnGeom = new THREE.BoxGeometry(0.8, 16, 0.8);
-        const colMat = this.materials.get('structuralSteel');
+    _initSpotlightFixtures() {
+        const spotGroup = new THREE.Group();
+        spotGroup.name = 'CeilingSpotlightFixtures';
 
-        // Left Column
-        const leftCol = new THREE.Mesh(columnGeom, colMat);
-        leftCol.position.set(-8.5, 4, -11.5);
-        leftCol.castShadow = true;
-        leftCol.receiveShadow = true;
+        const housingMat = this.materials.get('spotlightHousing');
+        const lensMat = this.materials.get('spotlightLens');
+        const bracketMat = this.materials.get('brushedSteel');
 
-        // Right Column
-        const rightCol = new THREE.Mesh(columnGeom, colMat);
-        rightCol.position.set(8.5, 4, -11.5);
-        rightCol.castShadow = true;
-        rightCol.receiveShadow = true;
+        // Spotlight fixture configurations: [posX, posY, posZ, rotX, rotY, rotZ]
+        const fixtures = [
+            // 1. Center Spotlight (Pointing straight down)
+            { pos: [0, 6.8, 0], rot: [0, 0, 0] },
+            // 2. Front Spotlight (Angled forward toward Front Wall)
+            { pos: [0, 6.8, -3.5], rot: [-0.45, 0, 0] },
+            // 3. Left Spotlight (Angled left toward Projects Wall)
+            { pos: [-3.5, 6.8, 0], rot: [0, 0, 0.45] },
+            // 4. Right Spotlight (Angled right toward Social Wall)
+            { pos: [3.5, 6.8, 0], rot: [0, 0, -0.45] },
+            // 5. Back Spotlight (Angled back toward Games Wall)
+            { pos: [0, 6.8, 3.5], rot: [0.45, 0, 0] }
+        ];
 
-        // Top Horizontal Crossbeam
-        const beamGeom = new THREE.BoxGeometry(18, 0.8, 0.8);
-        const topBeam = new THREE.Mesh(beamGeom, colMat);
-        topBeam.position.set(0, 10.5, -11.5);
-        topBeam.castShadow = true;
+        fixtures.forEach(({ pos, rot }) => {
+            const fixture = new THREE.Group();
+            fixture.position.set(pos[0], pos[1], pos[2]);
 
-        this.backgroundGroup.add(leftCol, rightCol, topBeam);
+            // A. Ceiling Mounting Base Flange
+            const flangeGeom = new THREE.CylinderGeometry(0.22, 0.24, 0.08, 16);
+            const flange = new THREE.Mesh(flangeGeom, bracketMat);
+            flange.position.set(0, 0.25, 0);
+            fixture.add(flange);
+
+            // B. U-Shaped Swivel Yoke Bracket
+            const yokeGeom = new THREE.BoxGeometry(0.06, 0.35, 0.44);
+            const yoke = new THREE.Mesh(yokeGeom, bracketMat);
+            yoke.position.set(0, 0.08, 0);
+            fixture.add(yoke);
+
+            // C. Rotating Lamp Housing Assembly
+            const lampAssembly = new THREE.Group();
+            lampAssembly.rotation.set(rot[0], rot[1], rot[2]);
+
+            // Cylindrical Lamp Body with Heat Sink Cooling Ribs
+            const bodyGeom = new THREE.CylinderGeometry(0.18, 0.24, 0.42, 16);
+            const body = new THREE.Mesh(bodyGeom, housingMat);
+            lampAssembly.add(body);
+
+            // Cooling Fins
+            const finGeom = new THREE.TorusGeometry(0.22, 0.015, 6, 16);
+            finGeom.rotateX(Math.PI / 2);
+            [-0.08, 0, 0.08].forEach(yOff => {
+                const fin = new THREE.Mesh(finGeom, bracketMat);
+                fin.position.y = yOff;
+                lampAssembly.add(fin);
+            });
+
+            // Glowing Recessed Fresnel Lens (Emits light downwards)
+            const lensGeom = new THREE.CircleGeometry(0.20, 16);
+            const lens = new THREE.Mesh(lensGeom, lensMat);
+            lens.rotation.x = Math.PI / 2;
+            lens.position.set(0, -0.211, 0);
+            lampAssembly.add(lens);
+
+            fixture.add(lampAssembly);
+            spotGroup.add(fixture);
+        });
+
+        this.ceilingGroup.add(spotGroup);
     }
 
     /**
-     * Create Horizontal Cable Conduits & Equipment Trays
-     * @private
-     */
-    _initCableConduits() {
-        const pipeGeom = new THREE.CylinderGeometry(0.12, 0.12, 22, 12);
-        const pipeMat = this.materials.get('conduitPipe');
-
-        // Top Conduit Run
-        const pipe1 = new THREE.Mesh(pipeGeom, pipeMat);
-        pipe1.rotation.z = Math.PI / 2;
-        pipe1.position.set(0, 7.5, -11.3);
-
-        // Lower Conduit Run
-        const pipe2 = new THREE.Mesh(pipeGeom, pipeMat);
-        pipe2.rotation.z = Math.PI / 2;
-        pipe2.position.set(0, 2.5, -11.3);
-
-        this.backgroundGroup.add(pipe1, pipe2);
-    }
-
-    /**
-     * Create Sparse Ambient Dust Depth Particles (outside robot mounting cell)
+     * Create Sparse Ambient Dust Depth Particles
      * @private
      */
     _initAmbientParticles() {
@@ -234,8 +249,8 @@ export class Environment {
         for (let i = 0; i < this.particleCount; i++) {
             let px, pz;
             do {
-                px = (Math.random() - 0.5) * 16;
-                pz = (Math.random() - 0.5) * 12 - 2;
+                px = (Math.random() - 0.5) * 20;
+                pz = (Math.random() - 0.5) * 20;
             } while (Math.sqrt(px * px + pz * pz) < 2.5); // Clear immediate robot workspace radius
 
             positions[i * 3 + 0] = px;
@@ -248,9 +263,9 @@ export class Environment {
 
         const mat = new THREE.PointsMaterial({
             color: 0xffb703,
-            size: 0.04,
+            size: 0.038,
             transparent: true,
-            opacity: 0.45,
+            opacity: 0.40,
             blending: THREE.AdditiveBlending
         });
 
@@ -266,30 +281,25 @@ export class Environment {
         if (!scene) return;
         scene.add(this.backgroundGroup);
         scene.add(this.midgroundGroup);
+        scene.add(this.ceilingGroup);
         scene.add(this.particlesGroup);
     }
 
     /**
-     * Update subtle particle animation and pointer parallax depth
+     * Update subtle particle animation
      * @param {number} deltaTime Time elapsed since last frame
      * @param {Object} pointer PointerTracker instance
      */
     update(deltaTime, pointer) {
-        // 1. Subtle Ambient Particle Drift
         if (this.particlePositions) {
             for (let i = 0; i < this.particleCount; i++) {
                 const yIdx = i * 3 + 1;
-                this.particlePositions[yIdx] += deltaTime * 0.08;
-                if (this.particlePositions[yIdx] > 7) {
-                    this.particlePositions[yIdx] = -2;
+                this.particlePositions[yIdx] += deltaTime * 0.06;
+                if (this.particlePositions[yIdx] > 6.8) {
+                    this.particlePositions[yIdx] = -1.8;
                 }
             }
             this.particlesGroup.children[0].geometry.attributes.position.needsUpdate = true;
         }
-
-        // 2. All Environment Meshes remain 100% stationary in world space.
-        // True 3D perspective depth is driven via camera micro-parallax in SceneManager.
-        this.backgroundGroup.position.set(0, 0, 0);
-        this.midgroundGroup.position.set(0, 0, 0);
     }
 }
