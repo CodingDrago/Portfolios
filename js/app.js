@@ -3,19 +3,19 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 2 Workstation)
  */
 
-import { CONFIG, STATES } from './config.js?v=24';
-import { BootManager } from './loader/BootManager.js?v=24';
-import { StateManager } from './state/StateManager.js?v=24';
-import { PointerTracker } from './input/PointerTracker.js?v=24';
-import { SceneManager } from './scene/SceneManager.js?v=24';
-import { Lighting } from './scene/Lighting.js?v=24';
-import { Materials } from './scene/Materials.js?v=24';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=24';
-import { Environment } from './scene/Environment.js?v=24';
-import { Workbench } from './scene/Workbench.js?v=24';
-import { SpatialInterfaces } from './scene/SpatialInterfaces.js?v=24';
-import { SpatialHoverManager } from './scene/SpatialHoverManager.js?v=24';
-import { RobotController } from './robot/RobotController.js?v=24';
+import { CONFIG, STATES } from './config.js?v=27';
+import { BootManager } from './loader/BootManager.js?v=27';
+import { StateManager } from './state/StateManager.js?v=27';
+import { PointerTracker } from './input/PointerTracker.js?v=27';
+import { SceneManager } from './scene/SceneManager.js?v=27';
+import { Lighting } from './scene/Lighting.js?v=27';
+import { Materials } from './scene/Materials.js?v=27';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=27';
+import { Environment } from './scene/Environment.js?v=27';
+import { Workbench } from './scene/Workbench.js?v=27';
+import { SpatialInterfaces } from './scene/SpatialInterfaces.js?v=27';
+import { SpatialHoverManager } from './scene/SpatialHoverManager.js?v=27';
+import { RobotController } from './robot/RobotController.js?v=27';
 import * as THREE from 'three';
 
 class App {
@@ -232,9 +232,10 @@ class App {
                 id: 'oscilloscope',
                 title: 'DUAL-CHANNEL DIGITAL STORAGE OSCILLOSCOPE',
                 category: 'SIGNAL DIAGNOSTICS // BENCH-01',
+                description: 'Dual-channel 2.5 GS/s mixed-signal analysis for SPI/I2C bus timing & waveform capture.',
                 mesh: this.workbench.interactiveObjects.oscilloscope,
                 anchorPoint: new THREE.Vector3(-3.85, -0.74, -2.5),
-                hitboxSize: new THREE.Vector3(1.2, 0.9, 0.9),
+                boundsSize: new THREE.Vector3(0.7, 0.5, 0.5),
                 panelOffset: new THREE.Vector3(0.4, 1.4, 0.4),
                 getData: () => [
                     ['CHANNEL 1:', 'PWM 100 kHz [3.3V LVCMOS]', '#ff9d00'],
@@ -252,9 +253,10 @@ class App {
                 id: 'mcuPrototype',
                 title: 'ARM CORTEX-M7 EMBEDDED CONTROL NODE',
                 category: 'EMBEDDED SYSTEMS // CORE-01',
+                description: '480 MHz real-time embedded core with dual CAN 2.0B & SPI encoder buses.',
                 mesh: this.workbench.interactiveObjects.mcuPrototype,
                 anchorPoint: new THREE.Vector3(-2.8, -0.94, -1.8),
-                hitboxSize: new THREE.Vector3(1.0, 0.8, 0.8),
+                boundsSize: new THREE.Vector3(0.5, 0.3, 0.4),
                 panelOffset: new THREE.Vector3(0.2, 1.3, 0.4),
                 getData: () => [
                     ['MCU CORE:', 'ARM Cortex-M7 @ 480 MHz', '#ff9d00'],
@@ -272,9 +274,10 @@ class App {
                 id: 'powerSupply',
                 title: 'PROGRAMMABLE LINEAR DC BENCH SUPPLY',
                 category: 'POWER MANAGEMENT // RAIL-01',
+                description: 'Precision linear DC rail (24.0V / 3.5A) with isolated ground and active current limiting.',
                 mesh: this.workbench.interactiveObjects.powerSupply,
                 anchorPoint: new THREE.Vector3(-3.05, -0.80, -2.8),
-                hitboxSize: new THREE.Vector3(1.0, 0.8, 0.8),
+                boundsSize: new THREE.Vector3(0.6, 0.4, 0.4),
                 panelOffset: new THREE.Vector3(0.3, 1.4, 0.4),
                 getData: () => [
                     ['OUTPUT VOLTAGE:', '24.00 V DC [REGULATED]', '#ff9d00'],
@@ -292,9 +295,10 @@ class App {
                 id: 'reworkStation',
                 title: 'CLOSED-LOOP SMD SOLDERING STATION',
                 category: 'HARDWARE PROTOTYPING // FAB-01',
+                description: 'Closed-loop PID thermal control for SMD component rework & micro-soldering.',
                 mesh: this.workbench.interactiveObjects.reworkStation,
                 anchorPoint: new THREE.Vector3(-4.0, -0.85, -2.8),
-                hitboxSize: new THREE.Vector3(1.0, 0.8, 0.8),
+                boundsSize: new THREE.Vector3(0.5, 0.4, 0.4),
                 panelOffset: new THREE.Vector3(0.3, 1.4, 0.4),
                 getData: () => [
                     ['SET TEMPERATURE:', '380°C [CLOSED-LOOP PID]', '#ff9d00'],
@@ -312,9 +316,10 @@ class App {
                 id: 'robot',
                 title: '6-DOF ARTICULATED ROBOTIC MANIPULATOR',
                 category: 'ROBOTICS & KINEMATICS // ARM-01',
+                description: 'High-precision 6-axis articulated arm for automated PCB probing & spatial manipulation.',
                 mesh: this.robotController.arm.group,
                 anchorPoint: new THREE.Vector3(0, 0.4, 0),
-                hitboxSize: new THREE.Vector3(1.6, 2.4, 1.6),
+                boundsSize: new THREE.Vector3(1.2, 1.8, 1.2),
                 panelOffset: new THREE.Vector3(2.4, 1.4, 0.6),
                 getData: (rc) => {
                     let j1 = 0, j2 = 0, j3 = 0, j4 = 0, j5 = 0, j6 = 0;
@@ -343,9 +348,10 @@ class App {
                 id: 'opticalBreadboard',
                 title: 'PRECISION OPTICAL CALIBRATION RIG',
                 category: 'SPATIAL CALIBRATION // RIG-01',
+                description: 'M6 threaded matrix fixture with optical fiducial alignment for robotic TCP calibration.',
                 mesh: this.workbench.interactiveObjects.opticalBreadboard,
                 anchorPoint: new THREE.Vector3(3.4, -0.85, -2.2),
-                hitboxSize: new THREE.Vector3(1.8, 0.8, 1.4),
+                boundsSize: new THREE.Vector3(1.8, 0.4, 1.4),
                 panelOffset: new THREE.Vector3(-0.3, 1.4, 0.4),
                 getData: () => [
                     ['SURFACE MATRIX:', 'M6 THREADED 25mm PITCH', '#ff9d00'],
@@ -363,9 +369,10 @@ class App {
                 id: 'logicAnalyzer',
                 title: 'HIGH-SPEED LOGIC & CAN BUS ANALYZER',
                 category: 'BUS PROTOCOLS // ANALYZER-01',
+                description: '8-channel logic probe streaming 1.0 Mbps CAN 2.0B traffic and protocol decoding.',
                 mesh: this.workbench.interactiveObjects.logicAnalyzer,
                 anchorPoint: new THREE.Vector3(3.8, -0.85, -2.5),
-                hitboxSize: new THREE.Vector3(1.0, 0.8, 0.8),
+                boundsSize: new THREE.Vector3(0.5, 0.3, 0.4),
                 panelOffset: new THREE.Vector3(-0.4, 1.4, 0.4),
                 getData: () => [
                     ['CAN 2.0B BUS:', '1.000 Mbps [TRAFFIC: 14.2%]', '#10b981'],
@@ -418,7 +425,7 @@ class App {
         // 2.8. Update Contextual Holographic Telemetry & Spatial Discovery
         if (this.spatialInterfaces) {
             const cam = this.sceneManager ? this.sceneManager.camera : null;
-            this.spatialInterfaces.update(deltaTime, this.robotController, this.pointerTracker, this.hoverManager, cam);
+            this.spatialInterfaces.update(deltaTime, this.hoverManager, cam, this.robotController, this.pointerTracker);
         }
 
         // 3. Update Phase 3 6-DOF Industrial Robotic Arm

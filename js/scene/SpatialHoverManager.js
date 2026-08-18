@@ -13,7 +13,7 @@ export class SpatialHoverManager {
         this.raycaster = new THREE.Raycaster();
         this.mouseNDC = new THREE.Vector2(0, 0);
 
-        // Registry of interactive targets: Array of { id, name, category, mesh, anchorPoint, getData() }
+        // Registry of interactive targets: Array of { id, title, category, description, mesh, anchorPoint, panelOffset, getData(), onHover(), onUnhover() }
         this.interactiveTargets = [];
         this.targetMeshes = [];
 
@@ -21,39 +21,30 @@ export class SpatialHoverManager {
         this.activeTarget = null;
         this.previousTarget = null;
         this.hoverProgress = 0; // 0 (hidden) to 1 (fully visible)
-        this.hasInteractedOnce = false; // Tracks if user has hovered over an object (to fade intro hologram)
+        this.hasInteractedOnce = false; // Tracks if user has begun exploring (to fade intro hologram)
     }
 
     /**
      * Register an interactive 3D object
      * @param {Object} config 
-     * @param {string} config.id Unique identifier (e.g. 'oscilloscope', 'mcu', 'robot')
+     * @param {string} config.id Unique identifier (e.g. 'oscilloscope', 'mcuPrototype', 'robot')
      * @param {string} config.title Display title
      * @param {string} config.category Engineering discipline category
-     * @param {THREE.Object3D} [config.mesh] Optional 3D Mesh / Group for collision
+     * @param {string} config.description Concise engineering summary
+     * @param {THREE.Object3D} config.mesh 3D Mesh / Group for collision
      * @param {THREE.Vector3} config.anchorPoint World-space connection point for leader line
-     * @param {THREE.Vector3} [config.hitboxSize] World-space dimensions for collision hitbox
+     * @param {THREE.Vector3} [config.boundsSize] Tight physical bounding dimensions
      * @param {THREE.Vector3} config.panelOffset World-space offset for holographic panel placement
      * @param {Function} config.getData Callback returning dynamic technical data array
+     * @param {Function} [config.onHover] Callback when cursor enters object
+     * @param {Function} [config.onUnhover] Callback when cursor leaves object
      */
     registerTarget(config) {
         if (!config) return;
 
         this.interactiveTargets.push(config);
 
-        // Create a dedicated collision hitbox centered at anchorPoint
-        const hitboxSize = config.hitboxSize || new THREE.Vector3(0.9, 0.7, 0.7);
-        const hitboxGeom = new THREE.BoxGeometry(hitboxSize.x, hitboxSize.y, hitboxSize.z);
-        const hitboxMat = new THREE.MeshBasicMaterial({ visible: false });
-        const hitboxMesh = new THREE.Mesh(hitboxGeom, hitboxMat);
-        hitboxMesh.position.copy(config.anchorPoint || new THREE.Vector3(0, 0, 0));
-        hitboxMesh.userData.targetConfig = config;
-        if (this.scene) {
-            this.scene.add(hitboxMesh);
-        }
-        this.targetMeshes.push(hitboxMesh);
-
-        // Also collect child meshes if mesh is provided
+        // 1. Collect all real child meshes from the object
         if (config.mesh) {
             config.mesh.traverse((child) => {
                 if (child.isMesh) {
@@ -62,6 +53,19 @@ export class SpatialHoverManager {
                 }
             });
         }
+
+        // 2. Create a precision bounding volume conforming tightly to the hardware object
+        const bounds = config.boundsSize || new THREE.Vector3(0.6, 0.4, 0.5);
+        const boundGeom = new THREE.BoxGeometry(bounds.x, bounds.y, bounds.z);
+        const boundMat = new THREE.MeshBasicMaterial({ visible: false });
+        const boundMesh = new THREE.Mesh(boundGeom, boundMat);
+        boundMesh.position.copy(config.anchorPoint || new THREE.Vector3(0, 0, 0));
+        boundMesh.userData.targetConfig = config;
+
+        if (this.scene) {
+            this.scene.add(boundMesh);
+        }
+        this.targetMeshes.push(boundMesh);
     }
 
     /**
@@ -77,29 +81,14 @@ export class SpatialHoverManager {
             this.mouseNDC.set(pointerTracker.normalizedX, pointerTracker.normalizedY);
             this.raycaster.setFromCamera(this.mouseNDC, this.camera);
 
-            // Perform raycast against registered hardware meshes
+            // Perform pure 3D raycast against registered hardware meshes & bounds
             const intersects = this.raycaster.intersectObjects(this.targetMeshes, false);
 
             if (intersects.length > 0) {
-                // Find targetConfig on intersected mesh
                 for (const hit of intersects) {
                     if (hit.object.userData && hit.object.userData.targetConfig) {
                         hitTarget = hit.object.userData.targetConfig;
                         break;
-                    }
-                }
-            }
-
-            // If direct mesh intersection didn't hit, check proximity from camera ray to anchor points
-            if (!hitTarget) {
-                let closestDist = 1.35; // Maximum proximity threshold in meters
-                for (const target of this.interactiveTargets) {
-                    if (target.anchorPoint) {
-                        const d = this.raycaster.ray.distanceToPoint(target.anchorPoint);
-                        if (d < closestDist) {
-                            closestDist = d;
-                            hitTarget = target;
-                        }
                     }
                 }
             }
@@ -109,15 +98,24 @@ export class SpatialHoverManager {
         if (hitTarget) {
             this.hasInteractedOnce = true;
             if (this.activeTarget !== hitTarget) {
+                if (this.activeTarget && this.activeTarget.onUnhover) {
+                    this.activeTarget.onUnhover();
+                }
                 this.previousTarget = this.activeTarget;
                 this.activeTarget = hitTarget;
+                if (this.activeTarget && this.activeTarget.onHover) {
+                    this.activeTarget.onHover();
+                }
             }
             // Fade in smoothly
-            this.hoverProgress = Math.min(1.0, this.hoverProgress + deltaTime * 4.0);
+            this.hoverProgress = Math.min(1.0, this.hoverProgress + deltaTime * 6.0);
         } else {
             // Fade out smoothly
-            this.hoverProgress = Math.max(0.0, this.hoverProgress - deltaTime * 3.0);
+            this.hoverProgress = Math.max(0.0, this.hoverProgress - deltaTime * 4.0);
             if (this.hoverProgress <= 0.0) {
+                if (this.activeTarget && this.activeTarget.onUnhover) {
+                    this.activeTarget.onUnhover();
+                }
                 this.activeTarget = null;
             }
         }
