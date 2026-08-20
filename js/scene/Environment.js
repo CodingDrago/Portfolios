@@ -24,6 +24,7 @@ export class Environment {
         this.particleCount = 50;
 
         this._initFloor();
+        this._initArchitecturalTrim();
         this._initCeilingStructure();
         this._initSpotlightFixtures();
         this._initAmbientParticles();
@@ -77,6 +78,58 @@ export class Environment {
         frameMesh.rotation.x = -Math.PI / 2;
         frameMesh.position.y = -1.98;
         this.midgroundGroup.add(frameMesh);
+    }
+
+    /**
+     * Create Industrial Baseboard & Ceiling Cornice Trim Strips
+     * Close the architectural gaps at floor-wall and wall-ceiling junctions
+     * @private
+     */
+    _initArchitecturalTrim() {
+        const steelMat = this.materials.get('structuralSteel');
+        const trimMat = this.materials.get('conduitPipe');
+
+        // Floor Baseboard Trim (y = -2.0 to -1.82, 0.18m height)
+        // 4 Sides: Front (z = -12.0), Back (z = +12.0), Left (x = -12.0), Right (x = +12.0)
+
+        // Front & Back baseboards (26m wide)
+        const fbBaseGeom = new THREE.BoxGeometry(26, 0.18, 0.12);
+        const frontBase = new THREE.Mesh(fbBaseGeom, steelMat);
+        frontBase.position.set(0, -1.91, -12.06);
+        this.midgroundGroup.add(frontBase);
+
+        const backBase = new THREE.Mesh(fbBaseGeom, steelMat);
+        backBase.position.set(0, -1.91, 12.06);
+        this.midgroundGroup.add(backBase);
+
+        // Left & Right baseboards (26m deep)
+        const lrBaseGeom = new THREE.BoxGeometry(0.12, 0.18, 26);
+        const leftBase = new THREE.Mesh(lrBaseGeom, steelMat);
+        leftBase.position.set(-12.06, -1.91, 0);
+        this.midgroundGroup.add(leftBase);
+
+        const rightBase = new THREE.Mesh(lrBaseGeom, steelMat);
+        rightBase.position.set(12.06, -1.91, 0);
+        this.midgroundGroup.add(rightBase);
+
+        // Ceiling Cornice Trim (y = 7.0 to 7.12, 0.12m height)
+        const fbCorGeom = new THREE.BoxGeometry(26, 0.12, 0.10);
+        const frontCor = new THREE.Mesh(fbCorGeom, trimMat);
+        frontCor.position.set(0, 7.06, -12.05);
+        this.ceilingGroup.add(frontCor);
+
+        const backCor = new THREE.Mesh(fbCorGeom, trimMat);
+        backCor.position.set(0, 7.06, 12.05);
+        this.ceilingGroup.add(backCor);
+
+        const lrCorGeom = new THREE.BoxGeometry(0.10, 0.12, 26);
+        const leftCor = new THREE.Mesh(lrCorGeom, trimMat);
+        leftCor.position.set(-12.05, 7.06, 0);
+        this.ceilingGroup.add(leftCor);
+
+        const rightCor = new THREE.Mesh(lrCorGeom, trimMat);
+        rightCor.position.set(12.05, 7.06, 0);
+        this.ceilingGroup.add(rightCor);
     }
 
     /**
