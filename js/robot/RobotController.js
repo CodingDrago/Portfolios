@@ -5,10 +5,10 @@
  */
 
 import * as THREE from 'three';
-import { CONFIG } from '../config.js?v=11';
-import { RobotMaterials } from './RobotMaterials.js?v=11';
-import { RobotArm } from './RobotArm.js?v=11';
-import { TargetMapper } from './TargetMapper.js?v=11';
+import { CONFIG } from '../config.js?v=39';
+import { RobotMaterials } from './RobotMaterials.js?v=39';
+import { RobotArm } from './RobotArm.js?v=39';
+import { TargetMapper } from './TargetMapper.js?v=39';
 
 export class RobotController {
     /**
@@ -81,16 +81,15 @@ export class RobotController {
         // Elevation angle gamma of target relative to horizontal plane
         const gamma = Math.atan2(dy, Math.max(r, 0.1));
 
-        // Shoulder Pitch J2: (PI/2) - gamma - psi
-        // Tilts forward from vertical +Y towards +Z
-        const j2Angle = (Math.PI * 0.5) - gamma - psi;
+        // Shoulder Pitch J2: (PI/2) - gamma - psi (Clamped to prevent base collision)
+        const j2Angle = THREE.MathUtils.clamp((Math.PI * 0.5) - gamma - psi, -0.45, 1.30);
 
         // Law of Cosines for Elbow interior angle beta
         const cosBeta = (L2 * L2 + Ldistal * Ldistal - clampedD * clampedD) / (2 * L2 * Ldistal);
         const beta = Math.acos(THREE.MathUtils.clamp(cosBeta, -0.9999, 0.9999));
 
-        // Elbow flex angle J3: Bending FORWARD toward target (positive angle in [0, 115°])
-        const j3Angle = Math.PI - beta;
+        // Elbow flex angle J3: Bending FORWARD toward target (Clamped for joint clearance)
+        const j3Angle = THREE.MathUtils.clamp(Math.PI - beta, 0.08, 1.90);
 
         const j2 = this.arm.getJoint('J2');
         const j3 = this.arm.getJoint('J3');
