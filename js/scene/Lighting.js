@@ -42,7 +42,14 @@ export class Lighting {
         // 1. Ambient Light (Subtle dark environment fill)
         this.ambientLight = new THREE.AmbientLight(
             ambient.color || 0xffffff,
-            ambient.intensity || 0.45
+            ambient.intensity || 0.55
+        );
+
+        // 1.5. Hemisphere Light (Sky/Ground natural fill for physical realism)
+        this.hemisphereLight = new THREE.HemisphereLight(
+            0x8090b0, // Cool blue-grey sky
+            0x1a140e, // Warm dark ground bounce
+            0.35
         );
 
         // 2. Global Directional Key Light (Shadow caster)
@@ -78,10 +85,10 @@ export class Lighting {
 
         // 6. Workbench Task Lights
         this.leftBenchLight = new THREE.PointLight(CONFIG.colors.amber || 0xffb703, 0.4, 6);
-        this.leftBenchLight.position.set(-3.4, -0.4, -2.0);
+        this.leftBenchLight.position.set(-5.8, -0.4, -3.2);
 
         this.rightBenchLight = new THREE.PointLight(0xe2e8f0, 0.35, 6);
-        this.rightBenchLight.position.set(3.4, -0.4, -2.0);
+        this.rightBenchLight.position.set(5.8, -0.4, -3.2);
 
         // =========================================================================
         // 5 PRIMARY CEILING MOUNTED SPOTLIGHTS
@@ -166,6 +173,7 @@ export class Lighting {
         if (!scene) return;
 
         scene.add(this.ambientLight);
+        scene.add(this.hemisphereLight);
         scene.add(this.keyLight);
         scene.add(this.fillLight);
         scene.add(this.rimLight);
