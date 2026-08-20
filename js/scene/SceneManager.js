@@ -24,7 +24,7 @@ export class SceneManager {
         // Orbit Camera Spherical Coordinate System
         this.targetFocus = new THREE.Vector3(0, 0.8, 0);
 
-        this.defaultRadius = CONFIG.camera.position.z || 11.5;
+        this.defaultRadius = CONFIG.camera.position.z || 9.5;
         this.defaultTheta = 0.0; // Azimuth angle (horizontal)
         this.defaultPhi = Math.PI * 0.44; // Polar angle (~79° elevation)
 
@@ -37,13 +37,21 @@ export class SceneManager {
         this.targetPhi = this.defaultPhi;
         this.currentPhi = this.defaultPhi;
 
-        // Orbit & Zoom Limits
-        this.minRadius = 6.5;
-        this.maxRadius = 15.5;
-        this.minTheta = -Math.PI * 0.45; // -81°
-        this.maxTheta = Math.PI * 0.45;  // +81°
-        this.minPhi = 0.25;             // High overhead angle (~14°)
-        this.maxPhi = Math.PI * 0.47;   // Low floor grazing angle (~84.6°, floor-safe)
+        // Orbit & Zoom Limits (Bounded inside 24m x 24m room)
+        this.minRadius = 2.4;
+        this.maxRadius = 10.8;
+        this.minPhi = 0.05;            // Top-down overhead viewing (~2.8°)
+        this.maxPhi = Math.PI * 0.78;  // Upward elevation angle looking up at ceiling gantry (~140°)
+
+        // Room Physical Boundaries (Walls at ±12.0, Floor at -2.0, Ceiling at 7.2)
+        this.roomBounds = {
+            minX: -10.2,
+            maxX: 10.2,
+            minY: -1.0,
+            maxY: 6.2,
+            minZ: -10.2,
+            maxZ: 10.2
+        };
 
         this._initScene();
         this._initCamera();
@@ -57,6 +65,12 @@ export class SceneManager {
      */
     _initScene() {
         this.scene = new THREE.Scene();
+
+        // Deep dark laboratory background — physically correct dark environment
+        this.scene.background = new THREE.Color(0x050709);
+
+        // Distance fog for atmospheric depth falloff (dark industrial haze)
+        this.scene.fog = new THREE.FogExp2(0x050709, 0.012);
     }
 
     /**
@@ -81,7 +95,7 @@ export class SceneManager {
 
         this.renderer = new THREE.WebGLRenderer({
             antialias,
-            alpha,
+            alpha: false,
             powerPreference
         });
 
@@ -97,6 +111,11 @@ export class SceneManager {
         // Shadow map configuration
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // CINEMATIC TONE MAPPING — ACESFilmic for premium industrial render quality
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.15;
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
         // Append canvas to mount container
         this.container.appendChild(this.renderer.domElement);
@@ -149,16 +168,16 @@ export class SceneManager {
     updateCameraParallax(pointer) {
         if (!this.camera || !pointer) return;
 
-        // 1. Process drag orbit input (full 360-degree continuous horizontal rotation)
+        // 1. Process drag orbit input (full 360-degree continuous horizontal rotation & wide vertical range)
         if (pointer.isDragging) {
             this.targetTheta -= pointer.dragDeltaX * 0.0055;
             this.targetPhi -= pointer.dragDeltaY * 0.0055;
         }
 
-        // 2. Process wheel zoom input
-        if (Math.abs(pointer.wheelDelta) > 0.001) {
-            this.targetRadius += pointer.wheelDelta * 0.15;
-            pointer.wheelDelta *= 0.85; // Smooth decay
+        // 2. Process wheel zoom input (Responsive smooth CAD-style zoom)
+        if (Math.abs(pointer.wheelDelta) > 0.0001) {
+            this.targetRadius += pointer.wheelDelta * 1.2;
+            pointer.wheelDelta *= 0.5; // Fast decay for crisp response
         }
 
         // 3. Enforce vertical polar and zoom boundaries (No horizontal clamp - full 360° orbit)
@@ -166,9 +185,9 @@ export class SceneManager {
         this.targetRadius = THREE.MathUtils.clamp(this.targetRadius, this.minRadius, this.maxRadius);
 
         // 4. Smooth Damping Interpolation
-        this.currentTheta += (this.targetTheta - this.currentTheta) * 0.08;
-        this.currentPhi += (this.targetPhi - this.currentPhi) * 0.08;
-        this.currentRadius += (this.targetRadius - this.currentRadius) * 0.08;
+        this.currentTheta += (this.targetTheta - this.currentTheta) * 0.10;
+        this.currentPhi += (this.targetPhi - this.currentPhi) * 0.10;
+        this.currentRadius += (this.targetRadius - this.currentRadius) * 0.10;
 
         // 5. Subtle micro-parallax shift when NOT dragging
         let parallaxX = 0;
@@ -180,12 +199,14 @@ export class SceneManager {
 
         // 6. Convert spherical coordinates to Cartesian camera position
         const sinPhi = Math.sin(this.currentPhi);
-        const camX = this.currentRadius * sinPhi * Math.sin(this.currentTheta) + this.targetFocus.x + parallaxX;
+        const rawCamX = this.currentRadius * sinPhi * Math.sin(this.currentTheta) + this.targetFocus.x + parallaxX;
         const rawCamY = this.currentRadius * Math.cos(this.currentPhi) + this.targetFocus.y + parallaxY;
-        const camZ = this.currentRadius * sinPhi * Math.cos(this.currentTheta) + this.targetFocus.z;
+        const rawCamZ = this.currentRadius * sinPhi * Math.cos(this.currentTheta) + this.targetFocus.z;
 
-        // Floor safety clamp (camera physically cannot pass through the workstation floor)
-        const camY = Math.max(rawCamY, -0.4);
+        // 7. Strict Cartesian Room Boundary Clamping (Camera can NEVER leave room or see through walls)
+        const camX = THREE.MathUtils.clamp(rawCamX, this.roomBounds.minX, this.roomBounds.maxX);
+        const camY = THREE.MathUtils.clamp(rawCamY, this.roomBounds.minY, this.roomBounds.maxY);
+        const camZ = THREE.MathUtils.clamp(rawCamZ, this.roomBounds.minZ, this.roomBounds.maxZ);
 
         this.camera.position.set(camX, camY, camZ);
         this.camera.lookAt(this.targetFocus);
