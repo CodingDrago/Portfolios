@@ -30,7 +30,7 @@ export class WallBackGames {
         this._initChessAIStation();
         this._initPhysicsSimStation();
         this._initArcadeTestTerminal();
-        this._initLabClutter();
+        this._initToolCart();
     }
 
     /**
@@ -59,37 +59,60 @@ export class WallBackGames {
         });
 
         // Horizontal Mounting Rails
-        const railGeom = new THREE.BoxGeometry(24, 0.08, 0.08);
+        // Positioned BEHIND content panels (z = 0.15)
+        const railGeom = new THREE.BoxGeometry(24, 0.05, 0.05);
         [0.6, 2.8, 5.2].forEach(yPos => {
             const rail = new THREE.Mesh(railGeom, railMat);
-            rail.position.set(0, yPos, 0.28);
+            rail.position.set(0, yPos, 0.15);
             this.group.add(rail);
         });
 
         // Section Title Header
         const headerGroup = new THREE.Group();
-        headerGroup.position.set(0, 5.2, 0.35);
+        headerGroup.position.set(0, 5.2, 0.58);
+
+        const backGeom = new THREE.BoxGeometry(7.4, 1.35, 0.06);
+        const backMesh = new THREE.Mesh(backGeom, this.materials.get('instrumentChassis'));
+        headerGroup.add(backMesh);
+
+        const borderGeom = new THREE.EdgesGeometry(backGeom);
+        const borderMat = new THREE.LineBasicMaterial({ color: 0xa78bfa, linewidth: 2 });
+        const border = new THREE.LineSegments(borderGeom, borderMat);
+        border.position.z = 0.035;
+        headerGroup.add(border);
 
         const canvas = document.createElement('canvas');
-        canvas.width = 1024;
-        canvas.height = 160;
+        canvas.width = 2048;
+        canvas.height = 360;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#0a0e16';
-        ctx.fillRect(0, 0, 1024, 160);
+        ctx.fillStyle = '#060a12';
+        ctx.fillRect(0, 0, 2048, 360);
+        ctx.strokeStyle = 'rgba(167, 139, 250, 0.40)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(6, 6, 2036, 348);
+
         ctx.fillStyle = '#a78bfa';
-        ctx.font = 'bold 22px "JetBrains Mono", monospace';
-        ctx.fillText('// SIMULATION ENGINE & EXPERIMENTAL SYSTEMS', 36, 45);
+        ctx.font = 'bold 50px "JetBrains Mono", monospace';
+        ctx.fillText('// SIMULATION ENGINE & EXPERIMENTAL SYSTEMS', 54, 90);
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = '800 52px "Inter", sans-serif';
-        ctx.fillText('GAMES & INTERACTIVE SANDBOX', 36, 110);
+        ctx.font = '800 110px "Inter", sans-serif';
+        ctx.fillText('GAMES & INTERACTIVE SANDBOX', 54, 215);
+
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 40px "JetBrains Mono", monospace';
+        ctx.fillText('● 3 TEST RIGS OPERATIONAL // SIMULATION ACTIVE', 54, 305);
 
         const tex = new THREE.CanvasTexture(canvas);
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+
         const headerMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(6.4, 1.0),
+            new THREE.PlaneGeometry(7.2, 1.25),
             new THREE.MeshBasicMaterial({ map: tex, transparent: true })
         );
+        headerMesh.position.z = 0.04;
         headerGroup.add(headerMesh);
         this.group.add(headerGroup);
     }
@@ -116,7 +139,6 @@ export class WallBackGames {
 
         // Stylized Miniature Chess Pieces (Cylinders & cones)
         const pieceMatWhite = this.materials.get('brushedSteel');
-        const pieceMatBlack = this.materials.get('graphiteWall');
 
         for (let row = 0; row < 2; row++) {
             for (let col = 0; col < 8; col++) {
@@ -131,7 +153,14 @@ export class WallBackGames {
             }
         }
 
-        // Live Chess AI Evaluation Display Canvas (1024x512)
+        // Live Chess AI Evaluation Display Chassis (2.7m x 1.4m x 0.06m)
+        const screenChassis = new THREE.Mesh(
+            new THREE.BoxGeometry(2.7, 1.4, 0.06),
+            this.materials.get('instrumentChassis')
+        );
+        screenChassis.position.set(0, 1.0, 0.44);
+        station.add(screenChassis);
+
         this.chessCanvas = document.createElement('canvas');
         this.chessCanvas.width = 1024;
         this.chessCanvas.height = 512;
@@ -139,12 +168,13 @@ export class WallBackGames {
 
         this.chessTexture = new THREE.CanvasTexture(this.chessCanvas);
         this.chessTexture.minFilter = THREE.LinearFilter;
+        this.chessTexture.magFilter = THREE.LinearFilter;
 
         const screenMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(2.4, 1.2),
-            new THREE.MeshBasicMaterial({ map: this.chessTexture })
+            new THREE.PlaneGeometry(2.6, 1.3),
+            new THREE.MeshBasicMaterial({ map: this.chessTexture, transparent: true })
         );
-        screenMesh.position.set(0, 1.0, 0.2);
+        screenMesh.position.set(0, 1.0, 0.475);
         station.add(screenMesh);
 
         this.group.add(station);
@@ -174,7 +204,14 @@ export class WallBackGames {
         const tube = new THREE.Mesh(tubeGeom, this.materials.get('holoLineAmber'));
         station.add(tube);
 
-        // Live Simulation Canvas Display (1024x512)
+        // Live Simulation Display Chassis (2.7m x 1.4m x 0.06m)
+        const screenChassis = new THREE.Mesh(
+            new THREE.BoxGeometry(2.7, 1.4, 0.06),
+            this.materials.get('instrumentChassis')
+        );
+        screenChassis.position.set(0, 1.0, 0.44);
+        station.add(screenChassis);
+
         this.simCanvas = document.createElement('canvas');
         this.simCanvas.width = 1024;
         this.simCanvas.height = 512;
@@ -182,12 +219,13 @@ export class WallBackGames {
 
         this.simTexture = new THREE.CanvasTexture(this.simCanvas);
         this.simTexture.minFilter = THREE.LinearFilter;
+        this.simTexture.magFilter = THREE.LinearFilter;
 
         const screenMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(2.4, 1.2),
-            new THREE.MeshBasicMaterial({ map: this.simTexture })
+            new THREE.PlaneGeometry(2.6, 1.3),
+            new THREE.MeshBasicMaterial({ map: this.simTexture, transparent: true })
         );
-        screenMesh.position.set(0, 1.0, 0.2);
+        screenMesh.position.set(0, 1.0, 0.475);
         station.add(screenMesh);
 
         this.group.add(station);
@@ -231,62 +269,66 @@ export class WallBackGames {
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#060d09';
+        ctx.fillStyle = '#060a12';
         ctx.fillRect(0, 0, 1024, 512);
         ctx.strokeStyle = '#10b981';
         ctx.lineWidth = 4;
-        ctx.strokeRect(8, 8, 1008, 496);
+        ctx.strokeRect(6, 6, 1012, 500);
 
         ctx.fillStyle = '#10b981';
-        ctx.font = 'bold 36px "JetBrains Mono", monospace';
+        ctx.font = 'bold 48px "JetBrains Mono", monospace';
         ctx.fillText('HARDWARE LOGIC & TEST ARCADE', 48, 85);
 
         ctx.fillStyle = '#ff9d00';
-        ctx.font = 'bold 52px "JetBrains Mono", monospace';
+        ctx.font = 'bold 64px "JetBrains Mono", monospace';
         ctx.fillText('SCORE: 094200 // HIGH: 128000', 48, 185);
 
-        ctx.fillStyle = '#38bdf8';
-        ctx.font = '36px "JetBrains Mono", monospace';
-        ctx.fillText('• 6-DOF INVERSE KINEMATICS TRIAL', 48, 275);
-        ctx.fillText('• 100% HARDWARE LEVEL CONVERGENCE', 48, 340);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = 'bold 44px "JetBrains Mono", monospace';
+        ctx.fillText('• 6-DOF INVERSE KINEMATICS TRIAL', 48, 280);
+        ctx.fillText('• REAL-TIME SERVO RESPONSE MATCH', 48, 355);
 
         ctx.fillStyle = '#10b981';
-        ctx.font = 'bold 32px "JetBrains Mono", monospace';
-        ctx.fillText('● INSERT HARDWARE INTERRUPT TO PLAY', 48, 440);
+        ctx.font = 'bold 38px "JetBrains Mono", monospace';
+        ctx.fillText('● SYSTEM READY // INSERT COIN / CLICK', 48, 450);
 
         const tex = new THREE.CanvasTexture(canvas);
         tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
         const screenMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(2.1, 1.1),
-            new THREE.MeshBasicMaterial({ map: tex })
+            new THREE.PlaneGeometry(2.2, 1.1),
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
         );
-        screenMesh.position.set(0, 0.6, 0.86);
+        screenMesh.position.set(0, 0.6, 0.88);
         termGroup.add(screenMesh);
 
         this.group.add(termGroup);
     }
 
     /**
-     * Create mobile instrument carts and laboratory cable reels
+     * Mobile Equipment / Tool Cart (x = -7.5)
      * @private
      */
-    _initLabClutter() {
-        // Mobile Instrument Cart (x = -7.2, y = -1.2)
+    _initToolCart() {
         const cartGroup = new THREE.Group();
-        cartGroup.position.set(-7.2, -1.2, 0.6);
+        cartGroup.position.set(-7.5, -0.6, 0.45);
 
-        const cartTop = new THREE.Mesh(
-            new THREE.BoxGeometry(1.6, 0.05, 1.0),
-            this.materials.get('workbenchTop')
-        );
-        cartTop.position.y = 0.8;
-        cartGroup.add(cartTop);
+        // 3-Tier Rolling Metal Cart
+        const trayGeom = new THREE.BoxGeometry(1.6, 0.05, 0.8);
+        const trayMat = this.materials.get('workbenchTop');
+        const frameMat = this.materials.get('structuralSteel');
 
-        const cartLegGeom = new THREE.CylinderGeometry(0.02, 0.02, 0.8, 8);
-        const cartLegMat = this.materials.get('brushedSteel');
-        [[-0.7, -0.4], [0.7, -0.4], [-0.7, 0.4], [0.7, 0.4]].forEach(([cx, cz]) => {
-            const leg = new THREE.Mesh(cartLegGeom, cartLegMat);
-            leg.position.set(cx, 0.4, cz);
+        for (let i = 0; i < 3; i++) {
+            const tray = new THREE.Mesh(trayGeom, trayMat);
+            tray.position.set(0, i * 0.45, 0.4);
+            cartGroup.add(tray);
+        }
+
+        // Cart Corner Legs
+        const legGeom = new THREE.CylinderGeometry(0.02, 0.02, 1.2, 8);
+        [[-0.75, 0.05], [0.75, 0.05], [-0.75, 0.75], [0.75, 0.75]].forEach(([lx, lz]) => {
+            const leg = new THREE.Mesh(legGeom, frameMat);
+            leg.position.set(lx, 0.45, lz);
             cartGroup.add(leg);
         });
 
@@ -318,24 +360,27 @@ export class WallBackGames {
 
             ctx.fillStyle = '#060a12';
             ctx.fillRect(0, 0, w, h);
+            ctx.strokeStyle = '#a78bfa';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(6, 6, w - 12, h - 12);
 
             ctx.fillStyle = '#a78bfa';
-            ctx.font = 'bold 36px "JetBrains Mono", monospace';
-            ctx.fillText('CHESS AI // ALPHA-BETA PRUNING', 36, 70);
+            ctx.font = 'bold 48px "JetBrains Mono", monospace';
+            ctx.fillText('CHESS AI // ALPHA-BETA PRUNING', 40, 80);
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 50px "JetBrains Mono", monospace';
+            ctx.font = 'bold 64px "JetBrains Mono", monospace';
             const evalScore = (+1.45 + Math.sin(this.time * 2) * 0.15).toFixed(2);
-            ctx.fillText(`EVAL: +${evalScore} [WHITE ADVANTAGE]`, 36, 170);
+            ctx.fillText(`EVAL: +${evalScore} [WHITE ADVANTAGE]`, 40, 185);
 
-            ctx.fillStyle = '#38bdf8';
-            ctx.font = '34px "JetBrains Mono", monospace';
-            ctx.fillText('DEPTH: 18 PLY · NODES: 2,450 kN/s', 36, 260);
-            ctx.fillText('BEST LINE: 1. e4 e5 2. Nf3 Nc6 3. Bb5', 36, 325);
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = 'bold 44px "JetBrains Mono", monospace';
+            ctx.fillText('DEPTH: 18 PLY · NODES: 2,450 kN/s', 40, 280);
+            ctx.fillText('BEST LINE: 1. e4 e5 2. Nf3 Nc6 3. Bb5', 40, 355);
 
             ctx.fillStyle = '#10b981';
-            ctx.font = 'bold 30px "JetBrains Mono", monospace';
-            ctx.fillText('● ENGINE: ONLINE · 60Hz SEARCH CONVERGED', 36, 440);
+            ctx.font = 'bold 38px "JetBrains Mono", monospace';
+            ctx.fillText('● ENGINE: ONLINE · 60Hz SEARCH CONVERGED', 40, 450);
 
             this.chessTexture.needsUpdate = true;
         }
@@ -346,16 +391,19 @@ export class WallBackGames {
             const w = this.simCanvas.width;
             const h = this.simCanvas.height;
 
-            ctx.fillStyle = '#080c14';
+            ctx.fillStyle = '#060a12';
             ctx.fillRect(0, 0, w, h);
+            ctx.strokeStyle = '#ff9d00';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(6, 6, w - 12, h - 12);
 
             ctx.fillStyle = '#ff9d00';
-            ctx.font = 'bold 36px "JetBrains Mono", monospace';
-            ctx.fillText('KINEMATICS // TRAJECTORY VELOCITY & TORQUE', 36, 70);
+            ctx.font = 'bold 48px "JetBrains Mono", monospace';
+            ctx.fillText('KINEMATICS // TRAJECTORY VELOCITY & TORQUE', 40, 80);
 
             // Dynamic sine curve
             ctx.strokeStyle = '#ff9d00';
-            ctx.lineWidth = 3.5;
+            ctx.lineWidth = 4;
             ctx.beginPath();
             for (let x = 0; x < w; x++) {
                 const y = 260 + Math.sin(x * 0.02 + this.time * 4) * 80;
@@ -365,8 +413,8 @@ export class WallBackGames {
             ctx.stroke();
 
             ctx.fillStyle = '#10b981';
-            ctx.font = 'bold 30px "JetBrains Mono", monospace';
-            ctx.fillText('● GRAVITY COMPENSATION: ACTIVE (±0.01 Nm)', 36, 440);
+            ctx.font = 'bold 38px "JetBrains Mono", monospace';
+            ctx.fillText('● GRAVITY COMPENSATION: ACTIVE (±0.01 Nm)', 40, 450);
 
             this.simTexture.needsUpdate = true;
         }
