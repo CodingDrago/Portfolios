@@ -28,7 +28,7 @@ export class Workbench {
             powerSupply: null,
             reworkStation: null,
             mcuPrototype: null,
-            opticalBreadboard: null,
+            calibrationRig: null,
             logicAnalyzer: null
         };
 
@@ -37,17 +37,17 @@ export class Workbench {
     }
 
     /**
-     * Build Left Wing: Electronics, Embedded Systems & Rework Workstation
+     * Build Left Wing: Electronics, Embedded Systems & Rework Workstation (x = -5.8, z = -3.4)
      * @private
      */
     _initLeftElectronicsBench() {
         const leftGroup = new THREE.Group();
         leftGroup.name = 'ElectronicsBench';
 
-        // 1. Heavy Industrial Tabletop (Matte dark composite, x = -3.4, y = -1.0, z = -2.4)
+        // 1. Heavy Industrial Tabletop (Matte dark composite, x = -5.8, y = -1.0, z = -3.4)
         const tableTopGeom = new THREE.BoxGeometry(2.5, 0.08, 2.2);
         const tableTopMesh = new THREE.Mesh(tableTopGeom, this.materials.get('workbenchTop'));
-        tableTopMesh.position.set(-3.4, -1.0, -2.4);
+        tableTopMesh.position.set(-5.8, -1.0, -3.4);
         tableTopMesh.castShadow = true;
         tableTopMesh.receiveShadow = true;
         leftGroup.add(tableTopMesh);
@@ -55,13 +55,13 @@ export class Workbench {
         // 1.5. Antistatic ESD Bench Mat (Dark Blue-Grey with grounded snap)
         const esdMatGeom = new THREE.BoxGeometry(2.3, 0.01, 2.0);
         const esdMatMesh = new THREE.Mesh(esdMatGeom, this.materials.get('esdMat'));
-        esdMatMesh.position.set(-3.4, -0.955, -2.4);
+        esdMatMesh.position.set(-5.8, -0.955, -3.4);
         leftGroup.add(esdMatMesh);
 
         // Grounding Snap Rivet
         const snapGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.015, 12);
         const snap = new THREE.Mesh(snapGeom, this.materials.get('brushedSteel'));
-        snap.position.set(-2.4, -0.945, -1.5);
+        snap.position.set(-4.8, -0.945, -2.5);
         leftGroup.add(snap);
 
         // 2. Extruded Black Anodized T-Slot Aluminum Legs & Frame
@@ -69,10 +69,10 @@ export class Workbench {
         const legMat = this.materials.get('workbenchFrame');
 
         const legPositions = [
-            [-4.55, -1.52, -1.4],
-            [-2.25, -1.52, -1.4],
-            [-4.55, -1.52, -3.4],
-            [-2.25, -1.52, -3.4]
+            [-6.95, -1.52, -2.4],
+            [-4.65, -1.52, -2.4],
+            [-6.95, -1.52, -4.4],
+            [-4.65, -1.52, -4.4]
         ];
 
         legPositions.forEach(([x, y, z]) => {
@@ -85,9 +85,9 @@ export class Workbench {
         // Lower Stiffener Crossbars
         const crossbarGeomX = new THREE.BoxGeometry(2.3, 0.05, 0.05);
         const barFront = new THREE.Mesh(crossbarGeomX, legMat);
-        barFront.position.set(-3.4, -1.75, -1.4);
+        barFront.position.set(-5.8, -1.75, -2.4);
         const barBack = new THREE.Mesh(crossbarGeomX, legMat);
-        barBack.position.set(-3.4, -1.75, -3.4);
+        barBack.position.set(-5.8, -1.75, -4.4);
         leftGroup.add(barFront, barBack);
 
         // 3. Digital Storage Oscilloscope with Live Animated CRT Screen
@@ -116,8 +116,8 @@ export class Workbench {
     _initOscilloscope(parent) {
         const scopeGroup = new THREE.Group();
         scopeGroup.name = 'Oscilloscope';
-        scopeGroup.position.set(-3.9, -0.78, -2.7);
-        scopeGroup.rotation.y = 0.26; // Angled 15° toward center
+        scopeGroup.position.set(-6.3, -0.78, -3.8);
+        scopeGroup.rotation.y = 0.28;
 
         // Instrument Chassis (Dark Industrial Blue-Grey)
         const bodyGeom = new THREE.BoxGeometry(0.56, 0.32, 0.32);
@@ -193,7 +193,7 @@ export class Workbench {
     _initPowerSupply(parent) {
         const psuGroup = new THREE.Group();
         psuGroup.name = 'PowerSupply';
-        psuGroup.position.set(-3.05, -0.80, -2.8);
+        psuGroup.position.set(-5.3, -0.80, -3.8);
         psuGroup.rotation.y = 0.12;
 
         // Main Chassis
@@ -256,7 +256,7 @@ export class Workbench {
     _initReworkStation(parent) {
         const reworkGroup = new THREE.Group();
         reworkGroup.name = 'ReworkStation';
-        reworkGroup.position.set(-4.2, -0.84, -1.9);
+        reworkGroup.position.set(-6.6, -0.84, -3.0);
         reworkGroup.rotation.y = 0.40;
 
         // Base Unit
@@ -297,7 +297,7 @@ export class Workbench {
     _initMCUPrototype(parent) {
         const pcbGroup = new THREE.Group();
         pcbGroup.name = 'MCUPrototype';
-        pcbGroup.position.set(-2.8, -0.94, -1.8);
+        pcbGroup.position.set(-5.2, -0.94, -2.8);
         pcbGroup.rotation.y = -0.15;
 
         // Main FR4 PCB Substrate (0.32 x 0.22)
@@ -376,28 +376,28 @@ export class Workbench {
             opacity: 0.6
         });
         const trayMesh = new THREE.Mesh(trayGeom, trayMat);
-        trayMesh.position.set(-4.0, -0.94, -1.35);
+        trayMesh.position.set(-6.4, -0.94, -2.4);
         trayMesh.castShadow = true;
         toolsGroup.add(trayMesh);
 
         // Internal Compartment Dividers
         const divGeomX = new THREE.BoxGeometry(0.36, 0.035, 0.01);
         const div1 = new THREE.Mesh(divGeomX, this.materials.get('instrumentDial'));
-        div1.position.set(-4.0, -0.938, -1.35);
+        div1.position.set(-6.4, -0.938, -2.4);
         toolsGroup.add(div1);
 
         // Precision Digital Calipers on Benchtop
         const caliperBarGeom = new THREE.BoxGeometry(0.28, 0.008, 0.02);
         const caliperMat = this.materials.get('brushedSteel');
         const caliperMesh = new THREE.Mesh(caliperBarGeom, caliperMat);
-        caliperMesh.position.set(-2.6, -0.95, -1.35);
+        caliperMesh.position.set(-5.0, -0.95, -2.35);
         caliperMesh.rotation.y = 0.35;
         toolsGroup.add(caliperMesh);
 
         // Digital Multimeter (DMM) with Holster
         const dmmGeom = new THREE.BoxGeometry(0.16, 0.06, 0.26);
         const dmmMesh = new THREE.Mesh(dmmGeom, this.materials.get('instrumentChassis'));
-        dmmMesh.position.set(-3.3, -0.92, -1.4);
+        dmmMesh.position.set(-5.7, -0.92, -2.4);
         dmmMesh.rotation.y = -0.2;
         toolsGroup.add(dmmMesh);
 
@@ -407,33 +407,33 @@ export class Workbench {
             new THREE.MeshBasicMaterial({ color: 0x0a1410 })
         );
         dmmScreen.rotation.x = -Math.PI / 2;
-        dmmScreen.position.set(-3.3, -0.888, -1.45);
+        dmmScreen.position.set(-5.7, -0.888, -2.45);
         toolsGroup.add(dmmScreen);
 
         // Coiled Probe Leads (Red + Black)
         const leadGeom = new THREE.CylinderGeometry(0.006, 0.006, 0.18, 8);
         leadGeom.rotateX(0.4);
         const redLead = new THREE.Mesh(leadGeom, new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-        redLead.position.set(-3.18, -0.90, -1.35);
+        redLead.position.set(-5.58, -0.90, -2.35);
         const blackLead = new THREE.Mesh(leadGeom, new THREE.MeshStandardMaterial({ color: 0x1e293b }));
-        blackLead.position.set(-3.22, -0.90, -1.35);
+        blackLead.position.set(-5.62, -0.90, -2.35);
         toolsGroup.add(redLead, blackLead);
 
         parent.add(toolsGroup);
     }
 
     /**
-     * Build Right Wing: Robotics Calibration & Testing Fixture Bench
+     * Build Right Wing: Robotics Calibration & Testing Fixture Bench (x = +5.8, z = -3.4)
      * @private
      */
     _initRightRoboticsBench() {
         const rightGroup = new THREE.Group();
         rightGroup.name = 'RoboticsBench';
 
-        // 1. Heavy Industrial Tabletop (Matte dark composite, x = 3.4, y = -1.0, z = -2.4)
+        // 1. Heavy Industrial Tabletop (Matte dark composite, x = 5.8, y = -1.0, z = -3.4)
         const tableTopGeom = new THREE.BoxGeometry(2.5, 0.08, 2.2);
         const tableTopMesh = new THREE.Mesh(tableTopGeom, this.materials.get('workbenchTop'));
-        tableTopMesh.position.set(3.4, -1.0, -2.4);
+        tableTopMesh.position.set(5.8, -1.0, -3.4);
         tableTopMesh.castShadow = true;
         tableTopMesh.receiveShadow = true;
         rightGroup.add(tableTopMesh);
@@ -441,7 +441,7 @@ export class Workbench {
         // 1.5. Antistatic ESD Bench Mat (Dark Blue-Grey with grounded snap)
         const esdMatGeom = new THREE.BoxGeometry(2.3, 0.01, 2.0);
         const esdMatMesh = new THREE.Mesh(esdMatGeom, this.materials.get('esdMat'));
-        esdMatMesh.position.set(3.4, -0.955, -2.4);
+        esdMatMesh.position.set(5.8, -0.955, -3.4);
         rightGroup.add(esdMatMesh);
 
         // 2. Extruded Black Anodized T-Slot Aluminum Legs
@@ -449,10 +449,10 @@ export class Workbench {
         const legMat = this.materials.get('workbenchFrame');
 
         const legPositions = [
-            [2.25, -1.52, -1.4],
-            [4.55, -1.52, -1.4],
-            [2.25, -1.52, -3.4],
-            [4.55, -1.52, -3.4]
+            [4.65, -1.52, -2.4],
+            [6.95, -1.52, -2.4],
+            [4.65, -1.52, -4.4],
+            [6.95, -1.52, -4.4]
         ];
 
         legPositions.forEach(([x, y, z]) => {
@@ -462,33 +462,56 @@ export class Workbench {
             rightGroup.add(leg);
         });
 
-        // 3. Precision Optical Breadboard Matrix Plate (Anodized Aluminum with Threaded Matrix)
-        const breadboardGeom = new THREE.BoxGeometry(1.9, 0.03, 1.4);
+        // 3. Precision Optical Breadboard Matrix Plate (NON-INTERACTIVE background table surface)
+        const breadboardGeom = new THREE.BoxGeometry(2.0, 0.03, 1.6);
         const breadboardMesh = new THREE.Mesh(breadboardGeom, this.materials.get('opticalBreadboard'));
-        breadboardMesh.position.set(3.4, -0.94, -2.3);
+        breadboardMesh.position.set(5.8, -0.94, -3.4);
         breadboardMesh.castShadow = true;
         breadboardMesh.receiveShadow = true;
         rightGroup.add(breadboardMesh);
-        this.interactiveObjects.opticalBreadboard = breadboardMesh;
 
-        // 4. Optical Target Calibration Fiducial Cube
+        // 4. Optical Target Calibration Fiducial Rig (DEDICATED INTERACTIVE TARGET)
+        const calibrationRig = new THREE.Group();
+        calibrationRig.name = 'CalibrationRig';
+        calibrationRig.position.set(5.2, -0.92, -3.1);
+        calibrationRig.rotation.y = 0.35;
+
+        // Base Fixture Riser Block
+        const riserGeom = new THREE.BoxGeometry(0.36, 0.04, 0.36);
+        const riserMesh = new THREE.Mesh(riserGeom, this.materials.get('instrumentChassis'));
+        riserMesh.position.set(0, 0.02, 0);
+        riserMesh.castShadow = true;
+        calibrationRig.add(riserMesh);
+
+        // Calibration Fiducial Target Cube (Sub-millimeter calibrated)
         const cubeGeom = new THREE.BoxGeometry(0.24, 0.24, 0.24);
         const cubeMesh = new THREE.Mesh(cubeGeom, this.materials.get('titaniumPivot'));
-        cubeMesh.position.set(2.8, -0.80, -2.0);
-        cubeMesh.rotation.y = 0.45;
+        cubeMesh.position.set(0, 0.16, 0);
         cubeMesh.castShadow = true;
-        rightGroup.add(cubeMesh);
+        calibrationRig.add(cubeMesh);
 
-        // Calibration Fiducial Crosshairs (Brushed Steel ring)
+        // Calibration Fiducial Crosshairs (Target Ring)
         const fiducialGeom = new THREE.TorusGeometry(0.08, 0.008, 8, 16);
         const fiducialMesh = new THREE.Mesh(fiducialGeom, this.materials.get('amberAccent'));
-        fiducialMesh.position.set(2.8, -0.80, -1.87);
-        fiducialMesh.rotation.y = 0.45;
-        rightGroup.add(fiducialMesh);
+        fiducialMesh.position.set(0, 0.16, 0.125);
+        calibrationRig.add(fiducialMesh);
+
+        // Corner Alignment Pins
+        const pinGeom = new THREE.CylinderGeometry(0.006, 0.006, 0.06, 8);
+        const pinMat = this.materials.get('brushedSteel');
+        [[-0.14, -0.14], [0.14, -0.14], [-0.14, 0.14], [0.14, 0.14]].forEach(([px, pz]) => {
+            const pin = new THREE.Mesh(pinGeom, pinMat);
+            pin.position.set(px, 0.05, pz);
+            calibrationRig.add(pin);
+        });
+
+        rightGroup.add(calibrationRig);
+        this.interactiveObjects.calibrationRig = calibrationRig;
 
         // 5. Logic Analyzer & CAN Bus Diagnostic Unit with Multi-Channel Blinking LEDs
         const logicGroup = new THREE.Group();
-        logicGroup.position.set(3.8, -0.88, -2.5);
+        logicGroup.name = 'LogicAnalyzer';
+        logicGroup.position.set(6.3, -0.88, -3.7);
         logicGroup.rotation.y = -0.20;
 
         const logicBoxGeom = new THREE.BoxGeometry(0.34, 0.10, 0.22);
