@@ -146,7 +146,7 @@ export class ObjectInteractionManager {
      */
     _bindClick() {
         window.addEventListener('click', (event) => {
-            if (!this.isEnabled || !this.hoveredTarget) return;
+            if (!this.isEnabled) return;
 
             // Only trigger if click wasn't consumed by UI element
             const targetEl = event.target;
@@ -154,9 +154,29 @@ export class ObjectInteractionManager {
                 return;
             }
 
-            // Notify subscribers of clicked target
-            const target = this.hoveredTarget;
-            this.clickListeners.forEach(listener => listener(target));
+            let clickedTarget = this.hoveredTarget;
+
+            // Direct raycast on click coordinates to eliminate any frame-delay race condition
+            if (!clickedTarget && this.camera && this.targetMeshes.length > 0) {
+                const clickNDC = new THREE.Vector2(
+                    (event.clientX / window.innerWidth) * 2.0 - 1.0,
+                    -(event.clientY / window.innerHeight) * 2.0 + 1.0
+                );
+                this.raycaster.setFromCamera(clickNDC, this.camera);
+                const intersects = this.raycaster.intersectObjects(this.targetMeshes, false);
+                if (intersects.length > 0) {
+                    for (const hit of intersects) {
+                        if (hit.object.userData && hit.object.userData.interactiveTarget) {
+                            clickedTarget = hit.object.userData.interactiveTarget;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (clickedTarget) {
+                this.clickListeners.forEach(listener => listener(clickedTarget));
+            }
         });
     }
 
@@ -174,33 +194,41 @@ export class ObjectInteractionManager {
      * @param {THREE.Vector3} [config.boundsSize] Tight physical bounding dimensions
      * @param {Function} [config.getData] Dynamic parameters callback
      */
+    /**
+     * Register an interactive 3D object with strict per-mesh material isolation
+     * @param {Object} config 
+     * @param {string} config.id Unique identifier
+     * @param {string} config.title Display title
+     * @param {string} config.category Engineering discipline category
+     * @param {string} config.description Concise engineering summary
+     * @param {Array<string>} [config.features] List of key features/bullet points
+     * @param {Object} [config.technicalData] Key-value dictionary of specs
+     * @param {THREE.Object3D} config.mesh 3D Mesh / Group for collision
+     * @param {THREE.Vector3} config.anchorPoint World-space connection point for prompt
+     * @param {Function} [config.getData] Dynamic parameters callback
+     */
     registerTarget(config) {
-        if (!config) return;
+        if (!config || !config.mesh) return;
 
         this.interactiveTargets.push(config);
 
-        // Collect all child meshes from the object for precise raycasting
-        if (config.mesh) {
-            config.mesh.traverse((child) => {
-                if (child.isMesh) {
-                    child.userData.targetConfig = config;
-                    this.targetMeshes.push(child);
+        // Collect all physical child meshes and isolate their materials to prevent shared-material mutation
+        config.mesh.traverse((child) => {
+            if (child.isMesh) {
+                // Clone material so changes to this interactive object never bleed into walls, rails, or architecture
+                if (child.material && config.id !== 'robot') {
+                    if (Array.isArray(child.material)) {
+                        child.material = child.material.map(m => m.clone());
+                    } else {
+                        child.material = child.material.clone();
+                    }
                 }
-            });
-        }
 
-        // Bounding volume for reliable raycasting hitbox
-        const bounds = config.boundsSize || new THREE.Vector3(0.6, 0.4, 0.5);
-        const boundGeom = new THREE.BoxGeometry(bounds.x, bounds.y, bounds.z);
-        const boundMat = new THREE.MeshBasicMaterial({ visible: false });
-        const boundMesh = new THREE.Mesh(boundGeom, boundMat);
-        boundMesh.position.copy(config.anchorPoint || new THREE.Vector3(0, 0, 0));
-        boundMesh.userData.targetConfig = config;
-
-        if (this.scene) {
-            this.scene.add(boundMesh);
-        }
-        this.targetMeshes.push(boundMesh);
+                child.userData.interactiveTarget = config;
+                child.userData.interactiveRootId = config.id;
+                this.targetMeshes.push(child);
+            }
+        });
     }
 
     /**
@@ -229,7 +257,7 @@ export class ObjectInteractionManager {
     }
 
     /**
-     * Clear active hover state and restore meshes
+     * Clear active hover state and restore meshes immediately
      * @private
      */
     _clearHover() {
@@ -259,23 +287,26 @@ export class ObjectInteractionManager {
 
         target.mesh.traverse((child) => {
             if (child.isMesh && child.material) {
-                const mat = child.material;
-                if (mat.emissive) {
-                    if (!this.originalEmissives.has(child)) {
-                        this.originalEmissives.set(child, {
-                            color: mat.emissive.clone(),
-                            intensity: mat.emissiveIntensity !== undefined ? mat.emissiveIntensity : 0
-                        });
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach(mat => {
+                    if (mat && mat.emissive) {
+                        if (!this.originalEmissives.has(mat)) {
+                            this.originalEmissives.set(mat, {
+                                color: mat.emissive.clone(),
+                                intensity: mat.emissiveIntensity !== undefined ? mat.emissiveIntensity : 0
+                            });
+                        }
+                        const orig = this.originalEmissives.get(mat);
+                        mat.emissive.lerpColors(orig.color, amberColor, intensity * 0.25);
+                        mat.emissiveIntensity = THREE.MathUtils.lerp(orig.intensity, 0.35, intensity);
                     }
-                    mat.emissive.lerpColors(this.originalEmissives.get(child).color, amberColor, intensity * 0.25);
-                    mat.emissiveIntensity = THREE.MathUtils.lerp(this.originalEmissives.get(child).intensity, 0.35, intensity);
-                }
+                });
             }
         });
     }
 
     /**
-     * Restore original mesh emissive properties
+     * Restore original mesh emissive properties immediately
      * @private
      * @param {Object} target 
      */
@@ -286,19 +317,24 @@ export class ObjectInteractionManager {
         if (target.id === 'robot') return;
 
         target.mesh.traverse((child) => {
-            if (child.isMesh && child.material && this.originalEmissives.has(child)) {
-                const orig = this.originalEmissives.get(child);
-                child.material.emissive.copy(orig.color);
-                if (child.material.emissiveIntensity !== undefined) {
-                    child.material.emissiveIntensity = orig.intensity;
-                }
-                this.originalEmissives.delete(child);
+            if (child.isMesh && child.material) {
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach(mat => {
+                    if (mat && this.originalEmissives.has(mat)) {
+                        const orig = this.originalEmissives.get(mat);
+                        mat.emissive.copy(orig.color);
+                        if (mat.emissiveIntensity !== undefined) {
+                            mat.emissiveIntensity = orig.intensity;
+                        }
+                        this.originalEmissives.delete(mat);
+                    }
+                });
             }
         });
     }
 
     /**
-     * Per-frame update: Raycast against interactive meshes and animate spatial hover prompt
+     * Per-frame update: Raycast against ONLY registered target meshes and animate spatial hover prompt
      * @param {number} deltaTime 
      * @param {Object} pointerTracker 
      * @param {SpatialCursor} [spatialCursor] 
@@ -309,7 +345,7 @@ export class ObjectInteractionManager {
             return;
         }
 
-        // Raycasting
+        // Raycasting against registered interactive meshes only
         let hitTarget = null;
         if (pointerTracker.hasMovedEver && !pointerTracker.isDragging) {
             this.mouseNDC.set(pointerTracker.normalizedX, pointerTracker.normalizedY);
@@ -318,58 +354,79 @@ export class ObjectInteractionManager {
             const intersects = this.raycaster.intersectObjects(this.targetMeshes, false);
             if (intersects.length > 0) {
                 for (const hit of intersects) {
-                    if (hit.object.userData && hit.object.userData.targetConfig) {
-                        hitTarget = hit.object.userData.targetConfig;
+                    if (hit.object.userData && hit.object.userData.interactiveTarget) {
+                        hitTarget = hit.object.userData.interactiveTarget;
                         break;
                     }
                 }
             }
         }
 
-        // Hover State Transitions
+        // Hover State Transitions (Strict: 0 or 1 object active)
         if (hitTarget) {
             if (this.hoveredTarget !== hitTarget) {
                 if (this.hoveredTarget) {
                     this._restoreMeshHighlight(this.hoveredTarget);
                 }
                 this.hoveredTarget = hitTarget;
+                this.hoverProgress = 1.0;
             }
 
-            this.hoverProgress = Math.min(1.0, this.hoverProgress + deltaTime * 8.0);
             this._applyMeshHighlight(this.hoveredTarget, this.hoverProgress);
 
             if (spatialCursor) {
                 spatialCursor.setMode('hover', 'EXPLORE');
             }
+
+            // Position and billboard the 3D prompt
+            if (this.promptGroup && this.promptMesh) {
+                this.promptGroup.visible = true;
+                this.promptMesh.material.opacity = 1.0;
+
+                // Calculate bounding center of physical target
+                const box = new THREE.Box3().setFromObject(this.hoveredTarget.mesh);
+                const targetCenter = new THREE.Vector3();
+                box.getCenter(targetCenter);
+                const promptY = Math.max(targetCenter.y + 0.35, box.max.y + 0.20);
+
+                this.promptGroup.position.set(targetCenter.x, promptY, targetCenter.z);
+
+                // Billboard smoothly toward camera
+                this.promptGroup.quaternion.copy(this.camera.quaternion);
+            }
         } else {
-            this.hoverProgress = Math.max(0.0, this.hoverProgress - deltaTime * 6.0);
+            // No hit: Instantly clear hover
             if (this.hoveredTarget) {
-                this._applyMeshHighlight(this.hoveredTarget, this.hoverProgress);
-                if (this.hoverProgress <= 0.0) {
-                    this._restoreMeshHighlight(this.hoveredTarget);
-                    this.hoveredTarget = null;
-                }
+                this._restoreMeshHighlight(this.hoveredTarget);
+                this.hoveredTarget = null;
+            }
+            this.hoverProgress = 0.0;
+
+            if (spatialCursor) {
+                spatialCursor.setMode('default');
             }
 
-            if (spatialCursor && !pointerTracker.isDragging) {
-                spatialCursor.setMode('default');
+            if (this.promptGroup && this.promptMesh) {
+                this.promptGroup.visible = false;
+                this.promptMesh.material.opacity = 0.0;
             }
         }
 
-        // Update 3D Spatial Prompt
+        // Update 3D Spatial Prompt position, scale and billboarding
         if (this.promptGroup && this.hoveredTarget && this.hoverProgress > 0.01) {
             this.promptGroup.visible = true;
 
-            // Position prompt slightly above object anchor point
-            let anchor = this.hoveredTarget.anchorPoint
-                ? this.hoveredTarget.anchorPoint.clone()
-                : new THREE.Vector3(0, 0, 0);
-
-            // Dynamic anchor for robot arm shoulder
-            if (this.hoveredTarget.id === 'robot' && this.hoveredTarget.mesh) {
-                anchor.set(0, 1.8, 0);
-            } else {
-                anchor.y += 0.45;
+            // Anchor point
+            let anchor = new THREE.Vector3();
+            if (this.hoveredTarget.id === 'robot') {
+                anchor.set(0, 1.6, 0);
+            } else if (this.hoveredTarget.mesh) {
+                const box = new THREE.Box3().setFromObject(this.hoveredTarget.mesh);
+                box.getCenter(anchor);
+                anchor.y = Math.max(anchor.y + 0.35, box.max.y + 0.18);
+            } else if (this.hoveredTarget.anchorPoint) {
+                anchor.copy(this.hoveredTarget.anchorPoint);
+                anchor.y += 0.35;
             }
 
             this.promptGroup.position.copy(anchor);
@@ -377,12 +434,11 @@ export class ObjectInteractionManager {
             // Billboard towards camera
             this.promptGroup.quaternion.copy(this.camera.quaternion);
 
-            // Adaptive scale based on camera distance
+            // Distance adaptive scale
             const dist = this.camera.position.distanceTo(anchor);
-            const scale = THREE.MathUtils.clamp(dist / 10.0, 0.75, 1.3);
+            const scale = THREE.MathUtils.clamp(dist / 9.0, 0.75, 1.25);
             this.promptGroup.scale.set(scale, scale, scale);
 
-            // Opacity
             if (this.promptMesh && this.promptMesh.material) {
                 this.promptMesh.material.opacity = THREE.MathUtils.smoothstep(this.hoverProgress, 0, 1) * 0.95;
             }
