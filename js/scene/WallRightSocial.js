@@ -52,37 +52,60 @@ export class WallRightSocial {
         });
 
         // Horizontal Cable Routing Trays (y = -0.5, 1.8, 4.2, 6.2)
-        const strutGeom = new THREE.BoxGeometry(24, 0.08, 0.08);
+        // Positioned BEHIND content panels (z = 0.15)
+        const strutGeom = new THREE.BoxGeometry(24, 0.05, 0.05);
         [-0.5, 1.8, 4.2, 6.2].forEach(yPos => {
             const strut = new THREE.Mesh(strutGeom, railMat);
-            strut.position.set(0, yPos, 0.28);
+            strut.position.set(0, yPos, 0.15);
             this.group.add(strut);
         });
 
         // Section Title Header
         const headerGroup = new THREE.Group();
-        headerGroup.position.set(0, 5.2, 0.35);
+        headerGroup.position.set(0, 5.2, 0.58);
+
+        const backGeom = new THREE.BoxGeometry(7.4, 1.35, 0.06);
+        const backMesh = new THREE.Mesh(backGeom, this.materials.get('instrumentChassis'));
+        headerGroup.add(backMesh);
+
+        const borderGeom = new THREE.EdgesGeometry(backGeom);
+        const borderMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 2 });
+        const border = new THREE.LineSegments(borderGeom, borderMat);
+        border.position.z = 0.035;
+        headerGroup.add(border);
 
         const canvas = document.createElement('canvas');
-        canvas.width = 1024;
-        canvas.height = 160;
+        canvas.width = 2048;
+        canvas.height = 360;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#0a0e16';
-        ctx.fillRect(0, 0, 1024, 160);
-        ctx.fillStyle = '#ff9d00';
-        ctx.font = 'bold 22px "JetBrains Mono", monospace';
-        ctx.fillText('// TELEMETRY & PROFESSIONAL NETWORK', 36, 45);
+        ctx.fillStyle = '#060a12';
+        ctx.fillRect(0, 0, 2048, 360);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.40)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(6, 6, 2036, 348);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 50px "JetBrains Mono", monospace';
+        ctx.fillText('// TELEMETRY & PROFESSIONAL NETWORK INTERFACES', 54, 90);
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = '800 52px "Inter", sans-serif';
-        ctx.fillText('COMMUNICATION GATEWAYS', 36, 110);
+        ctx.font = '800 110px "Inter", sans-serif';
+        ctx.fillText('COMMUNICATION GATEWAYS', 54, 215);
+
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 40px "JetBrains Mono", monospace';
+        ctx.fillText('● 3 GATEWAYS ONLINE // 100% LINK QUALITY', 54, 305);
 
         const tex = new THREE.CanvasTexture(canvas);
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+
         const headerMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(6.4, 1.0),
+            new THREE.PlaneGeometry(7.2, 1.25),
             new THREE.MeshBasicMaterial({ map: tex, transparent: true })
         );
+        headerMesh.position.z = 0.04;
         headerGroup.add(headerMesh);
         this.group.add(headerGroup);
     }
@@ -135,36 +158,37 @@ export class WallRightSocial {
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#050810';
+        ctx.fillStyle = '#060a12';
         ctx.fillRect(0, 0, 1024, 512);
         ctx.strokeStyle = '#ff9d00';
         ctx.lineWidth = 4;
-        ctx.strokeRect(8, 8, 1008, 496);
+        ctx.strokeRect(6, 6, 1012, 500);
 
         ctx.fillStyle = '#ff9d00';
-        ctx.font = 'bold 36px "JetBrains Mono", monospace';
+        ctx.font = 'bold 48px "JetBrains Mono", monospace';
         ctx.fillText('NODE: GITHUB / REPOSITORY GATEWAY', 48, 85);
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 56px "JetBrains Mono", monospace';
+        ctx.font = 'bold 68px "JetBrains Mono", monospace';
         ctx.fillText('github.com/gunal', 48, 185);
 
-        ctx.fillStyle = '#38bdf8';
-        ctx.font = '36px "JetBrains Mono", monospace';
-        ctx.fillText('• 32 REPOSITORIES [OPEN-SOURCE]', 48, 275);
-        ctx.fillText('• EMBEDDED C/C++ · PYTHON · ROS 2', 48, 340);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = 'bold 44px "JetBrains Mono", monospace';
+        ctx.fillText('• 32 REPOSITORIES [OPEN-SOURCE]', 48, 280);
+        ctx.fillText('• EMBEDDED C/C++ · PYTHON · ROS 2', 48, 355);
 
         ctx.fillStyle = '#10b981';
-        ctx.font = 'bold 32px "JetBrains Mono", monospace';
-        ctx.fillText('● CI/CD PIPELINE: PASSED (100% HEALTH)', 48, 440);
+        ctx.font = 'bold 38px "JetBrains Mono", monospace';
+        ctx.fillText('● CI/CD PIPELINE: PASSED (100% HEALTH)', 48, 450);
 
         const tex = new THREE.CanvasTexture(canvas);
         tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
         const screenMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(2.0, 1.0),
-            new THREE.MeshBasicMaterial({ map: tex })
+            new THREE.PlaneGeometry(2.1, 1.05),
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
         );
-        screenMesh.position.set(0, 2.0, 0.86);
+        screenMesh.position.set(0, 2.0, 0.88);
         rackGroup.add(screenMesh);
 
         this.group.add(rackGroup);
@@ -190,36 +214,37 @@ export class WallRightSocial {
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#050810';
+        ctx.fillStyle = '#060a12';
         ctx.fillRect(0, 0, 1024, 512);
         ctx.strokeStyle = '#38bdf8';
         ctx.lineWidth = 4;
-        ctx.strokeRect(8, 8, 1008, 496);
+        ctx.strokeRect(6, 6, 1012, 500);
 
         ctx.fillStyle = '#38bdf8';
-        ctx.font = 'bold 36px "JetBrains Mono", monospace';
+        ctx.font = 'bold 48px "JetBrains Mono", monospace';
         ctx.fillText('NODE: LINKEDIN / PROFESSIONAL NETWORK', 48, 85);
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 56px "JetBrains Mono", monospace';
+        ctx.font = 'bold 68px "JetBrains Mono", monospace';
         ctx.fillText('linkedin.com/in/gunal', 48, 185);
 
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '36px "JetBrains Mono", monospace';
-        ctx.fillText('• HARDWARE & EMBEDDED R&D', 48, 275);
-        ctx.fillText('• ROBOTICS & APPLIED ML SYSTEMS', 48, 340);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = 'bold 44px "JetBrains Mono", monospace';
+        ctx.fillText('• HARDWARE & EMBEDDED R&D', 48, 280);
+        ctx.fillText('• ROBOTICS & APPLIED ML SYSTEMS', 48, 355);
 
         ctx.fillStyle = '#38bdf8';
-        ctx.font = 'bold 32px "JetBrains Mono", monospace';
-        ctx.fillText('● NETWORK STATUS: CONNECTED & OPEN', 48, 440);
+        ctx.font = 'bold 38px "JetBrains Mono", monospace';
+        ctx.fillText('● NETWORK STATUS: CONNECTED & OPEN', 48, 450);
 
         const tex = new THREE.CanvasTexture(canvas);
         tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
         const screenMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(1.9, 0.95),
-            new THREE.MeshBasicMaterial({ map: tex })
+            new THREE.PlaneGeometry(2.0, 1.0),
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
         );
-        screenMesh.position.set(0, 0.3, 0.73);
+        screenMesh.position.set(0, 0.3, 0.75);
         nodeGroup.add(screenMesh);
 
         this.group.add(nodeGroup);
@@ -246,36 +271,37 @@ export class WallRightSocial {
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#050810';
+        ctx.fillStyle = '#060a12';
         ctx.fillRect(0, 0, 1024, 512);
         ctx.strokeStyle = '#10b981';
         ctx.lineWidth = 4;
-        ctx.strokeRect(8, 8, 1008, 496);
+        ctx.strokeRect(6, 6, 1012, 500);
 
         ctx.fillStyle = '#10b981';
-        ctx.font = 'bold 36px "JetBrains Mono", monospace';
+        ctx.font = 'bold 48px "JetBrains Mono", monospace';
         ctx.fillText('GATEWAY: DIRECT ENGINEERING LINK', 48, 85);
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 50px "JetBrains Mono", monospace';
+        ctx.font = 'bold 60px "JetBrains Mono", monospace';
         ctx.fillText('contact@guna.engineering', 48, 185);
 
         ctx.fillStyle = '#cbd5e1';
-        ctx.font = '36px "JetBrains Mono", monospace';
-        ctx.fillText('• SECURE PROTOCOL // 256-BIT PGP', 48, 275);
-        ctx.fillText('• COLLABORATION & INQUIRIES', 48, 340);
+        ctx.font = 'bold 44px "JetBrains Mono", monospace';
+        ctx.fillText('• SECURE PROTOCOL // 256-BIT PGP', 48, 280);
+        ctx.fillText('• COLLABORATION & INQUIRIES', 48, 355);
 
         ctx.fillStyle = '#10b981';
-        ctx.font = 'bold 32px "JetBrains Mono", monospace';
-        ctx.fillText('● TRANSMITTER: ACTIVE [LISTENING]', 48, 440);
+        ctx.font = 'bold 38px "JetBrains Mono", monospace';
+        ctx.fillText('● TRANSMITTER: ACTIVE [LISTENING]', 48, 450);
 
         const tex = new THREE.CanvasTexture(canvas);
         tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
         const screenMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(2.0, 1.0),
-            new THREE.MeshBasicMaterial({ map: tex })
+            new THREE.PlaneGeometry(2.1, 1.05),
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
         );
-        screenMesh.position.set(0, 0.6, 0.86);
+        screenMesh.position.set(0, 0.6, 0.88);
         termGroup.add(screenMesh);
 
         this.group.add(termGroup);
