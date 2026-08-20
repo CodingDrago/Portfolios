@@ -83,6 +83,13 @@ export class PointerTracker {
         const curX = event.clientX;
         const curY = event.clientY;
 
+        if (this.isPointerDown) {
+            const dist = Math.hypot(curX - this.dragStartX, curY - this.dragStartY);
+            if (dist > 4) {
+                this.isDragging = true;
+            }
+        }
+
         if (this.isDragging) {
             this.dragDeltaX = curX - this.lastDragX;
             this.dragDeltaY = curY - this.lastDragY;
@@ -109,13 +116,14 @@ export class PointerTracker {
     }
 
     /**
-     * Handle mouse down event -> begins camera orbit drag
+     * Handle mouse down event -> records start position for drag threshold
      * @private
      */
     _onPointerDown(event) {
         // Only trigger on primary button or when not clicking an interactive link/button
         if (event.button === 0) {
-            this.isDragging = true;
+            this.isPointerDown = true;
+            this.isDragging = false;
             this.dragStartX = event.clientX;
             this.dragStartY = event.clientY;
             this.lastDragX = event.clientX;
@@ -131,6 +139,7 @@ export class PointerTracker {
      * @private
      */
     _onPointerUp() {
+        this.isPointerDown = false;
         this.isDragging = false;
         this.dragDeltaX = 0;
         this.dragDeltaY = 0;
@@ -142,7 +151,10 @@ export class PointerTracker {
      */
     _onWheel(event) {
         event.preventDefault();
-        this.wheelDelta += event.deltaY * 0.05;
+        const delta = event.deltaY !== undefined ? event.deltaY : event.detail;
+        const sign = Math.sign(delta) || 1;
+        const mag = Math.min(Math.max(Math.abs(delta) * 0.008, 0.35), 1.2);
+        this.wheelDelta += sign * mag;
         this._updateActivity(true);
     }
 
