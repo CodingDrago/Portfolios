@@ -53,37 +53,60 @@ export class WallLeftProjects {
         });
 
         // Horizontal Structural Unistruts (y = -0.5, 1.8, 4.2, 6.2)
-        const strutGeom = new THREE.BoxGeometry(24, 0.08, 0.08);
+        // Positioned BEHIND content panels (z = 0.15)
+        const strutGeom = new THREE.BoxGeometry(24, 0.05, 0.05);
         [-0.5, 1.8, 4.2, 6.2].forEach(yPos => {
             const strut = new THREE.Mesh(strutGeom, railMat);
-            strut.position.set(0, yPos, 0.28);
+            strut.position.set(0, yPos, 0.15);
             this.group.add(strut);
         });
 
         // Section Title Header
         const headerGroup = new THREE.Group();
-        headerGroup.position.set(0, 5.2, 0.35);
+        headerGroup.position.set(0, 5.2, 0.58);
+
+        const backGeom = new THREE.BoxGeometry(7.4, 1.35, 0.06);
+        const backMesh = new THREE.Mesh(backGeom, this.materials.get('instrumentChassis'));
+        headerGroup.add(backMesh);
+
+        const borderGeom = new THREE.EdgesGeometry(backGeom);
+        const borderMat = new THREE.LineBasicMaterial({ color: 0xffb703, linewidth: 2 });
+        const border = new THREE.LineSegments(borderGeom, borderMat);
+        border.position.z = 0.035;
+        headerGroup.add(border);
 
         const canvas = document.createElement('canvas');
-        canvas.width = 1024;
-        canvas.height = 160;
+        canvas.width = 2048;
+        canvas.height = 360;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#0a0e16';
-        ctx.fillRect(0, 0, 1024, 160);
+        ctx.fillStyle = '#060a12';
+        ctx.fillRect(0, 0, 2048, 360);
+        ctx.strokeStyle = 'rgba(255, 157, 0, 0.40)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(6, 6, 2036, 348);
+
         ctx.fillStyle = '#ff9d00';
-        ctx.font = 'bold 22px "JetBrains Mono", monospace';
-        ctx.fillText('// R&D ENGINEERING BUILDS & PROTOTYPES', 36, 45);
+        ctx.font = 'bold 50px "JetBrains Mono", monospace';
+        ctx.fillText('// R&D ENGINEERING BUILDS & HARDWARE PROTOTYPES', 54, 90);
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = '800 52px "Inter", sans-serif';
-        ctx.fillText('ACTIVE PROJECT STATIONS', 36, 110);
+        ctx.font = '800 110px "Inter", sans-serif';
+        ctx.fillText('ACTIVE PROJECT STATIONS', 54, 215);
+
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 40px "JetBrains Mono", monospace';
+        ctx.fillText('● 4 STATIONS ACTIVE // REAL-TIME TELEMETRY STREAMING', 54, 305);
 
         const tex = new THREE.CanvasTexture(canvas);
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+
         const headerMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(6.4, 1.0),
+            new THREE.PlaneGeometry(7.2, 1.25),
             new THREE.MeshBasicMaterial({ map: tex, transparent: true })
         );
+        headerMesh.position.z = 0.04;
         headerGroup.add(headerMesh);
         this.group.add(headerGroup);
     }
@@ -315,41 +338,58 @@ export class WallLeftProjects {
      * @private
      */
     _addProjectTag(parent, title, subtitle, x, y) {
+        const tagGroup = new THREE.Group();
+        tagGroup.position.set(x, y, 0.12);
+
+        // Solid Backing Chassis
+        const backGeom = new THREE.BoxGeometry(3.05, 0.95, 0.04);
+        const backMesh = new THREE.Mesh(backGeom, this.materials.get('instrumentChassis'));
+        tagGroup.add(backMesh);
+
+        const borderGeom = new THREE.EdgesGeometry(backGeom);
+        const borderMat = new THREE.LineBasicMaterial({ color: 0xffb703, linewidth: 1.5 });
+        const border = new THREE.LineSegments(borderGeom, borderMat);
+        border.position.z = 0.025;
+        tagGroup.add(border);
+
         const canvas = document.createElement('canvas');
         canvas.width = 1024;
-        canvas.height = 280;
+        canvas.height = 320;
         const ctx = canvas.getContext('2d');
 
         ctx.fillStyle = '#060a12';
-        ctx.fillRect(0, 0, 1024, 280);
+        ctx.fillRect(0, 0, 1024, 320);
         ctx.strokeStyle = 'rgba(255, 157, 0, 0.45)';
         ctx.lineWidth = 4;
-        ctx.strokeRect(8, 8, 1008, 264);
+        ctx.strokeRect(6, 6, 1012, 308);
 
         // Header Tag
         ctx.fillStyle = '#ff9d00';
-        ctx.font = 'bold 44px "JetBrains Mono", monospace';
-        ctx.fillText(title, 36, 95);
+        ctx.font = 'bold 54px "JetBrains Mono", monospace';
+        ctx.fillText(title, 40, 95);
 
         // Subtitle
         ctx.fillStyle = '#cbd5e1';
-        ctx.font = '34px "JetBrains Mono", monospace';
-        ctx.fillText(subtitle, 36, 185);
+        ctx.font = 'bold 42px "JetBrains Mono", monospace';
+        ctx.fillText(subtitle, 40, 190);
 
         // Status indicator
         ctx.fillStyle = '#10b981';
-        ctx.font = 'bold 26px "JetBrains Mono", monospace';
-        ctx.fillText('● BENCH STATUS: OPERATIONAL & CALIBRATED', 36, 240);
+        ctx.font = 'bold 36px "JetBrains Mono", monospace';
+        ctx.fillText('● BENCH STATUS: OPERATIONAL & CALIBRATED', 40, 265);
 
         const tex = new THREE.CanvasTexture(canvas);
         tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
 
         const mesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(2.5, 0.70),
+            new THREE.PlaneGeometry(3.0, 0.92),
             new THREE.MeshBasicMaterial({ map: tex, transparent: true })
         );
-        mesh.position.set(x, y, 0.05);
-        parent.add(mesh);
+        mesh.position.z = 0.025;
+        tagGroup.add(mesh);
+
+        parent.add(tagGroup);
     }
 
     /**
