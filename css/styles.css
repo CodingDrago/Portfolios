@@ -48,7 +48,13 @@ html, body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     user-select: none;
+    cursor: none !important;
 }
+
+button, a, input, select {
+    cursor: none !important;
+}
+
 
 /* --- Hero Main Layout Container --- */
 .hero-container {
@@ -311,3 +317,408 @@ html, body {
         text-align: center;
     }
 }
+
+/* ==========================================================================
+   PHASE 4: ORANGE SPATIAL CURSOR
+   ========================================================================== */
+.spatial-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    will-change: transform;
+}
+
+.spatial-cursor.visible {
+    opacity: 1;
+}
+
+/* Inner Dot */
+.cursor-dot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    top: -3px;
+    left: -3px;
+    background-color: #ff9d00;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #ff9d00, 0 0 20px rgba(255, 157, 0, 0.6);
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
+}
+
+/* Outer Reticle Ring */
+.cursor-ring {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    top: -13px;
+    left: -13px;
+    border: 1.5px solid rgba(255, 157, 0, 0.65);
+    border-radius: 50%;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+}
+
+/* Active Click State */
+.spatial-cursor.cursor-active .cursor-dot {
+    transform: scale(1.6);
+    background-color: #ffffff;
+}
+
+.spatial-cursor.cursor-active .cursor-ring {
+    transform: scale(0.85);
+    border-color: #ffb703;
+}
+
+/* Hover Target Mode (Corner Brackets) */
+.spatial-cursor.hover-mode .cursor-ring {
+    width: 38px;
+    height: 38px;
+    top: -19px;
+    left: -19px;
+    border-radius: 4px;
+    border: 1.5px dashed #ff9d00;
+    animation: cursorRotate 8s linear infinite;
+    box-shadow: 0 0 15px rgba(255, 157, 0, 0.3);
+}
+
+/* Orbit Drag Mode */
+.spatial-cursor.orbit-mode .cursor-ring {
+    width: 44px;
+    height: 44px;
+    top: -22px;
+    left: -22px;
+    border-radius: 50%;
+    border: 2px solid #00b4d8;
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+    animation: cursorRotate 2s linear infinite;
+}
+
+.spatial-cursor.orbit-mode .cursor-dot {
+    background-color: #00b4d8;
+    box-shadow: 0 0 12px #00b4d8;
+}
+
+/* Action / UI Mode (Crosshair) */
+.spatial-cursor.action-mode .cursor-ring {
+    width: 32px;
+    height: 32px;
+    top: -16px;
+    left: -16px;
+    border-radius: 50%;
+    border: 2px solid #ef4444;
+}
+
+.spatial-cursor.action-mode .cursor-dot {
+    background-color: #ef4444;
+    box-shadow: 0 0 10px #ef4444;
+}
+
+/* Micro-Label */
+.cursor-label {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #ff9d00;
+    background: rgba(8, 10, 15, 0.85);
+    padding: 2px 6px;
+    border: 1px solid rgba(255, 157, 0, 0.4);
+    border-radius: 2px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    display: none;
+}
+
+@keyframes cursorRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   PHASE 4: RIGHT-SIDE TECHNICAL INSPECTION PANEL
+   ========================================================================== */
+.inspection-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 480px;
+    max-width: 90vw;
+    height: 100vh;
+    background: rgba(8, 12, 19, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-left: 1px solid rgba(255, 183, 3, 0.45);
+    box-shadow: -16px 0 50px rgba(0, 0, 0, 0.85), inset 1px 0 0 rgba(255, 183, 3, 0.15);
+    padding: 3.25rem 2.5rem 2.5rem 2.5rem;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 1.65rem;
+    transform: translateX(105%);
+    opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 183, 3, 0.4) transparent;
+}
+
+.inspection-panel.visible {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+/* Panel Header */
+.panel-category {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    color: #ff9d00;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.panel-title {
+    font-family: var(--font-sans);
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    color: #ffffff;
+    line-height: 1.25;
+    margin-bottom: 0.75rem;
+}
+
+.panel-desc {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: #94a3b8;
+}
+
+.panel-divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255, 183, 3, 0.7) 0%, rgba(255, 183, 3, 0.08) 100%);
+    margin: 0.25rem 0;
+}
+
+/* Panel Section */
+.panel-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.section-title {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: #e2e8f0;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-title::before {
+    content: '//';
+    color: #ff9d00;
+}
+
+/* Features List */
+.features-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+
+.features-list li {
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: #e2e8f0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+}
+
+.features-list li .bullet {
+    color: #ff9d00;
+    font-weight: 800;
+}
+
+/* Specifications Grid */
+.specs-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 0.85rem 1.1rem;
+}
+
+.spec-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.spec-row:last-child {
+    border-bottom: none;
+}
+
+.spec-key {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.spec-val {
+    color: #ff9d00;
+    font-weight: 700;
+    text-align: right;
+}
+
+/* Panel Footer */
+.panel-footer {
+    margin-top: auto;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.10);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.footer-tag {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #10b981;
+    letter-spacing: 0.12em;
+}
+
+.footer-hint {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: #64748b;
+    letter-spacing: 0.08em;
+}
+
+/* ==========================================================================
+   PHASE 4: UPPER-RIGHT EXIT 'X' BUTTON
+   ========================================================================== */
+.inspection-close {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    z-index: 105;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.1rem;
+    background: rgba(12, 16, 24, 0.90);
+    border: 1px solid rgba(255, 183, 3, 0.4);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #ffffff;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.inspection-close.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.inspection-close:hover {
+    background: #ff9d00;
+    color: #08090b;
+    border-color: #ffb703;
+    box-shadow: 0 0 20px rgba(255, 157, 0, 0.6);
+    transform: scale(1.05);
+}
+
+.close-icon {
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+/* ==========================================================================
+   PHASE 4: INITIAL SUBTLE HOLOGRAPHIC INSTRUCTION
+   ========================================================================== */
+.workstation-intro-hint {
+    position: fixed;
+    top: 5.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.workstation-intro-hint.fade-out {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-15px);
+}
+
+.intro-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.25rem;
+    padding: 0.75rem 1.8rem;
+    background: rgba(8, 12, 19, 0.82);
+    border: 1px dashed rgba(255, 183, 3, 0.5);
+    border-radius: 4px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+.intro-tag {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: #ff9d00;
+}
+
+.intro-title {
+    font-family: var(--font-sans);
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #ffffff;
+}
+
+.intro-sub {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: #94a3b8;
+    letter-spacing: 0.04em;
+}
+
