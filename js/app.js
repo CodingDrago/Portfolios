@@ -3,26 +3,26 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 4 Spatial Exploration)
  */
 
-import { CONFIG, STATES } from './config.js?v=30';
-import { BootManager } from './loader/BootManager.js?v=30';
-import { StateManager } from './state/StateManager.js?v=30';
-import { PointerTracker } from './input/PointerTracker.js?v=30';
-import { SpatialCursor } from './input/SpatialCursor.js?v=30';
-import { SceneManager } from './scene/SceneManager.js?v=30';
-import { Lighting } from './scene/Lighting.js?v=30';
-import { Materials } from './scene/Materials.js?v=30';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=30';
-import { Environment } from './scene/Environment.js?v=30';
-import { Workbench } from './scene/Workbench.js?v=30';
-import { RobotController } from './robot/RobotController.js?v=30';
-import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=30';
-import { HolographicInspector } from './scene/HolographicInspector.js?v=30';
-import { InspectionCamera } from './scene/InspectionCamera.js?v=30';
-import { InspectionMode } from './scene/InspectionMode.js?v=30';
-import { WallFrontAbout } from './scene/WallFrontAbout.js?v=30';
-import { WallLeftProjects } from './scene/WallLeftProjects.js?v=30';
-import { WallRightSocial } from './scene/WallRightSocial.js?v=30';
-import { WallBackGames } from './scene/WallBackGames.js?v=30';
+import { CONFIG, STATES } from './config.js?v=39';
+import { BootManager } from './loader/BootManager.js?v=39';
+import { StateManager } from './state/StateManager.js?v=39';
+import { PointerTracker } from './input/PointerTracker.js?v=39';
+import { SpatialCursor } from './input/SpatialCursor.js?v=39';
+import { SceneManager } from './scene/SceneManager.js?v=39';
+import { Lighting } from './scene/Lighting.js?v=39';
+import { Materials } from './scene/Materials.js?v=39';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=39';
+import { Environment } from './scene/Environment.js?v=39';
+import { Workbench } from './scene/Workbench.js?v=39';
+import { RobotController } from './robot/RobotController.js?v=39';
+import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=39';
+import { HolographicInspector } from './scene/HolographicInspector.js?v=39';
+import { InspectionCamera } from './scene/InspectionCamera.js?v=39';
+import { InspectionMode } from './scene/InspectionMode.js?v=39';
+import { WallFrontAbout } from './scene/WallFrontAbout.js?v=39';
+import { WallLeftProjects } from './scene/WallLeftProjects.js?v=39';
+import { WallRightSocial } from './scene/WallRightSocial.js?v=39';
+import { WallBackGames } from './scene/WallBackGames.js?v=39';
 import * as THREE from 'three';
 
 class App {
@@ -289,8 +289,7 @@ class App {
                     'BUS INTEGRITY': '0.00% JITTER / PASS'
                 },
                 mesh: this.workbench.interactiveObjects.oscilloscope,
-                anchorPoint: new THREE.Vector3(-3.9, -0.78, -2.7),
-                boundsSize: new THREE.Vector3(0.7, 0.5, 0.5),
+                anchorPoint: new THREE.Vector3(-6.3, -0.78, -3.8),
                 getData: () => [
                     ['CHANNEL 1:', 'PWM 100 kHz [3.3V LVCMOS]', '#ff9d00'],
                     ['CHANNEL 2:', 'ANALOG SINE [IMU_RAW]', '#38bdf8'],
@@ -322,8 +321,7 @@ class App {
                     'MEMORY MAP': '32KB SRAM / 128KB FLASH'
                 },
                 mesh: this.workbench.interactiveObjects.mcuPrototype,
-                anchorPoint: new THREE.Vector3(-2.8, -0.94, -1.8),
-                boundsSize: new THREE.Vector3(0.5, 0.3, 0.4),
+                anchorPoint: new THREE.Vector3(-5.2, -0.94, -2.8),
                 getData: () => [
                     ['MCU CORE:', 'ARM Cortex-M7 @ 480 MHz', '#ff9d00'],
                     ['RTOS KERNEL:', 'FreeRTOS v10.4 [PREEMPTIVE]', '#38bdf8'],
@@ -355,8 +353,7 @@ class App {
                     'ACTIVE EFFICIENCY': '94.6% PFC REGULATED'
                 },
                 mesh: this.workbench.interactiveObjects.powerSupply,
-                anchorPoint: new THREE.Vector3(-3.05, -0.80, -2.8),
-                boundsSize: new THREE.Vector3(0.6, 0.4, 0.4),
+                anchorPoint: new THREE.Vector3(-5.3, -0.80, -3.8),
                 getData: () => [
                     ['OUTPUT VOLTAGE:', '24.00 V DC [REGULATED]', '#ff9d00'],
                     ['OUTPUT CURRENT:', '03.50 A [LOAD: 42.0%]', '#10b981'],
@@ -388,8 +385,7 @@ class App {
                     'SAFETY SLEEP': 'AUTO STANDBY 10 MIN'
                 },
                 mesh: this.workbench.interactiveObjects.reworkStation,
-                anchorPoint: new THREE.Vector3(-4.2, -0.84, -1.9),
-                boundsSize: new THREE.Vector3(0.5, 0.4, 0.4),
+                anchorPoint: new THREE.Vector3(-6.6, -0.84, -3.0),
                 getData: () => [
                     ['SET TEMPERATURE:', '380°C [CLOSED-LOOP PID]', '#ff9d00'],
                     ['ACTUAL TIP TEMP:', '380.2°C [STABLE ±0.5°C]', '#10b981'],
@@ -422,7 +418,6 @@ class App {
                 },
                 mesh: this.robotController.arm.group,
                 anchorPoint: new THREE.Vector3(0, 0.4, 0),
-                boundsSize: new THREE.Vector3(1.4, 2.2, 1.4),
                 getData: () => {
                     let j1 = 0, j2 = 0, j3 = 0, j4 = 0, j5 = 0, j6 = 0;
                     if (this.robotController && this.robotController.arm) {
@@ -444,35 +439,34 @@ class App {
             });
         }
 
-        // 6. Precision Optical Breadboard Matrix
-        if (this.workbench && this.workbench.interactiveObjects.opticalBreadboard) {
+        // 6. Optical Target Calibration Fiducial Rig
+        if (this.workbench && this.workbench.interactiveObjects.calibrationRig) {
             this.interactionManager.registerTarget({
-                id: 'opticalBreadboard',
-                title: 'PRECISION OPTICAL CALIBRATION RIG',
+                id: 'calibrationRig',
+                title: 'OPTICAL CALIBRATION RIG & TARGET FIDUCIAL',
                 category: 'SPATIAL CALIBRATION // RIG-01',
-                description: 'M6 threaded matrix fixture with optical fiducial alignment for robotic TCP calibration.',
+                description: 'Sub-millimeter optical fiducial alignment target for robotic TCP calibration and matrix verification.',
                 features: [
-                    'Solid anodized aircraft-grade aluminum alloy plate',
-                    'Precision M6 threaded grid on 25mm center pitch',
-                    'Sub-millimeter optical fiducial cube alignment target',
-                    'Calibrated surface flatness <0.05mm over 1000mm'
+                    'Sub-millimeter calibrated optical fiducial alignment cube',
+                    'Dual-ring precision crosshair center alignment reticle',
+                    '4-point ground reference corner locating pins',
+                    'Direct origin registry to global kinematics coordinate frame'
                 ],
                 technicalData: {
-                    'SURFACE MATRIX': 'M6 THREADED 25mm PITCH',
                     'FIDUCIAL TARGET': 'SUB-MILLIMETER OPTICAL CUBE',
-                    'MATERIAL ALLOY': 'ANODIZED AIRCRAFT ALUMINUM',
+                    'ALIGNMENT RETICLE': 'DUAL-RING BRUSHED STEEL TORUS',
                     'SURFACE FLATNESS': '< 0.05mm OVER 1000mm',
+                    'CALIBRATION ACCURACY': '± 0.02 mm REPEATABILITY',
                     'WORLD COORDINATE': 'REGISTERED TO ORIGIN (0,0,0)'
                 },
-                mesh: this.workbench.interactiveObjects.opticalBreadboard,
-                anchorPoint: new THREE.Vector3(3.4, -0.85, -2.2),
-                boundsSize: new THREE.Vector3(1.8, 0.4, 1.4),
+                mesh: this.workbench.interactiveObjects.calibrationRig,
+                anchorPoint: new THREE.Vector3(5.2, -0.80, -3.1),
                 getData: () => [
-                    ['SURFACE MATRIX:', 'M6 THREADED 25mm PITCH', '#ff9d00'],
                     ['FIDUCIAL TARGET:', 'SUB-MILLIMETER OPTICAL CUBE', '#10b981'],
-                    ['MATERIAL ALLOY:', 'ANODIZED AIRCRAFT ALUMINUM', '#f8fafc'],
-                    ['SURFACE FLATNESS:', '< 0.05mm OVER 1000mm', '#38bdf8'],
-                    ['WORLD COORDINATE:', 'REGISTERED TO ORIGIN (0,0,0)', '#10b981']
+                    ['ALIGNMENT RETICLE:', 'DUAL-RING TORUS [ACTIVE]', '#ff9d00'],
+                    ['CALIBRATION ACCURACY:', '± 0.02 mm REPEATABILITY', '#38bdf8'],
+                    ['WORLD COORDINATE:', 'REGISTERED TO ORIGIN (0,0,0)', '#10b981'],
+                    ['SURFACE FLATNESS:', '< 0.05mm OVER 1000mm', '#f8fafc']
                 ]
             });
         }
@@ -494,18 +488,17 @@ class App {
                     'CAN 2.0B BUS': '1.000 Mbps [TRAFFIC: 14.2%]',
                     'DIGITAL CHANNELS': '8-CH LOGIC PROBES @ 500MHz',
                     'PACKET DECODER': 'MOTOR_SYNC / IMU_TELEM_ACK',
-                    'FRAME ERROR RATE': '0.000% [ZERO DROPPED FRAMES]',
-                    'TRIGGER PATTERN': 'CAN ID 0x120 [MATCH OK]'
+                    'TRIGGER MASK': '0x7FF [FRAME CONVERGED]',
+                    'DIAGNOSTIC STATUS': 'ACTIVE STREAMING / NOMINAL'
                 },
                 mesh: this.workbench.interactiveObjects.logicAnalyzer,
-                anchorPoint: new THREE.Vector3(3.8, -0.85, -2.5),
-                boundsSize: new THREE.Vector3(0.5, 0.3, 0.4),
+                anchorPoint: new THREE.Vector3(6.3, -0.80, -3.7),
                 getData: () => [
                     ['CAN 2.0B BUS:', '1.000 Mbps [TRAFFIC: 14.2%]', '#10b981'],
-                    ['DIGITAL CHANNELS:', '8-CH LOGIC PROBES @ 500MHz', '#ff9d00'],
-                    ['PACKET DECODER:', 'MOTOR_SYNC / IMU_TELEM_ACK', '#38bdf8'],
-                    ['FRAME ERROR RATE:', '0.000% [ZERO DROPPED FRAMES]', '#10b981'],
-                    ['TRIGGER PATTERN:', 'CAN ID 0x120 [MATCH OK]', '#f8fafc']
+                    ['DIGITAL CHANNELS:', '8-CH @ 500 MHz SAMPLING', '#ff9d00'],
+                    ['PACKET DECODER:', 'MOTOR_SYNC / IMU_ACK', '#38bdf8'],
+                    ['TRIGGER MASK:', '0x7FF [FRAME CONVERGED]', '#10b981'],
+                    ['DIAGNOSTIC STATUS:', 'ACTIVE STREAMING / NOMINAL', '#f8fafc']
                 ]
             });
         }
