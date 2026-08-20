@@ -47,17 +47,21 @@ export class TargetMapper {
 
             const hit = this.raycaster.ray.intersectPlane(this.workspacePlane, this.planeIntersectPoint);
             if (hit) {
-                // Allow target to traverse the full viewport plane
-                this.currentTarget.copy(hit);
+                // Enforce physical boundary limits: Y >= 0.15m (stays >1.6m above mounting platform top plate at -1.48m)
+                const clampedX = THREE.MathUtils.clamp(hit.x, -5.5, 5.5);
+                const clampedY = THREE.MathUtils.clamp(hit.y, 0.15, 4.5);
+                const clampedZ = THREE.MathUtils.clamp(hit.z, 0.4, 3.8);
+
+                this.currentTarget.set(clampedX, clampedY, clampedZ);
                 return this.currentTarget;
             }
         }
 
         // Direct analytical mapping fallback
-        const x = ndcX * 6.5;
+        const x = ndcX * 5.5;
         const yNorm = (ndcY + 1.0) * 0.5; // [0, 1]
-        const y = THREE.MathUtils.lerp(-0.5, 4.8, yNorm);
-        const z = THREE.MathUtils.lerp(2.6, 0.4, yNorm) + Math.abs(ndcX) * 0.4;
+        const y = THREE.MathUtils.lerp(0.2, 4.5, yNorm);
+        const z = THREE.MathUtils.lerp(2.6, 0.6, yNorm) + Math.abs(ndcX) * 0.4;
 
         this.currentTarget.set(x, y, z);
         return this.currentTarget;
