@@ -142,37 +142,37 @@ export class SpatialInterfaces {
 
         // Header Tag
         ctx.fillStyle = '#ff9d00';
-        ctx.font = 'bold 22px monospace';
-        ctx.fillText('[ SPATIAL R&D LAB // CELL-01 ]', 48, 64);
+        ctx.font = 'bold 28px "JetBrains Mono", monospace';
+        ctx.fillText('[ SPATIAL R&D LAB // CELL-01 ]', 48, 68);
 
         // Divider
-        ctx.strokeStyle = 'rgba(255, 157, 0, 0.4)';
+        ctx.strokeStyle = 'rgba(255, 157, 0, 0.5)';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(48, 80);
-        ctx.lineTo(976, 80);
+        ctx.moveTo(48, 86);
+        ctx.lineTo(976, 86);
         ctx.stroke();
 
         // Main Title (Concise & Readable)
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 42px monospace';
+        ctx.font = '800 48px "Inter", sans-serif';
         ctx.fillText('EXPLORE THE WORKSTATION', 48, 160);
 
         // Subtitle Instruction
         ctx.fillStyle = '#cbd5e1';
-        ctx.font = '28px monospace';
-        ctx.fillText('Hover over hardware to inspect telemetry', 48, 230);
+        ctx.font = 'bold 30px "JetBrains Mono", monospace';
+        ctx.fillText('Hover over hardware to inspect telemetry', 48, 225);
 
         // Interaction Hints
         ctx.fillStyle = '#38bdf8';
-        ctx.font = '22px monospace';
-        ctx.fillText('• MOVE: Position arm target', 48, 320);
-        ctx.fillText('• DRAG: 360° orbit camera view', 48, 360);
+        ctx.font = 'bold 26px "JetBrains Mono", monospace';
+        ctx.fillText('• MOVE: Position arm target', 48, 310);
+        ctx.fillText('• DRAG: 360° orbit camera view', 48, 355);
         ctx.fillText('• SCROLL: Zoom workstation perspective', 48, 400);
 
         // Footer
         ctx.fillStyle = '#10b981';
-        ctx.font = 'bold 20px monospace';
+        ctx.font = 'bold 24px "JetBrains Mono", monospace';
         ctx.fillText('● SYSTEM READY — SPATIAL TELEMETRY ACTIVE', 48, 465);
 
         this.introTexture.needsUpdate = true;
@@ -299,60 +299,60 @@ export class SpatialInterfaces {
 
         // 5. Category Header Tag (Amber)
         ctx.fillStyle = '#ff9d00';
-        ctx.font = 'bold 22px monospace';
+        ctx.font = 'bold 26px "JetBrains Mono", monospace';
         ctx.fillText(`[ ${target.category || 'HARDWARE SUBSYSTEM'} ]`, 36, 48);
 
         // 6. Title (Large, White, Bold)
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 34px monospace';
-        ctx.fillText(target.title || 'DEVICE TELEMETRY', 36, 90);
+        ctx.font = '800 38px "Inter", sans-serif';
+        ctx.fillText(target.title || 'DEVICE TELEMETRY', 36, 92);
 
         // 7. Short Engineering Description
         if (target.description) {
-            ctx.fillStyle = '#94a3b8';
-            ctx.font = '20px monospace';
-            ctx.fillText(target.description, 36, 126);
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = 'bold 22px "JetBrains Mono", monospace';
+            ctx.fillText(target.description, 36, 128);
         }
 
         // 8. Glowing Divider Line
         ctx.strokeStyle = '#ff9d00';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(36, 146);
-        ctx.lineTo(988, 146);
+        ctx.moveTo(36, 148);
+        ctx.lineTo(988, 148);
         ctx.stroke();
 
         // 9. Technical Key Data Rows
         const rows = target.getData ? target.getData(robotController) : [];
-        const startY = 198;
-        const rowSpacing = 50;
+        const startY = 200;
+        const rowSpacing = 52;
 
         rows.forEach((r, idx) => {
             const y = startY + idx * rowSpacing;
             if (y > 480) return;
 
             // Row Background Shading
-            ctx.fillStyle = (idx % 2 === 0) ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.25)';
-            ctx.fillRect(36, y - 28, 952, 40);
+            ctx.fillStyle = (idx % 2 === 0) ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.30)';
+            ctx.fillRect(36, y - 30, 952, 42);
 
             // Row Bullet
             ctx.fillStyle = '#ff9d00';
-            ctx.fillRect(44, y - 14, 8, 8);
+            ctx.fillRect(44, y - 16, 10, 10);
 
             // Label
             ctx.fillStyle = '#cbd5e1';
-            ctx.font = 'bold 22px monospace';
+            ctx.font = 'bold 24px "JetBrains Mono", monospace';
             ctx.fillText(r[0], 64, y - 6);
 
             // Value
             ctx.fillStyle = r[2] || '#ff9d00';
-            ctx.font = 'bold 22px monospace';
+            ctx.font = 'bold 24px "JetBrains Mono", monospace';
             ctx.fillText(r[1], 440, y - 6);
         });
 
         // 10. Footer Status Row
-        ctx.fillStyle = '#64748b';
-        ctx.font = '18px monospace';
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 20px "JetBrains Mono", monospace';
         ctx.fillText(`HARDWARE ID: ${target.id.toUpperCase()} // LATENCY: 0.4ms // R&D BENCH-01`, 38, 546);
 
         this.inspectTexture.needsUpdate = true;
