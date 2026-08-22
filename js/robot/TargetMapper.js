@@ -1,10 +1,12 @@
 /**
- * TargetMapper - True Camera-Ray → 3D Workspace Surface Raycasting System
+ * TargetMapper - True Camera-Ray → 3D Panel Geometry & Workspace Surface Raycasting System
  *
- * Casts a Three.js Ray from the camera through pointer NDC coordinates into the 3D scene,
- * intersecting directly against the dedicated USER_TARGET_SURFACE 3D collision mesh.
- * The intersection point (hit.point) in world space becomes the authoritative target
- * for the robot's 6-DOF analytic IK solver.
+ * Implements two-tier authoritative 3D raycasting:
+ *   1. Primary Target Priority: Real interactive 3D panel meshes across active/facing walls
+ *      (WallFrontAbout, WallLeftProjects, WallRightSocial, WallBackGames).
+ *      When the cursor points directly at a panel (e.g., GUNA header, badges, schematics),
+ *      the ray intersects that panel's physical mesh directly.
+ *   2. Secondary Fallback: Dedicated 3D USER_TARGET_SURFACE collision geometry (for open space/workbench).
  *
  * Core Dataflow:
  *   SCREEN POINTER (2D)
@@ -13,9 +15,11 @@
  *       ↓
  *   CAMERA RAY (origin + direction in world space)
  *       ↓
- *   3D USER_TARGET_SURFACE INTERSECTION (raycaster.intersectObject)
+ *   1. REAL PANEL RAYCAST (intersectObjects against visible wall panels)
+ *       ↓ (if no panel hit)
+ *   2. USER_TARGET_SURFACE RAYCAST (intersectObject against reachable 3D envelope)
  *       ↓
- *   WORLD-SPACE TARGET (validated against physical boundaries)
+ *   WORLD-SPACE TARGET (clamped to physical boundaries)
  *       ↓
  *   ROBOT IK SOLVER
  */
@@ -41,13 +45,17 @@ export class TargetMapper {
         // Raycasting engine
         this.raycaster = new THREE.Raycaster();
 
+        // Registered real panel meshes for primary raycasting
+        this.panelMeshes = [];
+
         // Debug ray telemetry
         this.lastRayOrigin = new THREE.Vector3();
         this.lastRayDirection = new THREE.Vector3();
         this.lastHitPoint = new THREE.Vector3();
         this.hasHit = false;
+        this.hitType = 'NONE'; // 'PANEL' | 'SURFACE' | 'NONE'
 
-        // Build dedicated USER_TARGET_SURFACE 3D collision structure
+        // Build dedicated USER_TARGET_SURFACE 3D collision structure (fallback)
         this.workspaceSurface = this._buildTargetSurface();
     }
 
@@ -57,9 +65,6 @@ export class TargetMapper {
      *   1. Horizontal deck disc at working height y = -0.65 (covers table / cell surface)
      *   2. Upright cylinder shell of radius 3.2m spanning y = -0.65 to y = 2.55
      *   3. Upper spherical dome cap from y = 2.55 to y = 4.15
-     *
-     * Material is transparent/opacity=0 with double-sided rendering, ensuring
-     * 100% raycast hit reliability from ANY camera orbit orientation (0°–360°).
      * @private
      * @returns {THREE.Group}
      */
@@ -104,6 +109,34 @@ export class TargetMapper {
     }
 
     /**
+     * Register interactive panel meshes or groups from the 4 walls
+     * @param {Array<THREE.Object3D>|THREE.Object3D} objects
+     */
+    registerPanelMeshes(objects) {
+        if (!objects) return;
+        const list = Array.isArray(objects) ? objects : [objects];
+        list.forEach(obj => {
+            if (!obj) return;
+            if (obj.isMesh) {
+                if (!this.panelMeshes.includes(obj)) {
+                    this.panelMeshes.push(obj);
+                }
+            } else if (obj.traverse) {
+                obj.traverse(child => {
+                    if (child.isMesh && !this.panelMeshes.includes(child)) {
+                        // Exclude the 26x10 full-room wall backplane plane mesh (we only want actual panels)
+                        if (child.geometry && child.geometry.parameters &&
+                            child.geometry.parameters.width >= 20 && child.geometry.parameters.height >= 8) {
+                            return;
+                        }
+                        this.panelMeshes.push(child);
+                    }
+                });
+            }
+        });
+    }
+
+    /**
      * Returns the 3D USER_TARGET_SURFACE collision object to be added to the scene.
      * @returns {THREE.Group}
      */
@@ -131,28 +164,30 @@ export class TargetMapper {
 
     /**
      * Returns the latest ray origin, direction, and hit point for visual debugging.
-     * @returns {{origin: THREE.Vector3, direction: THREE.Vector3, hitPoint: THREE.Vector3, hasHit: boolean}}
+     * @returns {{origin: THREE.Vector3, direction: THREE.Vector3, hitPoint: THREE.Vector3, hasHit: boolean, hitType: string}}
      */
     getLastRayInfo() {
         return {
             origin: this.lastRayOrigin.clone(),
             direction: this.lastRayDirection.clone(),
             hitPoint: this.lastHitPoint.clone(),
-            hasHit: this.hasHit
+            hasHit: this.hasHit,
+            hitType: this.hitType
         };
     }
 
     /**
-     * Casts a camera ray through pointer NDC coordinates, intersects against
-     * USER_TARGET_SURFACE, enforces physical world-space boundaries, and returns
-     * the authoritative 3D target coordinates.
+     * Casts a camera ray through pointer NDC coordinates.
+     * Priority 1: Real panel meshes (WallFrontAbout, WallLeftProjects, etc.)
+     * Priority 2: Dedicated USER_TARGET_SURFACE 3D envelope.
+     * Enforces physical boundaries in world space and returns the authoritative 3D target.
      *
      * @param {Object}        pointer  PointerTracker instance
      * @param {THREE.Camera}  camera   Three.js perspective camera (current frame)
      * @returns {THREE.Vector3}        Authoritative 3D world target
      */
     mapPointerToTarget(pointer, camera) {
-        if (!pointer || !camera || !this.workspaceSurface) {
+        if (!pointer || !camera) {
             return this.currentTarget;
         }
 
@@ -164,16 +199,45 @@ export class TargetMapper {
         this.lastRayOrigin.copy(this.raycaster.ray.origin);
         this.lastRayDirection.copy(this.raycaster.ray.direction);
 
-        // 2. Intersect ray against the physical USER_TARGET_SURFACE mesh
-        const intersects = this.raycaster.intersectObject(this.workspaceSurface, true);
+        let hitPoint = null;
+        let detectedType = 'NONE';
 
-        if (intersects.length > 0) {
+        // 2. PRIORITY 1: Raycast against active, visible real panel meshes
+        if (this.panelMeshes.length > 0) {
+            // Filter meshes whose parent hierarchy is currently visible
+            const visiblePanels = this.panelMeshes.filter(m => {
+                let curr = m;
+                while (curr) {
+                    if (curr.visible === false) return false;
+                    curr = curr.parent;
+                }
+                return true;
+            });
+
+            if (visiblePanels.length > 0) {
+                const panelIntersects = this.raycaster.intersectObjects(visiblePanels, false);
+                if (panelIntersects.length > 0) {
+                    hitPoint = panelIntersects[0].point.clone();
+                    detectedType = 'PANEL';
+                }
+            }
+        }
+
+        // 3. PRIORITY 2: If no panel was hit, fallback to USER_TARGET_SURFACE
+        if (!hitPoint && this.workspaceSurface) {
+            const surfaceIntersects = this.raycaster.intersectObject(this.workspaceSurface, true);
+            if (surfaceIntersects.length > 0) {
+                hitPoint = surfaceIntersects[0].point.clone();
+                detectedType = 'SURFACE';
+            }
+        }
+
+        // 4. Enforce physical constraints in WORLD SPACE
+        if (hitPoint) {
             this.hasHit = true;
-            // Closest valid intersection point along the camera ray
-            const hitPoint = intersects[0].point.clone();
+            this.hitType = detectedType;
             this.lastHitPoint.copy(hitPoint);
 
-            // 3. Enforce physical constraints in WORLD SPACE
             // A. Radial clamp relative to robot base origin (0, 0)
             let r = Math.hypot(hitPoint.x, hitPoint.z);
             if (r < this.minRadius) {
@@ -196,7 +260,8 @@ export class TargetMapper {
             this.currentTarget.copy(hitPoint);
         } else {
             this.hasHit = false;
-            // On ray miss: retain previously calculated valid world target
+            this.hitType = 'NONE';
+            // On complete ray miss: retain previously calculated valid world target
         }
 
         return this.currentTarget;

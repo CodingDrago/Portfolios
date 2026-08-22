@@ -54,8 +54,8 @@ export class RobotArm {
         const j1Joint = new RobotJoint({
             name: 'J1_BaseYaw',
             axis: new THREE.Vector3(0, 1, 0),
-            minAngle: THREE.MathUtils.degToRad(-160),
-            maxAngle: THREE.MathUtils.degToRad(160),
+            minAngle: -Math.PI,
+            maxAngle: Math.PI,
             initialAngle: 0,
             speed: 4.5
         });

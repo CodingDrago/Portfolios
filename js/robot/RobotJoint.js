@@ -1,6 +1,8 @@
 /**
  * RobotJoint - 1-DOF Rotational Joint Abstraction
  * Encapsulates joint axis, current/target angles, min/max limits, speed, and smooth lerp updates.
+ * For continuous joints spanning [-π, +π] (like J1 base yaw), uses shortest angular path interpolation
+ * via atan2(sin(delta), cos(delta)) to eliminate wraparound delay across the ±π boundary.
  */
 
 import * as THREE from 'three';
@@ -25,6 +27,10 @@ export class RobotJoint {
         this.targetAngle = config.initialAngle || 0;
         this.speed = config.speed || 5.0;
 
+        // Continuous joint check: spans the full [-π, +π] circle (~2π total range)
+        this.isContinuous = (this.maxAngle - this.minAngle) >= (2 * Math.PI - 0.05) ||
+                            (this.minAngle <= -Math.PI + 0.05 && this.maxAngle >= Math.PI - 0.05);
+
         // Reference to Three.js Object3D joint pivot node
         this.pivotNode = null;
     }
@@ -39,27 +45,53 @@ export class RobotJoint {
     }
 
     /**
-     * Set new target angle clamped within physical joint limits
+     * Set new target angle. For continuous joints, normalizes to [-π, +π].
+     * For restricted joints, clamps within [minAngle, maxAngle].
      * @param {number} angle Angle in radians
      */
     setTargetAngle(angle) {
-        this.targetAngle = THREE.MathUtils.clamp(angle, this.minAngle, this.maxAngle);
+        if (this.isContinuous) {
+            this.targetAngle = Math.atan2(Math.sin(angle), Math.cos(angle));
+        } else {
+            this.targetAngle = THREE.MathUtils.clamp(angle, this.minAngle, this.maxAngle);
+        }
     }
 
     /**
-     * Smoothly update joint angle toward target using delta time
+     * Smoothly update joint angle toward target using delta time.
+     * Uses shortest-path angular delta for continuous joints.
      * @param {number} deltaTime Time elapsed in seconds
      */
     update(deltaTime) {
-        if (Math.abs(this.currentAngle - this.targetAngle) < 0.0001) {
-            this.currentAngle = this.targetAngle;
+        if (this.isContinuous) {
+            // Shortest angular path delta via atan2(sin, cos)
+            const delta = Math.atan2(
+                Math.sin(this.targetAngle - this.currentAngle),
+                Math.cos(this.targetAngle - this.currentAngle)
+            );
+
+            if (Math.abs(delta) < 0.0001) {
+                this.currentAngle = this.targetAngle;
+            } else {
+                const step = delta * Math.min(deltaTime * this.speed, 1.0);
+                this.currentAngle += step;
+            }
+
+            // Normalize current angle to [-π, +π]
+            this.currentAngle = Math.atan2(Math.sin(this.currentAngle), Math.cos(this.currentAngle));
         } else {
-            const step = (this.targetAngle - this.currentAngle) * Math.min(deltaTime * this.speed, 1.0);
-            this.currentAngle += step;
+            // Standard linear interpolation for joints with mechanical limits (J2, J3, J5)
+            if (Math.abs(this.currentAngle - this.targetAngle) < 0.0001) {
+                this.currentAngle = this.targetAngle;
+            } else {
+                const step = (this.targetAngle - this.currentAngle) * Math.min(deltaTime * this.speed, 1.0);
+                this.currentAngle += step;
+            }
+
+            // Clamp current angle as safety safeguard
+            this.currentAngle = THREE.MathUtils.clamp(this.currentAngle, this.minAngle, this.maxAngle);
         }
 
-        // Clamp current angle as safety safeguard
-        this.currentAngle = THREE.MathUtils.clamp(this.currentAngle, this.minAngle, this.maxAngle);
         this._applyRotation(this.currentAngle);
     }
 

@@ -149,6 +149,16 @@ class App {
             this.robotController = new RobotController(this.materials);
             this.robotController.addToScene(this.sceneManager.scene);
 
+            // Register real 3D panel meshes for high-priority precision raycasting
+            if (this.robotController && this.robotController.targetMapper) {
+                this.robotController.targetMapper.registerPanelMeshes([
+                    this.wallFrontAbout.group,
+                    this.wallLeftProjects.group,
+                    this.wallRightSocial.group,
+                    this.wallBackGames.group
+                ]);
+            }
+
             // 8.8. Initialize Phase 4 Spatial Object Interaction Subsystems
             this.interactionManager = new ObjectInteractionManager(this.sceneManager.camera, this.sceneManager.scene);
             this.holographicInspector = new HolographicInspector();
@@ -607,7 +617,7 @@ class App {
                 hitX  = rInfo.hitPoint.x.toFixed(2);
                 hitY  = rInfo.hitPoint.y.toFixed(2);
                 hitZ  = rInfo.hitPoint.z.toFixed(2);
-                hitStatus = rInfo.hasHit ? 'HIT' : 'MISS';
+                hitStatus = rInfo.hasHit ? `HIT (${rInfo.hitType || 'OK'})` : 'MISS';
             }
         }
 
