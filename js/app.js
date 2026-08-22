@@ -3,27 +3,27 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 4 Spatial Exploration)
  */
 
-import { CONFIG, STATES } from './config.js?v=41';
-import { BootManager } from './loader/BootManager.js?v=41';
-import { StateManager } from './state/StateManager.js?v=41';
-import { PointerTracker } from './input/PointerTracker.js?v=41';
-import { SpatialCursor } from './input/SpatialCursor.js?v=41';
-import { SceneManager } from './scene/SceneManager.js?v=41';
-import { Lighting } from './scene/Lighting.js?v=41';
-import { Materials } from './scene/Materials.js?v=41';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=41';
-import { Environment } from './scene/Environment.js?v=41';
-import { Workbench } from './scene/Workbench.js?v=41';
-import { RobotController } from './robot/RobotController.js?v=41';
-import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=41';
-import { HolographicInspector } from './scene/HolographicInspector.js?v=41';
-import { InspectionCamera } from './scene/InspectionCamera.js?v=41';
-import { InspectionMode } from './scene/InspectionMode.js?v=41';
-import { WallFrontAbout } from './scene/WallFrontAbout.js?v=41';
-import { WallLeftProjects } from './scene/WallLeftProjects.js?v=41';
-import { WallRightSocial } from './scene/WallRightSocial.js?v=41';
-import { WallBackGames } from './scene/WallBackGames.js?v=41';
-import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=41';
+import { CONFIG, STATES } from './config.js?v=44';
+import { BootManager } from './loader/BootManager.js?v=44';
+import { StateManager } from './state/StateManager.js?v=44';
+import { PointerTracker } from './input/PointerTracker.js?v=44';
+import { SpatialCursor } from './input/SpatialCursor.js?v=44';
+import { SceneManager } from './scene/SceneManager.js?v=44';
+import { Lighting } from './scene/Lighting.js?v=44';
+import { Materials } from './scene/Materials.js?v=44';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=44';
+import { Environment } from './scene/Environment.js?v=44';
+import { Workbench } from './scene/Workbench.js?v=44';
+import { RobotController } from './robot/RobotController.js?v=44';
+import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=44';
+import { HolographicInspector } from './scene/HolographicInspector.js?v=44';
+import { InspectionCamera } from './scene/InspectionCamera.js?v=44';
+import { InspectionMode } from './scene/InspectionMode.js?v=44';
+import { WallFrontAbout } from './scene/WallFrontAbout.js?v=44';
+import { WallLeftProjects } from './scene/WallLeftProjects.js?v=44';
+import { WallRightSocial } from './scene/WallRightSocial.js?v=44';
+import { WallBackGames } from './scene/WallBackGames.js?v=44';
+import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=44';
 import * as THREE from 'three';
 
 class App {
@@ -156,6 +156,14 @@ class App {
                     this.wallLeftProjects.group,
                     this.wallRightSocial.group,
                     this.wallBackGames.group
+                ]);
+
+                // Register real 26x10 wall backplane meshes for seamless depth-sorted space raycasting
+                this.robotController.targetMapper.registerWallBackplanes([
+                    this.wallFrontAbout.wallMesh,
+                    this.wallLeftProjects.wallMesh,
+                    this.wallRightSocial.wallMesh,
+                    this.wallBackGames.wallMesh
                 ]);
             }
 
@@ -617,7 +625,8 @@ class App {
                 hitX  = rInfo.hitPoint.x.toFixed(2);
                 hitY  = rInfo.hitPoint.y.toFixed(2);
                 hitZ  = rInfo.hitPoint.z.toFixed(2);
-                hitStatus = rInfo.hasHit ? `HIT (${rInfo.hitType || 'OK'})` : 'MISS';
+                const isReachable = rInfo.isTargetReachable !== false;
+                hitStatus = rInfo.hasHit ? `HIT (${rInfo.hitType || 'OK'}) [${isReachable ? 'IN-REACH' : 'OUT-OF-REACH'}]` : 'MISS';
             }
         }
 
