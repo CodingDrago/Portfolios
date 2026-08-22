@@ -47,8 +47,8 @@ export class SceneManager {
         this.roomBounds = {
             minX: -10.2,
             maxX: 10.2,
-            minY: -1.2,
-            maxY: 5.8,
+            minY: -1.6,
+            maxY: 6.8,
             minZ: -10.2,
             maxZ: 10.2
         };
@@ -201,16 +201,39 @@ export class SceneManager {
             parallaxY = pointer.smoothY * 0.20;
         }
 
-        // 6. Convert spherical coordinates to Cartesian camera position
+        // 6. Direction-Preserving Ray-Box Radius Bounding
+        // Limits camera distance along the spherical ray so it never penetrates floor, ceiling, or walls,
+        // while strictly preserving the spherical look direction so looking up at the ceiling works cleanly.
         const sinPhi = Math.sin(this.currentPhi);
-        const rawCamX = this.currentRadius * sinPhi * Math.sin(this.currentTheta) + this.targetFocus.x + parallaxX;
-        const rawCamY = this.currentRadius * Math.cos(this.currentPhi) + this.targetFocus.y + parallaxY;
-        const rawCamZ = this.currentRadius * sinPhi * Math.cos(this.currentTheta) + this.targetFocus.z;
+        const cosPhi = Math.cos(this.currentPhi);
+        const sinTheta = Math.sin(this.currentTheta);
+        const cosTheta = Math.cos(this.currentTheta);
 
-        // 7. Strict Cartesian Room Boundary Clamping (Camera can NEVER leave room or see through walls)
-        const camX = THREE.MathUtils.clamp(rawCamX, this.roomBounds.minX, this.roomBounds.maxX);
-        const camY = THREE.MathUtils.clamp(rawCamY, this.roomBounds.minY, this.roomBounds.maxY);
-        const camZ = THREE.MathUtils.clamp(rawCamZ, this.roomBounds.minZ, this.roomBounds.maxZ);
+        const ux = sinPhi * sinTheta;
+        const uy = cosPhi;
+        const uz = sinPhi * cosTheta;
+
+        let maxAllowedRadius = this.currentRadius;
+
+        // Bounded within physical room interior: X in [-10.2, 10.2], Y in [-1.6, 6.8], Z in [-10.2, 10.2]
+        if (Math.abs(ux) > 0.0001) {
+            const rx = ux > 0 ? (this.roomBounds.maxX - this.targetFocus.x) / ux : (this.roomBounds.minX - this.targetFocus.x) / ux;
+            if (rx > 0) maxAllowedRadius = Math.min(maxAllowedRadius, rx);
+        }
+        if (Math.abs(uy) > 0.0001) {
+            const ry = uy > 0 ? (this.roomBounds.maxY - this.targetFocus.y) / uy : (this.roomBounds.minY - this.targetFocus.y) / uy;
+            if (ry > 0) maxAllowedRadius = Math.min(maxAllowedRadius, ry);
+        }
+        if (Math.abs(uz) > 0.0001) {
+            const rz = uz > 0 ? (this.roomBounds.maxZ - this.targetFocus.z) / uz : (this.roomBounds.minZ - this.targetFocus.z) / uz;
+            if (rz > 0) maxAllowedRadius = Math.min(maxAllowedRadius, rz);
+        }
+
+        const effectiveRadius = Math.max(this.minRadius, Math.min(this.currentRadius, maxAllowedRadius));
+
+        const camX = effectiveRadius * ux + this.targetFocus.x + parallaxX;
+        const camY = effectiveRadius * uy + this.targetFocus.y + parallaxY;
+        const camZ = effectiveRadius * uz + this.targetFocus.z;
 
         this.camera.position.set(camX, camY, camZ);
         this.camera.lookAt(this.targetFocus);
