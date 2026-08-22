@@ -40,6 +40,7 @@ export class WallRightSocial {
         const wallMesh = new THREE.Mesh(wallGeom, wallMat);
         wallMesh.position.set(0, 2.5, 0);
         wallMesh.receiveShadow = true;
+        this.wallMesh = wallMesh;
         this.group.add(wallMesh);
 
         // Heavy Rack Framework Columns (z = -6, -2, 2, 6)

@@ -47,6 +47,7 @@ export class WallBackGames {
         const wallMesh = new THREE.Mesh(wallGeom, wallMat);
         wallMesh.position.set(0, 2.5, 0);
         wallMesh.receiveShadow = true;
+        this.wallMesh = wallMesh;
         this.group.add(wallMesh);
 
         // Heavy Rack Framework Columns (x = -8.5, -3.8, 3.8, 8.5)

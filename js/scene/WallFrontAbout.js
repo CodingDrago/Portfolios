@@ -42,6 +42,7 @@ export class WallFrontAbout {
         const wallMesh = new THREE.Mesh(wallGeom, wallMat);
         wallMesh.position.set(0, 2.5, 0);
         wallMesh.receiveShadow = true;
+        this.wallMesh = wallMesh;
         this.group.add(wallMesh);
 
         // Structural Steel Vertical Columns (x = ±8.5, x = ±3.8)
