@@ -41,14 +41,14 @@ export class SceneManager {
         this.minRadius = 2.4;
         this.maxRadius = 10.8;
         this.minPhi = 0.05;            // Top-down overhead viewing (~2.8°)
-        this.maxPhi = Math.PI * 0.78;  // Upward elevation angle looking up at ceiling gantry (~140°)
+        this.maxPhi = Math.PI * 0.85;  // Upward elevation angle looking up at ceiling gantry (~153°)
 
         // Room Physical Boundaries (Walls at ±12.0, Floor at -2.0, Ceiling at 7.2)
         this.roomBounds = {
             minX: -10.2,
             maxX: 10.2,
-            minY: -1.0,
-            maxY: 6.2,
+            minY: -1.2,
+            maxY: 5.8,
             minZ: -10.2,
             maxZ: 10.2
         };
@@ -185,7 +185,11 @@ export class SceneManager {
         this.targetRadius = THREE.MathUtils.clamp(this.targetRadius, this.minRadius, this.maxRadius);
 
         // 4. Smooth Damping Interpolation
-        this.currentTheta += (this.targetTheta - this.currentTheta) * 0.10;
+        const thetaDelta = Math.atan2(
+            Math.sin(this.targetTheta - this.currentTheta),
+            Math.cos(this.targetTheta - this.currentTheta)
+        );
+        this.currentTheta += thetaDelta * 0.10;
         this.currentPhi += (this.targetPhi - this.currentPhi) * 0.10;
         this.currentRadius += (this.targetRadius - this.currentRadius) * 0.10;
 

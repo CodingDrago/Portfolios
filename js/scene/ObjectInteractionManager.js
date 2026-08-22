@@ -212,9 +212,10 @@ export class ObjectInteractionManager {
 
         this.interactiveTargets.push(config);
 
-        // Collect all physical child meshes and isolate their materials to prevent shared-material mutation
+        // Collect all physical child meshes and isolate their materials to prevent shared-material mutation.
+        // Environment geometry (userData.isEnvironment === true) is excluded from the raycast layer (C4).
         config.mesh.traverse((child) => {
-            if (child.isMesh) {
+            if (child.isMesh && child.userData.isEnvironment !== true) {
                 // Clone material so changes to this interactive object never bleed into walls, rails, or architecture
                 if (child.material && config.id !== 'robot') {
                     if (Array.isArray(child.material)) {
@@ -283,7 +284,7 @@ export class ObjectInteractionManager {
         // Strict Requirement: NEVER tint, recolor, or modify robot arm materials on hover
         if (target.id === 'robot') return;
 
-        const amberColor = new THREE.Color(0xff9d00);
+        const highlightColor = new THREE.Color(0xffffff);
 
         target.mesh.traverse((child) => {
             if (child.isMesh && child.material) {
@@ -297,8 +298,8 @@ export class ObjectInteractionManager {
                             });
                         }
                         const orig = this.originalEmissives.get(mat);
-                        mat.emissive.lerpColors(orig.color, amberColor, intensity * 0.25);
-                        mat.emissiveIntensity = THREE.MathUtils.lerp(orig.intensity, 0.35, intensity);
+                        mat.emissive.lerpColors(orig.color, highlightColor, intensity * 0.15);
+                        mat.emissiveIntensity = THREE.MathUtils.lerp(orig.intensity, 0.12, intensity);
                     }
                 });
             }
@@ -340,6 +341,12 @@ export class ObjectInteractionManager {
      * @param {SpatialCursor} [spatialCursor] 
      */
     update(deltaTime, pointerTracker, spatialCursor) {
+        // Immediately clear hover when drag begins — prevents stale emissive highlight during camera orbit (C3)
+        if (pointerTracker && pointerTracker.isDragging) {
+            this._clearHover();
+            return;
+        }
+
         if (!this.isEnabled || !this.camera || !pointerTracker) {
             if (this.promptGroup) this.promptGroup.visible = false;
             return;
@@ -453,5 +460,19 @@ export class ObjectInteractionManager {
      */
     getActiveTarget() {
         return this.hoveredTarget;
+    }
+
+    /**
+     * Mark all descendant meshes of an Object3D as environment geometry
+     * (excluded from interactive raycasting)
+     * @param {THREE.Object3D} object3D
+     */
+    static markAsEnvironment(object3D) {
+        if (!object3D) return;
+        object3D.traverse((child) => {
+            if (child.isMesh) {
+                child.userData.isEnvironment = true;
+            }
+        });
     }
 }

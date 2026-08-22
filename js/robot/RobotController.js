@@ -5,10 +5,10 @@
  */
 
 import * as THREE from 'three';
-import { CONFIG } from '../config.js?v=39';
-import { RobotMaterials } from './RobotMaterials.js?v=39';
-import { RobotArm } from './RobotArm.js?v=39';
-import { TargetMapper } from './TargetMapper.js?v=39';
+import { CONFIG } from '../config.js?v=41';
+import { RobotMaterials } from './RobotMaterials.js?v=41';
+import { RobotArm } from './RobotArm.js?v=41';
+import { TargetMapper } from './TargetMapper.js?v=41';
 
 export class RobotController {
     /**
@@ -28,11 +28,16 @@ export class RobotController {
         this.L1 = 1.30;      // Shoulder pivot height (0.55 base + 0.75 yoke)
         this.L2 = 1.80;      // Upper arm length (J2 to J3)
         this.Ldistal = 2.80; // Distance from J3 Elbow pivot directly to the grasping Claw Tip TCP
+
+        // Debug target marker (bright magenta sphere, visible in scene)
+        this._debugMarker = null;
+        this._debugLine = null;
+        this._debugEnabled = false;
     }
 
     /**
      * Add robot assembly to target scene
-     * @param {THREE.Scene} scene 
+     * @param {THREE.Scene} scene
      */
     addToScene(scene) {
         if (!scene) return;
@@ -40,6 +45,74 @@ export class RobotController {
 
         if (this.arm) {
             this.arm.addToScene(scene);
+        }
+
+        if (this.targetMapper && typeof this.targetMapper.getWorkspaceSurface === 'function') {
+            scene.add(this.targetMapper.getWorkspaceSurface());
+        }
+
+        this._initDebugMarker(scene);
+    }
+
+    /**
+     * Create visible debug target marker (magenta sphere) and camera→target ray line.
+     * Hidden by default; enabled when _debugEnabled is set to true.
+     * @private
+     * @param {THREE.Scene} scene
+     */
+    _initDebugMarker(scene) {
+        if (!scene) return;
+
+        // Bright magenta sphere at target position
+        const markerGeo = new THREE.SphereGeometry(0.12, 12, 12);
+        const markerMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, depthTest: false });
+        this._debugMarker = new THREE.Mesh(markerGeo, markerMat);
+        this._debugMarker.renderOrder = 999;
+        this._debugMarker.name = 'IKTargetMarker';
+        this._debugMarker.visible = false;
+        scene.add(this._debugMarker);
+
+        // Debug ray line (camera origin → target)
+        const lineGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(), new THREE.Vector3()
+        ]);
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffff, depthTest: false });
+        this._debugLine = new THREE.Line(lineGeo, lineMat);
+        this._debugLine.renderOrder = 998;
+        this._debugLine.visible = false;
+        scene.add(this._debugLine);
+    }
+
+    /**
+     * Update debug marker position and ray line endpoints each frame.
+     * @private
+     * @param {THREE.Vector3} targetWorld
+     * @param {THREE.Camera}  camera
+     */
+    _updateDebugMarker(targetWorld, camera) {
+        if (!this._debugEnabled || !this._debugMarker) return;
+
+        this._debugMarker.visible = true;
+        this._debugMarker.position.copy(targetWorld);
+
+        if (this._debugLine && camera) {
+            this._debugLine.visible = true;
+            const positions = this._debugLine.geometry.attributes.position;
+            positions.setXYZ(0, camera.position.x, camera.position.y, camera.position.z);
+            positions.setXYZ(1, targetWorld.x, targetWorld.y, targetWorld.z);
+            positions.needsUpdate = true;
+        }
+    }
+
+    /**
+     * Enable or disable the debug marker and ray line.
+     * @param {boolean} enabled
+     */
+    setDebugEnabled(enabled) {
+        this._debugEnabled = enabled;
+        if (!enabled) {
+            if (this._debugMarker) this._debugMarker.visible = false;
+            if (this._debugLine)   this._debugLine.visible   = false;
         }
     }
 
@@ -115,7 +188,7 @@ export class RobotController {
     /**
      * Apply subtle mechanical idle breathing motion when pointer is inactive
      * @private
-     * @param {number} deltaTime 
+     * @param {number} deltaTime
      */
     _applyIdleBreathing(deltaTime) {
         this.idleTime += deltaTime;
@@ -166,10 +239,13 @@ export class RobotController {
             // 1. Map pointer to 3D target in workspace (synchronized with camera view)
             const targetPos = this.targetMapper.mapPointerToTarget(pointer, camera);
 
-            // 2. Solve 6-DOF IK joint angles
+            // 2. Update debug marker at the resolved world-space target
+            this._updateDebugMarker(targetPos, camera);
+
+            // 3. Solve 6-DOF IK joint angles
             this.solveIK(targetPos);
 
-            // 3. Set gripper to READY posture during cursor tracking
+            // 4. Set gripper to READY posture during cursor tracking
             if (this.arm.gripper) {
                 this.arm.gripper.setState('READY');
             }
@@ -179,9 +255,7 @@ export class RobotController {
             this._applyIdleBreathing(deltaTime);
         }
 
-        // 4. Update joint interpolations and gripper fingers
+        // 5. Update joint interpolations and gripper fingers
         this.arm.update(deltaTime);
     }
 }
-
-

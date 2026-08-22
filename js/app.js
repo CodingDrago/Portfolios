@@ -3,26 +3,26 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 4 Spatial Exploration)
  */
 
-import { CONFIG, STATES } from './config.js?v=39';
-import { BootManager } from './loader/BootManager.js?v=39';
-import { StateManager } from './state/StateManager.js?v=39';
-import { PointerTracker } from './input/PointerTracker.js?v=39';
-import { SpatialCursor } from './input/SpatialCursor.js?v=39';
-import { SceneManager } from './scene/SceneManager.js?v=39';
-import { Lighting } from './scene/Lighting.js?v=39';
-import { Materials } from './scene/Materials.js?v=39';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=39';
-import { Environment } from './scene/Environment.js?v=39';
-import { Workbench } from './scene/Workbench.js?v=39';
-import { RobotController } from './robot/RobotController.js?v=39';
-import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=39';
-import { HolographicInspector } from './scene/HolographicInspector.js?v=39';
-import { InspectionCamera } from './scene/InspectionCamera.js?v=39';
-import { InspectionMode } from './scene/InspectionMode.js?v=39';
-import { WallFrontAbout } from './scene/WallFrontAbout.js?v=39';
-import { WallLeftProjects } from './scene/WallLeftProjects.js?v=39';
-import { WallRightSocial } from './scene/WallRightSocial.js?v=39';
-import { WallBackGames } from './scene/WallBackGames.js?v=39';
+import { CONFIG, STATES } from './config.js?v=41';
+import { BootManager } from './loader/BootManager.js?v=41';
+import { StateManager } from './state/StateManager.js?v=41';
+import { PointerTracker } from './input/PointerTracker.js?v=41';
+import { SpatialCursor } from './input/SpatialCursor.js?v=41';
+import { SceneManager } from './scene/SceneManager.js?v=41';
+import { Lighting } from './scene/Lighting.js?v=41';
+import { Materials } from './scene/Materials.js?v=41';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=41';
+import { Environment } from './scene/Environment.js?v=41';
+import { Workbench } from './scene/Workbench.js?v=41';
+import { RobotController } from './robot/RobotController.js?v=41';
+import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=41';
+import { HolographicInspector } from './scene/HolographicInspector.js?v=41';
+import { InspectionCamera } from './scene/InspectionCamera.js?v=41';
+import { InspectionMode } from './scene/InspectionMode.js?v=41';
+import { WallFrontAbout } from './scene/WallFrontAbout.js?v=41';
+import { WallLeftProjects } from './scene/WallLeftProjects.js?v=41';
+import { WallRightSocial } from './scene/WallRightSocial.js?v=41';
+import { WallBackGames } from './scene/WallBackGames.js?v=41';
 import * as THREE from 'three';
 
 class App {
@@ -68,6 +68,10 @@ class App {
             telemetryStatus: null
         };
 
+        // DEV Debug Overlay (toggle with D key — remove _initDevDebug() to disable)
+        this._devDebugEnabled = false;
+        this._devDebugEl = null;
+
         this._onFrame = this._onFrame.bind(this);
         this._onBootComplete = this._onBootComplete.bind(this);
     }
@@ -81,6 +85,9 @@ class App {
         try {
             // 1. Initialize DOM Telemetry Handles
             this._initDOMHandles();
+
+            // DEV debug overlay (press D to toggle)
+            this._initDevDebug();
 
             // 2. Initialize Finite State Machine
             this.stateManager = new StateManager(STATES.NORMAL);
@@ -125,7 +132,7 @@ class App {
             this.mountingPlatform = new MountingPlatform(this.materials);
             this.mountingPlatform.addToScene(this.sceneManager.scene);
 
-            // 8.5. Initialize Phase 3 6-DOF Industrial Robotic Arm
+            // 8.5. Initialize Phase 3 6-DOF Industrial Robotic Arm (adds USER_TARGET_SURFACE to scene)
             this.robotController = new RobotController(this.materials);
             this.robotController.addToScene(this.sceneManager.scene);
 
@@ -289,7 +296,7 @@ class App {
                     'BUS INTEGRITY': '0.00% JITTER / PASS'
                 },
                 mesh: this.workbench.interactiveObjects.oscilloscope,
-                anchorPoint: new THREE.Vector3(-6.3, -0.78, -3.8),
+                anchorPoint: new THREE.Vector3(-8.5, -0.78, -5.4),
                 getData: () => [
                     ['CHANNEL 1:', 'PWM 100 kHz [3.3V LVCMOS]', '#ff9d00'],
                     ['CHANNEL 2:', 'ANALOG SINE [IMU_RAW]', '#38bdf8'],
@@ -321,7 +328,7 @@ class App {
                     'MEMORY MAP': '32KB SRAM / 128KB FLASH'
                 },
                 mesh: this.workbench.interactiveObjects.mcuPrototype,
-                anchorPoint: new THREE.Vector3(-5.2, -0.94, -2.8),
+                anchorPoint: new THREE.Vector3(-7.4, -0.94, -4.4),
                 getData: () => [
                     ['MCU CORE:', 'ARM Cortex-M7 @ 480 MHz', '#ff9d00'],
                     ['RTOS KERNEL:', 'FreeRTOS v10.4 [PREEMPTIVE]', '#38bdf8'],
@@ -353,7 +360,7 @@ class App {
                     'ACTIVE EFFICIENCY': '94.6% PFC REGULATED'
                 },
                 mesh: this.workbench.interactiveObjects.powerSupply,
-                anchorPoint: new THREE.Vector3(-5.3, -0.80, -3.8),
+                anchorPoint: new THREE.Vector3(-7.5, -0.80, -5.4),
                 getData: () => [
                     ['OUTPUT VOLTAGE:', '24.00 V DC [REGULATED]', '#ff9d00'],
                     ['OUTPUT CURRENT:', '03.50 A [LOAD: 42.0%]', '#10b981'],
@@ -385,7 +392,7 @@ class App {
                     'SAFETY SLEEP': 'AUTO STANDBY 10 MIN'
                 },
                 mesh: this.workbench.interactiveObjects.reworkStation,
-                anchorPoint: new THREE.Vector3(-6.6, -0.84, -3.0),
+                anchorPoint: new THREE.Vector3(-8.8, -0.84, -4.6),
                 getData: () => [
                     ['SET TEMPERATURE:', '380°C [CLOSED-LOOP PID]', '#ff9d00'],
                     ['ACTUAL TIP TEMP:', '380.2°C [STABLE ±0.5°C]', '#10b981'],
@@ -460,7 +467,7 @@ class App {
                     'WORLD COORDINATE': 'REGISTERED TO ORIGIN (0,0,0)'
                 },
                 mesh: this.workbench.interactiveObjects.calibrationRig,
-                anchorPoint: new THREE.Vector3(5.2, -0.80, -3.1),
+                anchorPoint: new THREE.Vector3(7.4, -0.80, -4.7),
                 getData: () => [
                     ['FIDUCIAL TARGET:', 'SUB-MILLIMETER OPTICAL CUBE', '#10b981'],
                     ['ALIGNMENT RETICLE:', 'DUAL-RING TORUS [ACTIVE]', '#ff9d00'],
@@ -492,7 +499,7 @@ class App {
                     'DIAGNOSTIC STATUS': 'ACTIVE STREAMING / NOMINAL'
                 },
                 mesh: this.workbench.interactiveObjects.logicAnalyzer,
-                anchorPoint: new THREE.Vector3(6.3, -0.80, -3.7),
+                anchorPoint: new THREE.Vector3(8.5, -0.80, -5.3),
                 getData: () => [
                     ['CAN 2.0B BUS:', '1.000 Mbps [TRAFFIC: 14.2%]', '#10b981'],
                     ['DIGITAL CHANNELS:', '8-CH @ 500 MHz SAMPLING', '#ff9d00'],
@@ -502,6 +509,156 @@ class App {
                 ]
             });
         }
+    }
+
+    /**
+     * Initialize toggleable DEV interaction debug overlay (press D to show/hide).
+     * Remove this._initDevDebug() in init() to disable entirely.
+     * @private
+     */
+    _initDevDebug() {
+        const el = document.createElement('div');
+        el.id = 'dev-debug';
+        el.style.cssText = [
+            'position:fixed','top:10px','right:10px','z-index:99999',
+            'background:rgba(5,7,9,0.92)','color:#e2e8f0',
+            'font:11px/1.5 "JetBrains Mono",monospace',
+            'padding:10px 14px','border:1px solid #1e293b','border-radius:6px',
+            'max-width:340px','min-width:280px','pointer-events:none','display:none',
+            'white-space:pre','box-shadow:0 4px 24px rgba(0,0,0,0.7)'
+        ].join(';');
+        document.body.appendChild(el);
+        this._devDebugEl = el;
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'd' || e.key === 'D') {
+                this._devDebugEnabled = !this._devDebugEnabled;
+                el.style.display = this._devDebugEnabled ? 'block' : 'none';
+                // Sync debug marker visibility in the 3D scene
+                if (this.robotController && typeof this.robotController.setDebugEnabled === 'function') {
+                    this.robotController.setDebugEnabled(this._devDebugEnabled);
+                }
+            }
+        });
+    }
+
+    /**
+     * Update DEV debug overlay content each frame.
+     * @private
+     */
+    _updateDevDebug() {
+        if (!this._devDebugEnabled || !this._devDebugEl) return;
+
+        const cam = this.sceneManager && this.sceneManager.camera;
+        const sm  = this.sceneManager;
+        const pt  = this.pointerTracker;
+        const rc  = this.robotController;
+        const im  = this.interactionManager;
+
+        const azDeg = sm ? (THREE.MathUtils.radToDeg(sm.currentTheta) % 360).toFixed(1) : '—';
+        const elDeg = sm ? THREE.MathUtils.radToDeg(sm.currentPhi).toFixed(1) : '—';
+        const rad   = sm ? sm.currentRadius.toFixed(2) : '—';
+        const cx = cam ? cam.position.x.toFixed(2) : '—';
+        const cy = cam ? cam.position.y.toFixed(2) : '—';
+        const cz = cam ? cam.position.z.toFixed(2) : '—';
+
+        const rb = sm ? sm.roomBounds : null;
+        const insideRoom = rb && cam
+            ? (cam.position.x > rb.minX && cam.position.x < rb.maxX &&
+               cam.position.y > rb.minY && cam.position.y < rb.maxY &&
+               cam.position.z > rb.minZ && cam.position.z < rb.maxZ)
+            : null;
+        const ceilHit  = rb && cam ? cam.position.y >= rb.maxY - 0.05 : false;
+        const floorHit = rb && cam ? cam.position.y <= rb.minY + 0.05 : false;
+        const wallHit  = rb && cam
+            ? (cam.position.x <= rb.minX + 0.05 || cam.position.x >= rb.maxX - 0.05 ||
+               cam.position.z <= rb.minZ + 0.05 || cam.position.z >= rb.maxZ - 0.05)
+            : false;
+
+        const px   = pt ? pt.x.toFixed(0) : '—';
+        const py   = pt ? pt.y.toFixed(0) : '—';
+        const ndcX = pt ? pt.normalizedX.toFixed(3) : '—';
+        const ndcY = pt ? pt.normalizedY.toFixed(3) : '—';
+
+        let rayOx='—',rayOy='—',rayOz='—',rayDx='—',rayDy='—',rayDz='—';
+        let hitX='—',hitY='—',hitZ='—',hitStatus='NO';
+        const tm = rc && rc.targetMapper;
+        if (tm && typeof tm.getLastRayInfo === 'function') {
+            const rInfo = tm.getLastRayInfo();
+            if (rInfo && rInfo.origin) {
+                rayOx = rInfo.origin.x.toFixed(2);
+                rayOy = rInfo.origin.y.toFixed(2);
+                rayOz = rInfo.origin.z.toFixed(2);
+                rayDx = rInfo.direction.x.toFixed(2);
+                rayDy = rInfo.direction.y.toFixed(2);
+                rayDz = rInfo.direction.z.toFixed(2);
+                hitX  = rInfo.hitPoint.x.toFixed(2);
+                hitY  = rInfo.hitPoint.y.toFixed(2);
+                hitZ  = rInfo.hitPoint.z.toFixed(2);
+                hitStatus = rInfo.hasHit ? 'HIT' : 'MISS';
+            }
+        }
+
+        let tx='—',ty='—',tz='—';
+        if (tm) { const t=tm.getLastTarget(); tx=t.x.toFixed(2); ty=t.y.toFixed(2); tz=t.z.toFixed(2); }
+
+        const getDeg = (n) => {
+            if (!rc||!rc.arm) return '—';
+            const j=rc.arm.getJoint(n);
+            return j ? THREE.MathUtils.radToDeg(j.currentAngle).toFixed(1) : '—';
+        };
+
+        const wsValid = tm
+            ? (parseFloat(tx)>=-5.5&&parseFloat(tx)<=5.5&&
+               parseFloat(ty)>=0.0 &&parseFloat(ty)<=4.5&&
+               parseFloat(tz)>=-5.5&&parseFloat(tz)<=3.8)
+            : null;
+
+        // FK end-effector world position and distance-to-target error
+        let fkx='—', fky='—', fkz='—', fkErr='—';
+        if (rc && rc.arm && typeof rc.arm.getEndEffectorWorldPosition === 'function') {
+            const fkPos = rc.arm.getEndEffectorWorldPosition();
+            fkx = fkPos.x.toFixed(2);
+            fky = fkPos.y.toFixed(2);
+            fkz = fkPos.z.toFixed(2);
+            if (tm) {
+                const tgt = tm.getLastTarget();
+                fkErr = fkPos.distanceTo(tgt).toFixed(3);
+            }
+        }
+
+        const hoveredId    = im && im.hoveredTarget ? im.hoveredTarget.id : 'none';
+        const targetCount  = im ? im.targetMeshes.length : 0;
+
+        const a = (s,c) => `<span style="color:${c}">${s}</span>`;
+        const h = (s) => a(s,'#ff9d00');
+        const g = (v) => v ? a('YES','#10b981') : a('NO','#ef4444');
+
+        const rows = [
+            h('── CAMERA ─────────────────────'),
+            ` AZ ${azDeg}°  EL ${elDeg}°  R ${rad}`,
+            ` XYZ  ${cx}  ${cy}  ${cz}`,
+            h('── POINTER ────────────────────'),
+            ` SCREEN  ${px} ${py}   NDC  ${ndcX} ${ndcY}`,
+            h('── RAY ────────────────────────'),
+            ` ORIG   ${rayOx} ${rayOy} ${rayOz}`,
+            ` DIR    ${rayDx} ${rayDy} ${rayDz}`,
+            ` HIT    ${hitX} ${hitY} ${hitZ} [${hitStatus}]`,
+            h('── ROBOT ──────────────────────'),
+            ` TGT   ${tx} ${ty} ${tz}`,
+            ` J1:${getDeg('J1')}° J2:${getDeg('J2')}° J3:${getDeg('J3')}°`,
+            ` J4:${getDeg('J4')}° J5:${getDeg('J5')}° J6:${getDeg('J6')}°`,
+            ` FK    ${fkx} ${fky} ${fkz}`,
+            ` FK-ERR  ${fkErr}m`,
+            ` WS-VALID: ${wsValid===null?'—':g(wsValid)}`,
+            h('── INTERACTION ────────────────'),
+            ` HOVERED: ${hoveredId}`,
+            ` RAYCAST TARGETS: ${targetCount}`,
+            h('── CAM BOUNDS ─────────────────'),
+            ` INSIDE ROOM: ${insideRoom===null?'—':g(insideRoom)}`,
+            ` CEIL:${ceilHit?a('HIT','#ef4444'):'OK'}  FLOOR:${floorHit?a('HIT','#ef4444'):'OK'}  WALL:${wallHit?a('HIT','#ef4444'):'OK'}`
+        ];
+
+        this._devDebugEl.innerHTML = rows.join('\n');
     }
 
     /**
@@ -579,6 +736,9 @@ class App {
         if (this.sceneManager) {
             this.sceneManager.render();
         }
+
+        // DEV debug overlay update
+        this._updateDevDebug();
 
         // Request next frame
         requestAnimationFrame(this._onFrame);

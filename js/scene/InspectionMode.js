@@ -50,6 +50,11 @@ export class InspectionMode {
 
         this._initDOM();
         this._bindEvents();
+
+        // Auto-dismiss intro hint after 5 seconds OR on first mouse interaction
+        this._introAutoDismissTimer = setTimeout(() => this._dismissIntro(), 5000);
+        this._introPointerHandler = () => this._dismissIntro();
+        window.addEventListener('pointerdown', this._introPointerHandler, { once: true });
     }
 
     /**
@@ -156,6 +161,24 @@ export class InspectionMode {
             this.panelElement.addEventListener('pointerdown', (e) => e.stopPropagation());
             this.panelElement.addEventListener('wheel', (e) => e.stopPropagation());
         }
+    }
+
+    /**
+     * Dismiss the initial intro instruction hint permanently
+     * @private
+     */
+    _dismissIntro() {
+        if (this.introInstructionElement && !this.introInstructionElement.classList.contains('fade-out')) {
+            this.introInstructionElement.classList.add('fade-out');
+            // Remove from DOM after CSS transition completes
+            setTimeout(() => {
+                if (this.introInstructionElement && this.introInstructionElement.parentElement) {
+                    this.introInstructionElement.parentElement.removeChild(this.introInstructionElement);
+                }
+            }, 1000);
+        }
+        clearTimeout(this._introAutoDismissTimer);
+        window.removeEventListener('pointerdown', this._introPointerHandler);
     }
 
     /**

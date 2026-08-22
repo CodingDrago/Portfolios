@@ -85,10 +85,10 @@ export class Lighting {
 
         // 6. Workbench Task Lights
         this.leftBenchLight = new THREE.PointLight(CONFIG.colors.amber || 0xffb703, 0.4, 6);
-        this.leftBenchLight.position.set(-5.8, -0.4, -3.2);
+        this.leftBenchLight.position.set(-8.0, -0.4, -5.0);
 
         this.rightBenchLight = new THREE.PointLight(0xe2e8f0, 0.35, 6);
-        this.rightBenchLight.position.set(5.8, -0.4, -3.2);
+        this.rightBenchLight.position.set(8.0, -0.4, -5.0);
 
         // =========================================================================
         // 5 PRIMARY CEILING MOUNTED SPOTLIGHTS

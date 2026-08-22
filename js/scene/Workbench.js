@@ -43,6 +43,7 @@ export class Workbench {
     _initLeftElectronicsBench() {
         const leftGroup = new THREE.Group();
         leftGroup.name = 'ElectronicsBench';
+        leftGroup.position.set(-2.2, 0, -1.6); // Push toward left wall for clear central workspace
 
         // 1. Heavy Industrial Tabletop (Matte dark composite, x = -5.8, y = -1.0, z = -3.4)
         const tableTopGeom = new THREE.BoxGeometry(2.5, 0.08, 2.2);
@@ -51,18 +52,21 @@ export class Workbench {
         tableTopMesh.castShadow = true;
         tableTopMesh.receiveShadow = true;
         leftGroup.add(tableTopMesh);
+        tableTopMesh.userData.isEnvironment = true;
 
         // 1.5. Antistatic ESD Bench Mat (Dark Blue-Grey with grounded snap)
         const esdMatGeom = new THREE.BoxGeometry(2.3, 0.01, 2.0);
         const esdMatMesh = new THREE.Mesh(esdMatGeom, this.materials.get('esdMat'));
         esdMatMesh.position.set(-5.8, -0.955, -3.4);
         leftGroup.add(esdMatMesh);
+        esdMatMesh.userData.isEnvironment = true;
 
         // Grounding Snap Rivet
         const snapGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.015, 12);
         const snap = new THREE.Mesh(snapGeom, this.materials.get('brushedSteel'));
         snap.position.set(-4.8, -0.945, -2.5);
         leftGroup.add(snap);
+        snap.userData.isEnvironment = true;
 
         // 2. Extruded Black Anodized T-Slot Aluminum Legs & Frame
         const legGeom = new THREE.BoxGeometry(0.08, 0.96, 0.08);
@@ -80,6 +84,7 @@ export class Workbench {
             leg.position.set(x, y, z);
             leg.castShadow = true;
             leftGroup.add(leg);
+            leg.userData.isEnvironment = true;
         });
 
         // Lower Stiffener Crossbars
@@ -89,6 +94,7 @@ export class Workbench {
         const barBack = new THREE.Mesh(crossbarGeomX, legMat);
         barBack.position.set(-5.8, -1.75, -4.4);
         leftGroup.add(barFront, barBack);
+        barFront.userData.isEnvironment = true; barBack.userData.isEnvironment = true;
 
         // 3. Digital Storage Oscilloscope with Live Animated CRT Screen
         this._initOscilloscope(leftGroup);
@@ -379,6 +385,7 @@ export class Workbench {
         trayMesh.position.set(-6.4, -0.94, -2.4);
         trayMesh.castShadow = true;
         toolsGroup.add(trayMesh);
+        trayMesh.userData.isEnvironment = true;
 
         // Internal Compartment Dividers
         const divGeomX = new THREE.BoxGeometry(0.36, 0.035, 0.01);
@@ -393,6 +400,7 @@ export class Workbench {
         caliperMesh.position.set(-5.0, -0.95, -2.35);
         caliperMesh.rotation.y = 0.35;
         toolsGroup.add(caliperMesh);
+        caliperMesh.userData.isEnvironment = true;
 
         // Digital Multimeter (DMM) with Holster
         const dmmGeom = new THREE.BoxGeometry(0.16, 0.06, 0.26);
@@ -400,6 +408,7 @@ export class Workbench {
         dmmMesh.position.set(-5.7, -0.92, -2.4);
         dmmMesh.rotation.y = -0.2;
         toolsGroup.add(dmmMesh);
+        dmmMesh.userData.isEnvironment = true;
 
         // DMM LCD Screen
         const dmmScreen = new THREE.Mesh(
@@ -429,6 +438,7 @@ export class Workbench {
     _initRightRoboticsBench() {
         const rightGroup = new THREE.Group();
         rightGroup.name = 'RoboticsBench';
+        rightGroup.position.set(2.2, 0, -1.6); // Push toward right wall for clear central workspace
 
         // 1. Heavy Industrial Tabletop (Matte dark composite, x = 5.8, y = -1.0, z = -3.4)
         const tableTopGeom = new THREE.BoxGeometry(2.5, 0.08, 2.2);
@@ -437,12 +447,14 @@ export class Workbench {
         tableTopMesh.castShadow = true;
         tableTopMesh.receiveShadow = true;
         rightGroup.add(tableTopMesh);
+        tableTopMesh.userData.isEnvironment = true;
 
         // 1.5. Antistatic ESD Bench Mat (Dark Blue-Grey with grounded snap)
         const esdMatGeom = new THREE.BoxGeometry(2.3, 0.01, 2.0);
         const esdMatMesh = new THREE.Mesh(esdMatGeom, this.materials.get('esdMat'));
         esdMatMesh.position.set(5.8, -0.955, -3.4);
         rightGroup.add(esdMatMesh);
+        esdMatMesh.userData.isEnvironment = true;
 
         // 2. Extruded Black Anodized T-Slot Aluminum Legs
         const legGeom = new THREE.BoxGeometry(0.08, 0.96, 0.08);
@@ -460,6 +472,7 @@ export class Workbench {
             leg.position.set(x, y, z);
             leg.castShadow = true;
             rightGroup.add(leg);
+            leg.userData.isEnvironment = true;
         });
 
         // 3. Precision Optical Breadboard Matrix Plate (NON-INTERACTIVE background table surface)
@@ -469,10 +482,13 @@ export class Workbench {
         breadboardMesh.castShadow = true;
         breadboardMesh.receiveShadow = true;
         rightGroup.add(breadboardMesh);
+        breadboardMesh.userData.isEnvironment = true;
 
         // 4. Optical Target Calibration Fiducial Rig (DEDICATED INTERACTIVE TARGET)
         const calibrationRig = new THREE.Group();
         calibrationRig.name = 'CalibrationRig';
+        calibrationRig.userData.interactiveRoot = true;
+        calibrationRig.userData.interactiveId = 'calibrationRig';
         calibrationRig.position.set(5.2, -0.92, -3.1);
         calibrationRig.rotation.y = 0.35;
 

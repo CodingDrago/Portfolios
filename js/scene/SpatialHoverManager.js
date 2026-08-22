@@ -44,28 +44,17 @@ export class SpatialHoverManager {
 
         this.interactiveTargets.push(config);
 
-        // 1. Collect all real child meshes from the object
+        // 1. Collect all real child meshes from the object, excluding environment geometry
         if (config.mesh) {
             config.mesh.traverse((child) => {
-                if (child.isMesh) {
+                if (child.isMesh && child.userData.isEnvironment !== true) {
                     child.userData.targetConfig = config;
                     this.targetMeshes.push(child);
                 }
             });
         }
-
-        // 2. Create a precision bounding volume conforming tightly to the hardware object
-        const bounds = config.boundsSize || new THREE.Vector3(0.6, 0.4, 0.5);
-        const boundGeom = new THREE.BoxGeometry(bounds.x, bounds.y, bounds.z);
-        const boundMat = new THREE.MeshBasicMaterial({ visible: false });
-        const boundMesh = new THREE.Mesh(boundGeom, boundMat);
-        boundMesh.position.copy(config.anchorPoint || new THREE.Vector3(0, 0, 0));
-        boundMesh.userData.targetConfig = config;
-
-        if (this.scene) {
-            this.scene.add(boundMesh);
-        }
-        this.targetMeshes.push(boundMesh);
+        // No invisible BoxGeometry bounding mesh — removed to prevent false-positive hits
+        // on table surfaces, floors, and non-interactive geometry at the anchor point
     }
 
     /**
@@ -75,6 +64,17 @@ export class SpatialHoverManager {
      */
     update(deltaTime, pointerTracker) {
         if (!this.camera || !pointerTracker) return;
+
+        // Suppress hover during camera drag
+        if (pointerTracker.isDragging) {
+            if (this.activeTarget) {
+                if (this.activeTarget.onUnhover) this.activeTarget.onUnhover();
+                this.activeTarget = null;
+                this.previousTarget = null;
+            }
+            this.hoverProgress = 0;
+            return;
+        }
 
         let hitTarget = null;
         if (pointerTracker.hasMovedEver) {
