@@ -8,9 +8,12 @@
  *   - BACK  Wall (Z = +12.0): Target direction ( 0, +1) -> Score: +dirZ
  *   - RIGHT Wall (X = +12.0): Target direction (+1,  0) -> Score: +dirX
  *
- * Scoping Rules:
- *   - The primary facing wall (and adjacent walls in transition zones) render at full/interpolated opacity.
- *   - Non-facing walls (score <= 0.35) are completely removed from the render pass (group.visible = false)
+ * Hysteresis Scoping Rules:
+ *   - Uses a dual-threshold hysteresis band to eliminate visibility flickering near boundaries:
+ *     * Falling threshold (hideThreshold = 0.25): only hide a visible wall when score drops below 0.25.
+ *     * Rising threshold (showThreshold = 0.40): only re-show a hidden wall when score rises above 0.40.
+ *   - Visible walls render with smooth opacity scaling between hideThreshold (0.25) and fullThreshold (0.70).
+ *   - Non-facing walls (below hideThreshold) are culled from the render pass (group.visible = false)
  *     to prevent any 3D panel overlap, text clutter, or z-fighting across wall corners.
  *   - Evaluated every frame in the main RequestAnimationFrame loop (during drag orbit and idle).
  */
@@ -38,11 +41,20 @@ export class WallVisibilityManager {
             right: 0.0
         };
 
+        // Hysteresis state tracking per wall
+        this.wallStates = {
+            front: true,
+            left: false,
+            back: false,
+            right: false
+        };
+
         this.primaryFacingWall = 'front';
 
-        // Visibility threshold: below this score, the wall group is culled from rendering
-        this.cullThreshold = 0.35;
-        this.fullThreshold = 0.70;
+        // Dual-threshold hysteresis band
+        this.hideThreshold = 0.25; // Score below which a visible wall becomes hidden
+        this.showThreshold = 0.40; // Score above which a hidden wall becomes visible
+        this.fullThreshold = 0.70; // Score at which a visible wall reaches 1.0 full opacity
 
         // Cache original material opacities
         this._materialOpacities = new Map();
@@ -83,7 +95,7 @@ export class WallVisibilityManager {
     }
 
     /**
-     * Update camera-facing visibility for all 4 walls every frame
+     * Update camera-facing visibility for all 4 walls every frame with hysteresis
      * @param {number} [deltaTime] Time elapsed in seconds
      */
     update(deltaTime) {
@@ -114,23 +126,35 @@ export class WallVisibilityManager {
         }
         this.primaryFacingWall = primary;
 
-        // 4. Apply visibility scoping and smooth opacity to each wall group
+        // 4. Apply hysteresis visibility scoping and smooth opacity to each wall group
         for (const [wallKey, wallInstance] of Object.entries(this.walls)) {
             if (!wallInstance || !wallInstance.group) continue;
 
             const score = this.scores[wallKey];
             const group = wallInstance.group;
+            const wasVisible = this.wallStates[wallKey] !== undefined ? this.wallStates[wallKey] : true;
+            let isVisible = wasVisible;
 
-            if (score <= this.cullThreshold) {
-                // Non-facing wall: completely cull from render pass
-                group.visible = false;
+            // Hysteresis state transition
+            if (wasVisible) {
+                // Falling edge: only hide if score drops below hideThreshold (0.25)
+                if (score < this.hideThreshold) {
+                    isVisible = false;
+                }
             } else {
-                // Facing wall: make visible in render pass
-                group.visible = true;
+                // Rising edge: only re-show if score exceeds showThreshold (0.40)
+                if (score > this.showThreshold) {
+                    isVisible = true;
+                }
+            }
 
-                // Calculate smooth opacity interpolation factor
+            this.wallStates[wallKey] = isVisible;
+            group.visible = isVisible;
+
+            if (isVisible) {
+                // Calculate smooth opacity factor between hideThreshold (0.25) and fullThreshold (0.70)
                 const alpha = THREE.MathUtils.clamp(
-                    (score - this.cullThreshold) / (this.fullThreshold - this.cullThreshold),
+                    (score - this.hideThreshold) / (this.fullThreshold - this.hideThreshold),
                     0.0,
                     1.0
                 );
