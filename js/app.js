@@ -23,6 +23,7 @@ import { WallFrontAbout } from './scene/WallFrontAbout.js?v=41';
 import { WallLeftProjects } from './scene/WallLeftProjects.js?v=41';
 import { WallRightSocial } from './scene/WallRightSocial.js?v=41';
 import { WallBackGames } from './scene/WallBackGames.js?v=41';
+import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=41';
 import * as THREE from 'three';
 
 class App {
@@ -44,6 +45,7 @@ class App {
         this.wallLeftProjects = null;
         this.wallRightSocial = null;
         this.wallBackGames = null;
+        this.wallVisibilityManager = null;
 
         // Phase 3 Robotic Arm Subsystem
         this.robotController = null;
@@ -127,6 +129,17 @@ class App {
 
             this.wallBackGames = new WallBackGames(this.materials);
             this.wallBackGames.addToScene(this.sceneManager.scene);
+
+            // 7.9. Initialize Camera-Facing Wall Visibility Manager (Scopes 3D panels based on camera angle)
+            this.wallVisibilityManager = new WallVisibilityManager({
+                camera: this.sceneManager.camera,
+                walls: {
+                    front: this.wallFrontAbout,
+                    left: this.wallLeftProjects,
+                    right: this.wallRightSocial,
+                    back: this.wallBackGames
+                }
+            });
 
             // 8. Initialize Central Robot Mounting Platform (Origin: 0, -2.0, 0)
             this.mountingPlatform = new MountingPlatform(this.materials);
@@ -633,10 +646,13 @@ class App {
         const h = (s) => a(s,'#ff9d00');
         const g = (v) => v ? a('YES','#10b981') : a('NO','#ef4444');
 
+        const facingWall = this.wallVisibilityManager ? this.wallVisibilityManager.getFacingWall().toUpperCase() : '—';
+
         const rows = [
             h('── CAMERA ─────────────────────'),
             ` AZ ${azDeg}°  EL ${elDeg}°  R ${rad}`,
             ` XYZ  ${cx}  ${cy}  ${cz}`,
+            ` FACING WALL: ${h(facingWall)}`,
             h('── POINTER ────────────────────'),
             ` SCREEN  ${px} ${py}   NDC  ${ndcX} ${ndcY}`,
             h('── RAY ────────────────────────'),
@@ -730,6 +746,11 @@ class App {
             if (this.sceneManager && typeof this.sceneManager.updateCameraParallax === 'function') {
                 this.sceneManager.updateCameraParallax(this.pointerTracker);
             }
+        }
+
+        // 4.5. Update Camera-Facing Wall Visibility Scoping (Evaluated every frame during drag and idle)
+        if (this.wallVisibilityManager) {
+            this.wallVisibilityManager.update(deltaTime);
         }
 
         // Render Active Scene
