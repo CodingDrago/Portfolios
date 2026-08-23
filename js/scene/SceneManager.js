@@ -5,6 +5,7 @@
  */
 
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { CONFIG } from '../config.js';
 
 export class SceneManager {
@@ -56,6 +57,7 @@ export class SceneManager {
         this._initScene();
         this._initCamera();
         this._initRenderer();
+        this._initEnvironmentMap();
         this._initResizeObserver();
     }
 
@@ -119,6 +121,22 @@ export class SceneManager {
 
         // Append canvas to mount container
         this.container.appendChild(this.renderer.domElement);
+    }
+
+    /**
+     * Generate image-based lighting environment map from RoomEnvironment
+     * Provides realistic ambient reflections for metallic and rough PBR materials
+     * @private
+     */
+    _initEnvironmentMap() {
+        const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+        pmremGenerator.compileEquirectangularShader();
+
+        const roomEnvironment = new RoomEnvironment();
+        this.scene.environment = pmremGenerator.fromScene(roomEnvironment, 0.04).texture;
+
+        pmremGenerator.dispose();
+        roomEnvironment.dispose();
     }
 
     /**
