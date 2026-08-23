@@ -39,6 +39,9 @@ export class SceneManager {
         this.targetPhi = this.defaultPhi;
         this.currentPhi = this.defaultPhi;
 
+        // Programmatic Transition State
+        this.isTransitioning = false;
+
         // Camera Section Presets (front / left / right / back)
         // Matches Lighting.js spot targets and WallVisibilityManager wall IDs
         this.sectionPresets = {
@@ -223,6 +226,7 @@ export class SceneManager {
             return false;
         }
 
+        this.isTransitioning = true;
         this.targetTheta = preset.theta;
         this.targetPhi = preset.phi;
         this.targetRadius = preset.radius;
@@ -230,6 +234,14 @@ export class SceneManager {
             this.targetFocus.copy(preset.focus);
         }
         return true;
+    }
+
+    /**
+     * Returns true if camera is currently navigating to a preset
+     * @returns {boolean}
+     */
+    isNavigating() {
+        return this.isTransitioning;
     }
 
     /**
@@ -242,6 +254,7 @@ export class SceneManager {
 
         // 1. Process drag orbit input (full 360-degree continuous horizontal rotation & wide vertical range)
         if (pointer.isDragging) {
+            this.isTransitioning = false; // User drag overrides any programmatic transition
             this.targetTheta -= pointer.dragDeltaX * 0.0055;
             this.targetPhi -= pointer.dragDeltaY * 0.0055;
         }
@@ -267,6 +280,18 @@ export class SceneManager {
         this.currentPhi += (this.targetPhi - this.currentPhi) * damping;
         this.currentRadius += (this.targetRadius - this.currentRadius) * damping;
         this.currentFocus.lerp(this.targetFocus, damping);
+
+        // 4.5. Check Programmatic Transition Arrival Threshold
+        if (this.isTransitioning) {
+            const thetaDiff = Math.abs(thetaDelta);
+            const phiDiff = Math.abs(this.targetPhi - this.currentPhi);
+            const radiusDiff = Math.abs(this.targetRadius - this.currentRadius);
+            const focusDiff = this.currentFocus.distanceTo(this.targetFocus);
+
+            if (thetaDiff < 0.02 && phiDiff < 0.02 && radiusDiff < 0.04 && focusDiff < 0.04) {
+                this.isTransitioning = false;
+            }
+        }
 
         // 5. Subtle micro-parallax shift when NOT dragging
         let parallaxX = 0;

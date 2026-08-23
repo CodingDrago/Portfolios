@@ -3,27 +3,27 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 4 Spatial Exploration)
  */
 
-import { CONFIG, STATES } from './config.js?v=49';
-import { BootManager } from './loader/BootManager.js?v=49';
-import { StateManager } from './state/StateManager.js?v=49';
-import { PointerTracker } from './input/PointerTracker.js?v=49';
-import { SpatialCursor } from './input/SpatialCursor.js?v=49';
-import { SceneManager } from './scene/SceneManager.js?v=49';
-import { Lighting } from './scene/Lighting.js?v=49';
-import { Materials } from './scene/Materials.js?v=49';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=49';
-import { Environment } from './scene/Environment.js?v=49';
-import { Workbench } from './scene/Workbench.js?v=49';
-import { RobotController } from './robot/RobotController.js?v=49';
-import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=49';
-import { HolographicInspector } from './scene/HolographicInspector.js?v=49';
-import { InspectionCamera } from './scene/InspectionCamera.js?v=49';
-import { InspectionMode } from './scene/InspectionMode.js?v=49';
-import { WallFrontAbout } from './scene/WallFrontAbout.js?v=49';
-import { WallLeftProjects } from './scene/WallLeftProjects.js?v=49';
-import { WallRightSocial } from './scene/WallRightSocial.js?v=49';
-import { WallBackGames } from './scene/WallBackGames.js?v=49';
-import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=49';
+import { CONFIG, STATES } from './config.js?v=50';
+import { BootManager } from './loader/BootManager.js?v=50';
+import { StateManager } from './state/StateManager.js?v=50';
+import { PointerTracker } from './input/PointerTracker.js?v=50';
+import { SpatialCursor } from './input/SpatialCursor.js?v=50';
+import { SceneManager } from './scene/SceneManager.js?v=50';
+import { Lighting } from './scene/Lighting.js?v=50';
+import { Materials } from './scene/Materials.js?v=50';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=50';
+import { Environment } from './scene/Environment.js?v=50';
+import { Workbench } from './scene/Workbench.js?v=50';
+import { RobotController } from './robot/RobotController.js?v=50';
+import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=50';
+import { HolographicInspector } from './scene/HolographicInspector.js?v=50';
+import { InspectionCamera } from './scene/InspectionCamera.js?v=50';
+import { InspectionMode } from './scene/InspectionMode.js?v=50';
+import { WallFrontAbout } from './scene/WallFrontAbout.js?v=50';
+import { WallLeftProjects } from './scene/WallLeftProjects.js?v=50';
+import { WallRightSocial } from './scene/WallRightSocial.js?v=50';
+import { WallBackGames } from './scene/WallBackGames.js?v=50';
+import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=50';
 import * as THREE from 'three';
 
 class App {
@@ -59,6 +59,7 @@ class App {
 
         // Fixed Navigation Overlay State
         this.currentActiveNav = 'front';
+        this.isNavigatingProgrammatically = false;
 
         // Animation Loop Control
         this.lastFrameTime = 0;
@@ -773,12 +774,27 @@ class App {
             }
         }
 
-        // 4.5. Update Camera-Facing Wall Visibility Scoping (Evaluated every frame during drag and idle)
+        // 4.5. Update Camera-Facing Wall Visibility Scoping & Navbar Sync
         if (this.wallVisibilityManager) {
             this.wallVisibilityManager.update(deltaTime);
-            const facingWall = this.wallVisibilityManager.getFacingWall();
-            if (facingWall && facingWall !== this.currentActiveNav) {
-                this.setActiveNav(facingWall);
+
+            // Check if programmatic transition has completed or was cancelled by user drag
+            if (this.isNavigatingProgrammatically) {
+                if (this.pointerTracker && this.pointerTracker.isDragging) {
+                    this.isNavigatingProgrammatically = false;
+                } else if (this.sceneManager && typeof this.sceneManager.isNavigating === 'function') {
+                    if (!this.sceneManager.isNavigating()) {
+                        this.isNavigatingProgrammatically = false;
+                    }
+                }
+            }
+
+            // Sync navbar with free camera drag only when NOT in a programmatic transition
+            if (!this.isNavigatingProgrammatically) {
+                const facingWall = this.wallVisibilityManager.getFacingWall();
+                if (facingWall && facingWall !== this.currentActiveNav) {
+                    this.setActiveNav(facingWall);
+                }
             }
         }
 
@@ -845,6 +861,7 @@ class App {
         if (this.sceneManager && typeof this.sceneManager.goToSection === 'function') {
             const success = this.sceneManager.goToSection(sectionId);
             if (success) {
+                this.isNavigatingProgrammatically = true;
                 this.setActiveNav(sectionId);
             }
             return success;
