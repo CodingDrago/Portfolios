@@ -81,7 +81,7 @@ export class WallFrontAbout {
      */
     _initIdentityHeader() {
         const headerGroup = new THREE.Group();
-        headerGroup.position.set(0, 4.85, 0.58);
+        headerGroup.position.set(0, 4.95, 0.58);
 
         // Smoked Backing Plate with Amber Frame (7.6m x 1.45m)
         const backGeom = new THREE.BoxGeometry(7.6, 1.45, 0.08);
@@ -143,7 +143,7 @@ export class WallFrontAbout {
      */
     _initPhilosophyMarquee() {
         const marqueeGroup = new THREE.Group();
-        marqueeGroup.position.set(0, 3.85, 0.58);
+        marqueeGroup.position.set(0, 3.75, 0.58);
 
         const backGeom = new THREE.BoxGeometry(10.4, 0.52, 0.06);
         const backMesh = new THREE.Mesh(backGeom, this.materials.get('instrumentChassis'));
