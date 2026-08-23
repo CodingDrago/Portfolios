@@ -6,6 +6,10 @@
 
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { CONFIG } from '../config.js';
 
 export class SceneManager {
@@ -20,6 +24,8 @@ export class SceneManager {
         this.scene = null;
         this.camera = null;
         this.renderer = null;
+        this.composer = null;
+        this.bloomPass = null;
         this.resizeObserver = null;
 
         // Orbit Camera Spherical Coordinate System
@@ -90,6 +96,7 @@ export class SceneManager {
         this._initScene();
         this._initCamera();
         this._initRenderer();
+        this._initPostProcessing();
         this._initEnvironmentMap();
         this._initResizeObserver();
     }
@@ -157,6 +164,33 @@ export class SceneManager {
     }
 
     /**
+     * Initialize post-processing pipeline with EffectComposer, RenderPass, UnrealBloomPass, and OutputPass
+     * @private
+     */
+    _initPostProcessing() {
+        const width = this.container.clientWidth || window.innerWidth;
+        const height = this.container.clientHeight || window.innerHeight;
+
+        this.composer = new EffectComposer(this.renderer);
+
+        // 1. Base Scene Render Pass
+        const renderPass = new RenderPass(this.scene, this.camera);
+        this.composer.addPass(renderPass);
+
+        // 2. Modest Unreal Bloom Pass tuned for dark industrial scene
+        // Threshold: 0.75 (only bright emissives/spotlights bloom)
+        // Strength: 0.40 (soft restrained atmospheric glow)
+        // Radius: 0.50 (smooth falloff)
+        const resolution = new THREE.Vector2(width, height);
+        this.bloomPass = new UnrealBloomPass(resolution, 0.4, 0.5, 0.75);
+        this.composer.addPass(this.bloomPass);
+
+        // 3. Output Pass — handles ACESFilmic tone mapping & SRGBColorSpace output post-bloom
+        const outputPass = new OutputPass();
+        this.composer.addPass(outputPass);
+    }
+
+    /**
      * Generate image-based lighting environment map from RoomEnvironment
      * Provides realistic ambient reflections for metallic and rough PBR materials
      * @private
@@ -201,6 +235,13 @@ export class SceneManager {
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
+
+        if (this.composer) {
+            this.composer.setSize(width, height);
+        }
+        if (this.bloomPass && this.bloomPass.resolution) {
+            this.bloomPass.resolution.set(width, height);
+        }
     }
 
     /**
@@ -340,10 +381,12 @@ export class SceneManager {
     }
 
     /**
-     * Render the active scene from camera perspective
+     * Render the active scene from camera perspective via EffectComposer post-processing pipeline
      */
     render() {
-        if (this.renderer && this.scene && this.camera) {
+        if (this.composer) {
+            this.composer.render();
+        } else if (this.renderer && this.scene && this.camera) {
             this.renderer.render(this.scene, this.camera);
         }
     }
@@ -354,6 +397,10 @@ export class SceneManager {
     destroy() {
         if (this.resizeObserver) {
             this.resizeObserver.disconnect();
+        }
+
+        if (this.composer) {
+            this.composer.dispose();
         }
 
         if (this.renderer) {
