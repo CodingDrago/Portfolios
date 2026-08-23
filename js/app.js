@@ -3,27 +3,27 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 4 Spatial Exploration)
  */
 
-import { CONFIG, STATES } from './config.js?v=47';
-import { BootManager } from './loader/BootManager.js?v=47';
-import { StateManager } from './state/StateManager.js?v=47';
-import { PointerTracker } from './input/PointerTracker.js?v=47';
-import { SpatialCursor } from './input/SpatialCursor.js?v=47';
-import { SceneManager } from './scene/SceneManager.js?v=47';
-import { Lighting } from './scene/Lighting.js?v=47';
-import { Materials } from './scene/Materials.js?v=47';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=47';
-import { Environment } from './scene/Environment.js?v=47';
-import { Workbench } from './scene/Workbench.js?v=47';
-import { RobotController } from './robot/RobotController.js?v=47';
-import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=47';
-import { HolographicInspector } from './scene/HolographicInspector.js?v=47';
-import { InspectionCamera } from './scene/InspectionCamera.js?v=47';
-import { InspectionMode } from './scene/InspectionMode.js?v=47';
-import { WallFrontAbout } from './scene/WallFrontAbout.js?v=47';
-import { WallLeftProjects } from './scene/WallLeftProjects.js?v=47';
-import { WallRightSocial } from './scene/WallRightSocial.js?v=47';
-import { WallBackGames } from './scene/WallBackGames.js?v=47';
-import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=47';
+import { CONFIG, STATES } from './config.js?v=48';
+import { BootManager } from './loader/BootManager.js?v=48';
+import { StateManager } from './state/StateManager.js?v=48';
+import { PointerTracker } from './input/PointerTracker.js?v=48';
+import { SpatialCursor } from './input/SpatialCursor.js?v=48';
+import { SceneManager } from './scene/SceneManager.js?v=48';
+import { Lighting } from './scene/Lighting.js?v=48';
+import { Materials } from './scene/Materials.js?v=48';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=48';
+import { Environment } from './scene/Environment.js?v=48';
+import { Workbench } from './scene/Workbench.js?v=48';
+import { RobotController } from './robot/RobotController.js?v=48';
+import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=48';
+import { HolographicInspector } from './scene/HolographicInspector.js?v=48';
+import { InspectionCamera } from './scene/InspectionCamera.js?v=48';
+import { InspectionMode } from './scene/InspectionMode.js?v=48';
+import { WallFrontAbout } from './scene/WallFrontAbout.js?v=48';
+import { WallLeftProjects } from './scene/WallLeftProjects.js?v=48';
+import { WallRightSocial } from './scene/WallRightSocial.js?v=48';
+import { WallBackGames } from './scene/WallBackGames.js?v=48';
+import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=48';
 import * as THREE from 'three';
 
 class App {
@@ -280,6 +280,9 @@ class App {
                 this.sceneManager.resetCamera();
             }
         });
+
+        // Initialize Fixed HTML Navigation Overlay
+        this._initNavigation();
     }
 
     /**
@@ -785,12 +788,55 @@ class App {
     }
 
     /**
+     * Bind click listeners for fixed HTML navbar overlay
+     * @private
+     */
+    _initNavigation() {
+        const nav = document.getElementById('workstation-nav');
+        if (!nav) return;
+
+        const navButtons = nav.querySelectorAll('.nav-item');
+        navButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const sectionId = btn.getAttribute('data-section');
+                if (sectionId) {
+                    this.goToSection(sectionId);
+                }
+            });
+        });
+    }
+
+    /**
+     * Update active state of fixed navbar items
+     * @param {string} sectionId 'front' | 'left' | 'right' | 'back'
+     */
+    setActiveNav(sectionId) {
+        const nav = document.getElementById('workstation-nav');
+        if (!nav || !sectionId) return;
+
+        const navButtons = nav.querySelectorAll('.nav-item');
+        navButtons.forEach(btn => {
+            const btnSection = btn.getAttribute('data-section');
+            if (btnSection === sectionId) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    /**
      * Transition camera to a specific laboratory section preset
      * @param {string} sectionId 'front' | 'left' | 'right' | 'back'
      */
     goToSection(sectionId) {
         if (this.sceneManager && typeof this.sceneManager.goToSection === 'function') {
-            return this.sceneManager.goToSection(sectionId);
+            const success = this.sceneManager.goToSection(sectionId);
+            if (success) {
+                this.setActiveNav(sectionId);
+            }
+            return success;
         }
         return false;
     }
