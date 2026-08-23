@@ -3,27 +3,27 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 4 Spatial Exploration)
  */
 
-import { CONFIG, STATES } from './config.js?v=51';
-import { BootManager } from './loader/BootManager.js?v=51';
-import { StateManager } from './state/StateManager.js?v=51';
-import { PointerTracker } from './input/PointerTracker.js?v=51';
-import { SpatialCursor } from './input/SpatialCursor.js?v=51';
-import { SceneManager } from './scene/SceneManager.js?v=51';
-import { Lighting } from './scene/Lighting.js?v=51';
-import { Materials } from './scene/Materials.js?v=51';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=51';
-import { Environment } from './scene/Environment.js?v=51';
-import { Workbench } from './scene/Workbench.js?v=51';
-import { RobotController } from './robot/RobotController.js?v=51';
-import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=51';
-import { HolographicInspector } from './scene/HolographicInspector.js?v=51';
-import { InspectionCamera } from './scene/InspectionCamera.js?v=51';
-import { InspectionMode } from './scene/InspectionMode.js?v=51';
-import { WallFrontAbout } from './scene/WallFrontAbout.js?v=51';
-import { WallLeftProjects } from './scene/WallLeftProjects.js?v=51';
-import { WallRightSocial } from './scene/WallRightSocial.js?v=51';
-import { WallBackGames } from './scene/WallBackGames.js?v=51';
-import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=51';
+import { CONFIG, STATES } from './config.js?v=55';
+import { BootManager } from './loader/BootManager.js?v=55';
+import { StateManager } from './state/StateManager.js?v=55';
+import { PointerTracker } from './input/PointerTracker.js?v=55';
+import { SpatialCursor } from './input/SpatialCursor.js?v=55';
+import { SceneManager } from './scene/SceneManager.js?v=55';
+import { Lighting } from './scene/Lighting.js?v=55';
+import { Materials } from './scene/Materials.js?v=55';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=55';
+import { Environment } from './scene/Environment.js?v=55';
+import { Workbench } from './scene/Workbench.js?v=55';
+import { RobotController } from './robot/RobotController.js?v=55';
+import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=55';
+import { HolographicInspector } from './scene/HolographicInspector.js?v=55';
+import { InspectionCamera } from './scene/InspectionCamera.js?v=55';
+import { InspectionMode } from './scene/InspectionMode.js?v=55';
+import { WallFrontAbout } from './scene/WallFrontAbout.js?v=55';
+import { WallLeftProjects } from './scene/WallLeftProjects.js?v=55';
+import { WallRightSocial } from './scene/WallRightSocial.js?v=55';
+import { WallBackGames } from './scene/WallBackGames.js?v=55';
+import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=55';
 import * as THREE from 'three';
 
 class App {
@@ -875,6 +875,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const app = new App();
     window.app = app;
     window.goToSection = (id) => app.goToSection(id);
+    window.setBloomParams = (params) => {
+        if (app.sceneManager && typeof app.sceneManager.setBloomParams === 'function') {
+            app.sceneManager.setBloomParams(params);
+        }
+    };
     app.init();
 
     // URL Hash & Query Parameter routing for camera section presets
@@ -882,6 +887,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const hash = window.location.hash.replace('#', '').trim().toLowerCase();
         const params = new URLSearchParams(window.location.search);
         const sectionParam = (params.get('section') || hash).toLowerCase();
+
+        const bloomThreshold = params.get('bloom_threshold');
+        if (bloomThreshold !== null) {
+            const thresh = parseFloat(bloomThreshold);
+            if (!isNaN(thresh) && app.sceneManager) {
+                app.sceneManager.setBloomParams({ threshold: thresh });
+            }
+        }
+
+        const bloomStrength = params.get('bloom_strength');
+        if (bloomStrength !== null) {
+            const str = parseFloat(bloomStrength);
+            if (!isNaN(str) && app.sceneManager) {
+                app.sceneManager.setBloomParams({ strength: str });
+            }
+        }
 
         if (['front', 'left', 'right', 'back'].includes(sectionParam)) {
             setTimeout(() => app.goToSection(sectionParam), 500);
