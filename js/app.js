@@ -3,27 +3,27 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 4 Spatial Exploration)
  */
 
-import { CONFIG, STATES } from './config.js?v=50';
-import { BootManager } from './loader/BootManager.js?v=50';
-import { StateManager } from './state/StateManager.js?v=50';
-import { PointerTracker } from './input/PointerTracker.js?v=50';
-import { SpatialCursor } from './input/SpatialCursor.js?v=50';
-import { SceneManager } from './scene/SceneManager.js?v=50';
-import { Lighting } from './scene/Lighting.js?v=50';
-import { Materials } from './scene/Materials.js?v=50';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=50';
-import { Environment } from './scene/Environment.js?v=50';
-import { Workbench } from './scene/Workbench.js?v=50';
-import { RobotController } from './robot/RobotController.js?v=50';
-import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=50';
-import { HolographicInspector } from './scene/HolographicInspector.js?v=50';
-import { InspectionCamera } from './scene/InspectionCamera.js?v=50';
-import { InspectionMode } from './scene/InspectionMode.js?v=50';
-import { WallFrontAbout } from './scene/WallFrontAbout.js?v=50';
-import { WallLeftProjects } from './scene/WallLeftProjects.js?v=50';
-import { WallRightSocial } from './scene/WallRightSocial.js?v=50';
-import { WallBackGames } from './scene/WallBackGames.js?v=50';
-import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=50';
+import { CONFIG, STATES } from './config.js?v=51';
+import { BootManager } from './loader/BootManager.js?v=51';
+import { StateManager } from './state/StateManager.js?v=51';
+import { PointerTracker } from './input/PointerTracker.js?v=51';
+import { SpatialCursor } from './input/SpatialCursor.js?v=51';
+import { SceneManager } from './scene/SceneManager.js?v=51';
+import { Lighting } from './scene/Lighting.js?v=51';
+import { Materials } from './scene/Materials.js?v=51';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=51';
+import { Environment } from './scene/Environment.js?v=51';
+import { Workbench } from './scene/Workbench.js?v=51';
+import { RobotController } from './robot/RobotController.js?v=51';
+import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=51';
+import { HolographicInspector } from './scene/HolographicInspector.js?v=51';
+import { InspectionCamera } from './scene/InspectionCamera.js?v=51';
+import { InspectionMode } from './scene/InspectionMode.js?v=51';
+import { WallFrontAbout } from './scene/WallFrontAbout.js?v=51';
+import { WallLeftProjects } from './scene/WallLeftProjects.js?v=51';
+import { WallRightSocial } from './scene/WallRightSocial.js?v=51';
+import { WallBackGames } from './scene/WallBackGames.js?v=51';
+import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=51';
 import * as THREE from 'three';
 
 class App {

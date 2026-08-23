@@ -5,10 +5,10 @@
  */
 
 import * as THREE from 'three';
-import { CONFIG } from '../config.js?v=50';
-import { RobotMaterials } from './RobotMaterials.js?v=50';
-import { RobotArm } from './RobotArm.js?v=50';
-import { TargetMapper } from './TargetMapper.js?v=50';
+import { CONFIG } from '../config.js?v=51';
+import { RobotMaterials } from './RobotMaterials.js?v=51';
+import { RobotArm } from './RobotArm.js?v=51';
+import { TargetMapper } from './TargetMapper.js?v=51';
 
 export class RobotController {
     /**
