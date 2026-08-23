@@ -24,6 +24,7 @@ export class SceneManager {
 
         // Orbit Camera Spherical Coordinate System
         this.targetFocus = new THREE.Vector3(0, 0.8, 0);
+        this.currentFocus = this.targetFocus.clone();
 
         this.defaultRadius = CONFIG.camera.position.z || 9.5;
         this.defaultTheta = 0.0; // Azimuth angle (horizontal)
@@ -37,6 +38,35 @@ export class SceneManager {
 
         this.targetPhi = this.defaultPhi;
         this.currentPhi = this.defaultPhi;
+
+        // Camera Section Presets (front / left / right / back)
+        // Matches Lighting.js spot targets and WallVisibilityManager wall IDs
+        this.sectionPresets = {
+            front: {
+                theta: 0.0,
+                phi: this.defaultPhi,
+                radius: this.defaultRadius,
+                focus: new THREE.Vector3(0, 0.8, 0)
+            },
+            left: {
+                theta: Math.PI * 0.5, // +90° azimuth facing Left Wall (X = -12.0)
+                phi: this.defaultPhi,
+                radius: this.defaultRadius,
+                focus: new THREE.Vector3(0, 0.8, 0)
+            },
+            back: {
+                theta: Math.PI, // 180° azimuth facing Back Wall (Z = +12.0)
+                phi: this.defaultPhi,
+                radius: this.defaultRadius,
+                focus: new THREE.Vector3(0, 0.8, 0)
+            },
+            right: {
+                theta: -Math.PI * 0.5, // -90° (270°) azimuth facing Right Wall (X = +12.0)
+                phi: this.defaultPhi,
+                radius: this.defaultRadius,
+                focus: new THREE.Vector3(0, 0.8, 0)
+            }
+        };
 
         // Orbit & Zoom Limits (Bounded inside 24m x 24m room)
         this.minRadius = 2.4;
@@ -180,10 +210,34 @@ export class SceneManager {
     }
 
     /**
+     * Smoothly transition camera orbit to a predefined section preset
+     * @param {string} sectionId 'front' | 'left' | 'right' | 'back'
+     * @returns {boolean} True if preset exists and target was set
+     */
+    goToSection(sectionId) {
+        if (!sectionId) return false;
+        const key = String(sectionId).toLowerCase().trim();
+        const preset = this.sectionPresets[key];
+        if (!preset) {
+            console.warn(`[SceneManager] Unknown section preset: "${sectionId}". Available: front, left, right, back`);
+            return false;
+        }
+
+        this.targetTheta = preset.theta;
+        this.targetPhi = preset.phi;
+        this.targetRadius = preset.radius;
+        if (preset.focus) {
+            this.targetFocus.copy(preset.focus);
+        }
+        return true;
+    }
+
+    /**
      * Update camera position with smooth orbit inspection and subtle parallax
      * @param {Object} pointer PointerTracker instance
+     * @param {number} [deltaTime=0.016] Elapsed frame delta time in seconds
      */
-    updateCameraParallax(pointer) {
+    updateCameraParallax(pointer, deltaTime = 0.016) {
         if (!this.camera || !pointer) return;
 
         // 1. Process drag orbit input (full 360-degree continuous horizontal rotation & wide vertical range)
@@ -202,14 +256,17 @@ export class SceneManager {
         this.targetPhi = THREE.MathUtils.clamp(this.targetPhi, this.minPhi, this.maxPhi);
         this.targetRadius = THREE.MathUtils.clamp(this.targetRadius, this.minRadius, this.maxRadius);
 
-        // 4. Smooth Damping Interpolation
+        // 4. Smooth Damping Interpolation with shortest-path theta wraparound
+        const damping = deltaTime ? Math.min(1.0, deltaTime * 8.0) : 0.10;
+
         const thetaDelta = Math.atan2(
             Math.sin(this.targetTheta - this.currentTheta),
             Math.cos(this.targetTheta - this.currentTheta)
         );
-        this.currentTheta += thetaDelta * 0.10;
-        this.currentPhi += (this.targetPhi - this.currentPhi) * 0.10;
-        this.currentRadius += (this.targetRadius - this.currentRadius) * 0.10;
+        this.currentTheta += thetaDelta * damping;
+        this.currentPhi += (this.targetPhi - this.currentPhi) * damping;
+        this.currentRadius += (this.targetRadius - this.currentRadius) * damping;
+        this.currentFocus.lerp(this.targetFocus, damping);
 
         // 5. Subtle micro-parallax shift when NOT dragging
         let parallaxX = 0;
@@ -235,26 +292,26 @@ export class SceneManager {
 
         // Bounded within physical room interior: X in [-10.2, 10.2], Y in [-1.6, 6.8], Z in [-10.2, 10.2]
         if (Math.abs(ux) > 0.0001) {
-            const rx = ux > 0 ? (this.roomBounds.maxX - this.targetFocus.x) / ux : (this.roomBounds.minX - this.targetFocus.x) / ux;
+            const rx = ux > 0 ? (this.roomBounds.maxX - this.currentFocus.x) / ux : (this.roomBounds.minX - this.currentFocus.x) / ux;
             if (rx > 0) maxAllowedRadius = Math.min(maxAllowedRadius, rx);
         }
         if (Math.abs(uy) > 0.0001) {
-            const ry = uy > 0 ? (this.roomBounds.maxY - this.targetFocus.y) / uy : (this.roomBounds.minY - this.targetFocus.y) / uy;
+            const ry = uy > 0 ? (this.roomBounds.maxY - this.currentFocus.y) / uy : (this.roomBounds.minY - this.currentFocus.y) / uy;
             if (ry > 0) maxAllowedRadius = Math.min(maxAllowedRadius, ry);
         }
         if (Math.abs(uz) > 0.0001) {
-            const rz = uz > 0 ? (this.roomBounds.maxZ - this.targetFocus.z) / uz : (this.roomBounds.minZ - this.targetFocus.z) / uz;
+            const rz = uz > 0 ? (this.roomBounds.maxZ - this.currentFocus.z) / uz : (this.roomBounds.minZ - this.currentFocus.z) / uz;
             if (rz > 0) maxAllowedRadius = Math.min(maxAllowedRadius, rz);
         }
 
         const effectiveRadius = Math.max(this.minRadius, Math.min(this.currentRadius, maxAllowedRadius));
 
-        const camX = effectiveRadius * ux + this.targetFocus.x + parallaxX;
-        const camY = effectiveRadius * uy + this.targetFocus.y + parallaxY;
-        const camZ = effectiveRadius * uz + this.targetFocus.z;
+        const camX = effectiveRadius * ux + this.currentFocus.x + parallaxX;
+        const camY = effectiveRadius * uy + this.currentFocus.y + parallaxY;
+        const camZ = effectiveRadius * uz + this.currentFocus.z;
 
         this.camera.position.set(camX, camY, camZ);
-        this.camera.lookAt(this.targetFocus);
+        this.camera.lookAt(this.currentFocus);
     }
 
     /**

@@ -3,27 +3,27 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 4 Spatial Exploration)
  */
 
-import { CONFIG, STATES } from './config.js?v=46';
-import { BootManager } from './loader/BootManager.js?v=46';
-import { StateManager } from './state/StateManager.js?v=46';
-import { PointerTracker } from './input/PointerTracker.js?v=46';
-import { SpatialCursor } from './input/SpatialCursor.js?v=46';
-import { SceneManager } from './scene/SceneManager.js?v=46';
-import { Lighting } from './scene/Lighting.js?v=46';
-import { Materials } from './scene/Materials.js?v=46';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=46';
-import { Environment } from './scene/Environment.js?v=46';
-import { Workbench } from './scene/Workbench.js?v=46';
-import { RobotController } from './robot/RobotController.js?v=46';
-import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=46';
-import { HolographicInspector } from './scene/HolographicInspector.js?v=46';
-import { InspectionCamera } from './scene/InspectionCamera.js?v=46';
-import { InspectionMode } from './scene/InspectionMode.js?v=46';
-import { WallFrontAbout } from './scene/WallFrontAbout.js?v=46';
-import { WallLeftProjects } from './scene/WallLeftProjects.js?v=46';
-import { WallRightSocial } from './scene/WallRightSocial.js?v=46';
-import { WallBackGames } from './scene/WallBackGames.js?v=46';
-import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=46';
+import { CONFIG, STATES } from './config.js?v=47';
+import { BootManager } from './loader/BootManager.js?v=47';
+import { StateManager } from './state/StateManager.js?v=47';
+import { PointerTracker } from './input/PointerTracker.js?v=47';
+import { SpatialCursor } from './input/SpatialCursor.js?v=47';
+import { SceneManager } from './scene/SceneManager.js?v=47';
+import { Lighting } from './scene/Lighting.js?v=47';
+import { Materials } from './scene/Materials.js?v=47';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=47';
+import { Environment } from './scene/Environment.js?v=47';
+import { Workbench } from './scene/Workbench.js?v=47';
+import { RobotController } from './robot/RobotController.js?v=47';
+import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=47';
+import { HolographicInspector } from './scene/HolographicInspector.js?v=47';
+import { InspectionCamera } from './scene/InspectionCamera.js?v=47';
+import { InspectionMode } from './scene/InspectionMode.js?v=47';
+import { WallFrontAbout } from './scene/WallFrontAbout.js?v=47';
+import { WallLeftProjects } from './scene/WallLeftProjects.js?v=47';
+import { WallRightSocial } from './scene/WallRightSocial.js?v=47';
+import { WallBackGames } from './scene/WallBackGames.js?v=47';
+import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=47';
 import * as THREE from 'three';
 
 class App {
@@ -761,9 +761,9 @@ class App {
                 this.robotController.update(deltaTime, this.pointerTracker, state, cam);
             }
 
-            // Update Workstation Camera Micro-Parallax
+            // Update Workstation Camera Micro-Parallax & Orbit Damping
             if (this.sceneManager && typeof this.sceneManager.updateCameraParallax === 'function') {
-                this.sceneManager.updateCameraParallax(this.pointerTracker);
+                this.sceneManager.updateCameraParallax(this.pointerTracker, deltaTime);
             }
         }
 
@@ -783,10 +783,44 @@ class App {
         // Request next frame
         requestAnimationFrame(this._onFrame);
     }
+
+    /**
+     * Transition camera to a specific laboratory section preset
+     * @param {string} sectionId 'front' | 'left' | 'right' | 'back'
+     */
+    goToSection(sectionId) {
+        if (this.sceneManager && typeof this.sceneManager.goToSection === 'function') {
+            return this.sceneManager.goToSection(sectionId);
+        }
+        return false;
+    }
 }
 
 // Instantiate and bootstrap application on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     const app = new App();
+    window.app = app;
+    window.goToSection = (id) => app.goToSection(id);
     app.init();
+
+    // URL Hash & Query Parameter routing for camera section presets
+    const handleUrlSection = () => {
+        const hash = window.location.hash.replace('#', '').trim().toLowerCase();
+        const params = new URLSearchParams(window.location.search);
+        const sectionParam = (params.get('section') || hash).toLowerCase();
+
+        if (['front', 'left', 'right', 'back'].includes(sectionParam)) {
+            setTimeout(() => app.goToSection(sectionParam), 500);
+        }
+
+        if (params.get('run_preset_test') === 'true') {
+            setTimeout(() => app.goToSection('left'), 1500);
+            setTimeout(() => app.goToSection('back'), 4000);
+            setTimeout(() => app.goToSection('right'), 6500);
+            setTimeout(() => app.goToSection('front'), 9000);
+        }
+    };
+
+    window.addEventListener('hashchange', handleUrlSection);
+    setTimeout(handleUrlSection, 300);
 });

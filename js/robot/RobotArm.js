@@ -6,9 +6,9 @@
  */
 
 import * as THREE from 'three';
-import { RobotJoint } from './RobotJoint.js?v=46';
-import { RobotGeometry } from './RobotGeometry.js?v=46';
-import { Gripper } from './Gripper.js?v=46';
+import { RobotJoint } from './RobotJoint.js?v=47';
+import { RobotGeometry } from './RobotGeometry.js?v=47';
+import { Gripper } from './Gripper.js?v=47';
 
 export class RobotArm {
     /**
