@@ -247,6 +247,86 @@ button, a, input, select {
     background-color: var(--border-subtle);
 }
 
+/* --- Laboratory Workstation Fixed Navigation Bar --- */
+.workstation-nav {
+    position: absolute;
+    top: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.5rem;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.9rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    transition: all var(--transition-fast);
+    outline: none;
+    user-select: none;
+}
+
+.nav-item:hover {
+    color: var(--text-primary);
+    border-color: var(--border-subtle);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.nav-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 1px;
+    background-color: var(--text-muted);
+    transition: all var(--transition-fast);
+}
+
+.nav-index {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    opacity: 0.75;
+}
+
+.nav-label {
+    letter-spacing: 0.14em;
+}
+
+/* Active State - Amber highlight matching industrial aesthetic */
+.nav-item.active {
+    color: var(--accent-amber);
+    background: rgba(255, 183, 3, 0.08);
+    border-color: var(--border-accent);
+    box-shadow: 0 0 12px var(--accent-amber-glow);
+}
+
+.nav-item.active .nav-indicator {
+    background-color: var(--accent-amber);
+    box-shadow: 0 0 8px var(--accent-amber);
+}
+
+.nav-item.active .nav-index {
+    color: var(--accent-amber);
+    opacity: 1;
+}
+
 /* --- Phase 1 Technical Hint Banner --- */
 .phase1-hint {
     align-self: center;
