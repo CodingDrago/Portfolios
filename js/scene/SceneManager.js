@@ -165,24 +165,33 @@ export class SceneManager {
 
     /**
      * Initialize post-processing pipeline with EffectComposer, RenderPass, UnrealBloomPass, and OutputPass
+     * Configured with HDR WebGLRenderTarget (HalfFloatType) for accurate linear scene bloom prior to tone mapping
      * @private
      */
     _initPostProcessing() {
         const width = this.container.clientWidth || window.innerWidth;
         const height = this.container.clientHeight || window.innerHeight;
 
-        this.composer = new EffectComposer(this.renderer);
+        // Explicit HDR HalfFloatType render target in linear space (THREE.NoColorSpace)
+        // OutputPass performs ACESFilmic tone-mapping and final sRGB transfer at the end of the chain
+        const hdrRenderTarget = new THREE.WebGLRenderTarget(width, height, {
+            type: THREE.HalfFloatType,
+            format: THREE.RGBAFormat,
+            colorSpace: THREE.NoColorSpace
+        });
+
+        this.composer = new EffectComposer(this.renderer, hdrRenderTarget);
 
         // 1. Base Scene Render Pass
         const renderPass = new RenderPass(this.scene, this.camera);
         this.composer.addPass(renderPass);
 
-        // 2. Modest Unreal Bloom Pass tuned for dark industrial scene
-        // Threshold: 0.75 (only bright emissives/spotlights bloom)
-        // Strength: 0.40 (soft restrained atmospheric glow)
-        // Radius: 0.50 (smooth falloff)
+        // 2. Unreal Bloom Pass tuned for HDR industrial environment
+        // Threshold: 0.90 (restricts bloom strictly to high-luminance emissives, LEDs & spotlights)
+        // Strength: 0.35 (crisp, restrained glow without haze on white chassis)
+        // Radius: 0.45 (contained optical falloff)
         const resolution = new THREE.Vector2(width, height);
-        this.bloomPass = new UnrealBloomPass(resolution, 0.4, 0.5, 0.75);
+        this.bloomPass = new UnrealBloomPass(resolution, 0.35, 0.45, 0.90);
         this.composer.addPass(this.bloomPass);
 
         // 3. Output Pass — handles ACESFilmic tone mapping & SRGBColorSpace output post-bloom
@@ -242,6 +251,20 @@ export class SceneManager {
         if (this.bloomPass && this.bloomPass.resolution) {
             this.bloomPass.resolution.set(width, height);
         }
+    }
+
+    /**
+     * Set bloom parameters dynamically
+     * @param {Object} params
+     * @param {number} [params.threshold]
+     * @param {number} [params.strength]
+     * @param {number} [params.radius]
+     */
+    setBloomParams({ threshold, strength, radius } = {}) {
+        if (!this.bloomPass) return;
+        if (threshold !== undefined) this.bloomPass.threshold = threshold;
+        if (strength !== undefined) this.bloomPass.strength = strength;
+        if (radius !== undefined) this.bloomPass.radius = radius;
     }
 
     /**
