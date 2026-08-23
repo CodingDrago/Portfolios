@@ -3,27 +3,27 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 4 Spatial Exploration)
  */
 
-import { CONFIG, STATES } from './config.js?v=48';
-import { BootManager } from './loader/BootManager.js?v=48';
-import { StateManager } from './state/StateManager.js?v=48';
-import { PointerTracker } from './input/PointerTracker.js?v=48';
-import { SpatialCursor } from './input/SpatialCursor.js?v=48';
-import { SceneManager } from './scene/SceneManager.js?v=48';
-import { Lighting } from './scene/Lighting.js?v=48';
-import { Materials } from './scene/Materials.js?v=48';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=48';
-import { Environment } from './scene/Environment.js?v=48';
-import { Workbench } from './scene/Workbench.js?v=48';
-import { RobotController } from './robot/RobotController.js?v=48';
-import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=48';
-import { HolographicInspector } from './scene/HolographicInspector.js?v=48';
-import { InspectionCamera } from './scene/InspectionCamera.js?v=48';
-import { InspectionMode } from './scene/InspectionMode.js?v=48';
-import { WallFrontAbout } from './scene/WallFrontAbout.js?v=48';
-import { WallLeftProjects } from './scene/WallLeftProjects.js?v=48';
-import { WallRightSocial } from './scene/WallRightSocial.js?v=48';
-import { WallBackGames } from './scene/WallBackGames.js?v=48';
-import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=48';
+import { CONFIG, STATES } from './config.js?v=49';
+import { BootManager } from './loader/BootManager.js?v=49';
+import { StateManager } from './state/StateManager.js?v=49';
+import { PointerTracker } from './input/PointerTracker.js?v=49';
+import { SpatialCursor } from './input/SpatialCursor.js?v=49';
+import { SceneManager } from './scene/SceneManager.js?v=49';
+import { Lighting } from './scene/Lighting.js?v=49';
+import { Materials } from './scene/Materials.js?v=49';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=49';
+import { Environment } from './scene/Environment.js?v=49';
+import { Workbench } from './scene/Workbench.js?v=49';
+import { RobotController } from './robot/RobotController.js?v=49';
+import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=49';
+import { HolographicInspector } from './scene/HolographicInspector.js?v=49';
+import { InspectionCamera } from './scene/InspectionCamera.js?v=49';
+import { InspectionMode } from './scene/InspectionMode.js?v=49';
+import { WallFrontAbout } from './scene/WallFrontAbout.js?v=49';
+import { WallLeftProjects } from './scene/WallLeftProjects.js?v=49';
+import { WallRightSocial } from './scene/WallRightSocial.js?v=49';
+import { WallBackGames } from './scene/WallBackGames.js?v=49';
+import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=49';
 import * as THREE from 'three';
 
 class App {
@@ -56,6 +56,9 @@ class App {
         this.inspectionCamera = null;
         this.inspectionMode = null;
 
+
+        // Fixed Navigation Overlay State
+        this.currentActiveNav = 'front';
 
         // Animation Loop Control
         this.lastFrameTime = 0;
@@ -773,6 +776,10 @@ class App {
         // 4.5. Update Camera-Facing Wall Visibility Scoping (Evaluated every frame during drag and idle)
         if (this.wallVisibilityManager) {
             this.wallVisibilityManager.update(deltaTime);
+            const facingWall = this.wallVisibilityManager.getFacingWall();
+            if (facingWall && facingWall !== this.currentActiveNav) {
+                this.setActiveNav(facingWall);
+            }
         }
 
         // Render Active Scene
@@ -812,8 +819,12 @@ class App {
      * @param {string} sectionId 'front' | 'left' | 'right' | 'back'
      */
     setActiveNav(sectionId) {
+        if (!sectionId) return;
+        if (this.currentActiveNav === sectionId) return;
+        this.currentActiveNav = sectionId;
+
         const nav = document.getElementById('workstation-nav');
-        if (!nav || !sectionId) return;
+        if (!nav) return;
 
         const navButtons = nav.querySelectorAll('.nav-item');
         navButtons.forEach(btn => {
