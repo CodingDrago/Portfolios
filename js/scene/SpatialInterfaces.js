@@ -54,15 +54,8 @@ export class SpatialInterfaces {
         const height = 1.1;
         const geom = new THREE.PlaneGeometry(width, height);
 
-        // Smoked Translucent Backplane
-        const glassMat = new THREE.MeshBasicMaterial({
-            color: 0x060a12,
-            transparent: true,
-            opacity: 0.90,
-            side: THREE.DoubleSide,
-            depthWrite: false
-        });
-        const glassMesh = new THREE.Mesh(geom, glassMat);
+        // Holographic Translucent Backplane
+        const glassMesh = new THREE.Mesh(geom, this.materials.get('holoPanel'));
         glassMesh.renderOrder = 8;
         group.add(glassMesh);
 
@@ -113,8 +106,8 @@ export class SpatialInterfaces {
 
         ctx.clearRect(0, 0, 1024, 512);
 
-        // Dark Smoked Opaque Backing
-        ctx.fillStyle = 'rgba(6, 10, 18, 0.95)';
+        // Translucent Backing
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
         ctx.fillRect(0, 0, 1024, 512);
 
         // Subtle Engineering Scanlines
@@ -192,15 +185,8 @@ export class SpatialInterfaces {
         const panelHeight = 1.4;
         const geom = new THREE.PlaneGeometry(panelWidth, panelHeight);
 
-        // 1. Smoked Glass Backing (renderOrder = 8)
-        const glassMat = new THREE.MeshBasicMaterial({
-            color: 0x050912,
-            transparent: true,
-            opacity: 0.94,
-            side: THREE.DoubleSide,
-            depthWrite: false
-        });
-        this.inspectGlassMesh = new THREE.Mesh(geom, glassMat);
+        // 1. Holographic Backing (renderOrder = 8)
+        this.inspectGlassMesh = new THREE.Mesh(geom, this.materials.get('holoPanel'));
         this.inspectGlassMesh.renderOrder = 8;
         group.add(this.inspectGlassMesh);
 
@@ -267,8 +253,8 @@ export class SpatialInterfaces {
 
         ctx.clearRect(0, 0, 1024, 576);
 
-        // 1. Dark Smoked Glass Backing
-        ctx.fillStyle = 'rgba(6, 10, 18, 0.96)';
+        // 1. Holographic Translucent Backing
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
         ctx.fillRect(0, 0, 1024, 576);
 
         // 2. Scanline Grid
