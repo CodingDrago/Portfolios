@@ -66,7 +66,7 @@ export class WallRightSocial {
         headerGroup.position.set(0, 5.2, 0.58);
 
         const backGeom = new THREE.BoxGeometry(7.4, 1.35, 0.06);
-        const backMesh = new THREE.Mesh(backGeom, this.materials.get('instrumentChassis'));
+        const backMesh = new THREE.Mesh(backGeom, this.materials.get('holoPanelCyan'));
         headerGroup.add(backMesh);
 
         const borderGeom = new THREE.EdgesGeometry(backGeom);
@@ -80,7 +80,7 @@ export class WallRightSocial {
         canvas.height = 360;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#060a12';
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
         ctx.fillRect(0, 0, 2048, 360);
         ctx.strokeStyle = 'rgba(56, 189, 248, 0.40)';
         ctx.lineWidth = 4;
@@ -104,7 +104,7 @@ export class WallRightSocial {
 
         const headerMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(7.2, 1.25),
-            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
         headerMesh.position.z = 0.04;
         headerGroup.add(headerMesh);
@@ -159,7 +159,7 @@ export class WallRightSocial {
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#060a12';
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
         ctx.fillRect(0, 0, 1024, 512);
         ctx.strokeStyle = '#ff9d00';
         ctx.lineWidth = 4;
@@ -187,7 +187,7 @@ export class WallRightSocial {
         tex.magFilter = THREE.LinearFilter;
         const screenMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(2.1, 1.05),
-            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
         screenMesh.position.set(0, 2.0, 0.88);
         rackGroup.add(screenMesh);
@@ -215,7 +215,7 @@ export class WallRightSocial {
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#060a12';
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
         ctx.fillRect(0, 0, 1024, 512);
         ctx.strokeStyle = '#38bdf8';
         ctx.lineWidth = 4;
@@ -243,7 +243,7 @@ export class WallRightSocial {
         tex.magFilter = THREE.LinearFilter;
         const screenMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(2.0, 1.0),
-            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
         screenMesh.position.set(0, 0.3, 0.75);
         nodeGroup.add(screenMesh);
@@ -272,7 +272,7 @@ export class WallRightSocial {
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#060a12';
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
         ctx.fillRect(0, 0, 1024, 512);
         ctx.strokeStyle = '#10b981';
         ctx.lineWidth = 4;
@@ -300,7 +300,7 @@ export class WallRightSocial {
         tex.magFilter = THREE.LinearFilter;
         const screenMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(2.1, 1.05),
-            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
         screenMesh.position.set(0, 0.6, 0.88);
         termGroup.add(screenMesh);
