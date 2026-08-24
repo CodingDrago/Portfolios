@@ -85,7 +85,7 @@ export class WallFrontAbout {
 
         // Smoked Backing Plate with Amber Frame (7.6m x 1.45m)
         const backGeom = new THREE.BoxGeometry(7.6, 1.45, 0.08);
-        const backMesh = new THREE.Mesh(backGeom, this.materials.get('instrumentChassis'));
+        const backMesh = new THREE.Mesh(backGeom, this.materials.get('holoPanel'));
         headerGroup.add(backMesh);
 
         const borderGeom = new THREE.EdgesGeometry(backGeom);
@@ -100,7 +100,7 @@ export class WallFrontAbout {
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = 'rgba(6, 10, 18, 0.98)';
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
         ctx.fillRect(0, 0, 2048, 512);
 
         // Technical Header Tag
@@ -128,7 +128,7 @@ export class WallFrontAbout {
         tex.magFilter = THREE.LinearFilter;
 
         const textGeom = new THREE.PlaneGeometry(7.4, 1.35);
-        const textMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+        const textMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
         const textMesh = new THREE.Mesh(textGeom, textMat);
         textMesh.position.z = 0.05;
         headerGroup.add(textMesh);
@@ -146,7 +146,7 @@ export class WallFrontAbout {
         marqueeGroup.position.set(0, 3.75, 0.58);
 
         const backGeom = new THREE.BoxGeometry(10.4, 0.52, 0.06);
-        const backMesh = new THREE.Mesh(backGeom, this.materials.get('instrumentChassis'));
+        const backMesh = new THREE.Mesh(backGeom, this.materials.get('holoPanel'));
         marqueeGroup.add(backMesh);
 
         const borderGeom = new THREE.EdgesGeometry(backGeom);
@@ -160,7 +160,7 @@ export class WallFrontAbout {
         canvas.height = 128;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#060a12';
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
         ctx.fillRect(0, 0, 2048, 128);
 
         ctx.strokeStyle = 'rgba(255, 157, 0, 0.45)';
@@ -199,7 +199,7 @@ export class WallFrontAbout {
 
         const textMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(10.2, 0.48),
-            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
         textMesh.position.z = 0.035;
         marqueeGroup.add(textMesh);
@@ -227,7 +227,7 @@ export class WallFrontAbout {
 
             // Card Chassis (2.8m x 1.05m x 0.06m)
             const cardGeom = new THREE.BoxGeometry(2.8, 1.05, 0.06);
-            const cardMesh = new THREE.Mesh(cardGeom, this.materials.get('instrumentChassis'));
+            const cardMesh = new THREE.Mesh(cardGeom, this.materials.get('holoPanel'));
             cardGroup.add(cardMesh);
 
             // Card Canvas (1024x384 for crisp high-contrast typography)
@@ -236,7 +236,7 @@ export class WallFrontAbout {
             cardCanvas.height = 384;
             const cCtx = cardCanvas.getContext('2d');
 
-            cCtx.fillStyle = '#060a12';
+            cCtx.fillStyle = 'rgba(6, 10, 18, 0.20)';
             cCtx.fillRect(0, 0, 1024, 384);
 
             // Accent Left Stripe
@@ -269,7 +269,7 @@ export class WallFrontAbout {
 
             const textMesh = new THREE.Mesh(
                 new THREE.PlaneGeometry(2.7, 0.98),
-                new THREE.MeshBasicMaterial({ map: cardTex, transparent: true })
+                new THREE.MeshBasicMaterial({ map: cardTex, transparent: true, depthWrite: false })
             );
             textMesh.position.z = 0.035;
             cardGroup.add(textMesh);
@@ -288,7 +288,7 @@ export class WallFrontAbout {
 
         // Frame Chassis (5.4m x 1.60m x 0.08m)
         const frameGeom = new THREE.BoxGeometry(5.4, 1.60, 0.08);
-        const frameMesh = new THREE.Mesh(frameGeom, this.materials.get('instrumentChassis'));
+        const frameMesh = new THREE.Mesh(frameGeom, this.materials.get('holoPanelCyan'));
         displayGroup.add(frameMesh);
 
         const borderGeom = new THREE.EdgesGeometry(frameGeom);
@@ -308,7 +308,7 @@ export class WallFrontAbout {
         this.schematicTexture.magFilter = THREE.LinearFilter;
 
         const screenGeom = new THREE.PlaneGeometry(5.2, 1.48);
-        const screenMat = new THREE.MeshBasicMaterial({ map: this.schematicTexture, transparent: false });
+        const screenMat = new THREE.MeshBasicMaterial({ map: this.schematicTexture, transparent: true, depthWrite: false });
         const screenMesh = new THREE.Mesh(screenGeom, screenMat);
         screenMesh.position.z = 0.045;
         displayGroup.add(screenMesh);
@@ -363,7 +363,7 @@ export class WallFrontAbout {
         textTex.minFilter = THREE.LinearFilter;
         const textMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(8.5, 0.32),
-            new THREE.MeshBasicMaterial({ map: textTex, transparent: true })
+            new THREE.MeshBasicMaterial({ map: textTex, transparent: true, depthWrite: false })
         );
         textMesh.position.set(0, 0, 0.135);
         racewayGroup.add(textMesh);
@@ -393,7 +393,8 @@ export class WallFrontAbout {
             const w = this.schematicCanvas.width;
             const h = this.schematicCanvas.height;
 
-            ctx.fillStyle = '#060a12';
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
             ctx.fillRect(0, 0, w, h);
 
             // Technical Grid Lines
@@ -440,7 +441,7 @@ export class WallFrontAbout {
 
             // Draw Node Boxes
             nodes.forEach(n => {
-                ctx.fillStyle = '#0a101d';
+                ctx.fillStyle = 'rgba(10, 16, 29, 0.55)';
                 ctx.fillRect(n.x - 105, n.y - 36, 210, 72);
                 ctx.strokeStyle = '#38bdf8';
                 ctx.lineWidth = 2.5;
