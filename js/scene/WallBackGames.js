@@ -73,7 +73,7 @@ export class WallBackGames {
         headerGroup.position.set(0, 5.2, 0.58);
 
         const backGeom = new THREE.BoxGeometry(7.4, 1.35, 0.06);
-        const backMesh = new THREE.Mesh(backGeom, this.materials.get('instrumentChassis'));
+        const backMesh = new THREE.Mesh(backGeom, this.materials.get('holoPanelPurple'));
         headerGroup.add(backMesh);
 
         const borderGeom = new THREE.EdgesGeometry(backGeom);
@@ -87,7 +87,7 @@ export class WallBackGames {
         canvas.height = 360;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#060a12';
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
         ctx.fillRect(0, 0, 2048, 360);
         ctx.strokeStyle = 'rgba(167, 139, 250, 0.40)';
         ctx.lineWidth = 4;
@@ -111,7 +111,7 @@ export class WallBackGames {
 
         const headerMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(7.2, 1.25),
-            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
         headerMesh.position.z = 0.04;
         headerGroup.add(headerMesh);
@@ -157,7 +157,7 @@ export class WallBackGames {
         // Live Chess AI Evaluation Display Chassis (2.7m x 1.4m x 0.06m)
         const screenChassis = new THREE.Mesh(
             new THREE.BoxGeometry(2.7, 1.4, 0.06),
-            this.materials.get('instrumentChassis')
+            this.materials.get('holoPanelCyan')
         );
         screenChassis.position.set(0, 1.0, 0.44);
         station.add(screenChassis);
@@ -173,7 +173,7 @@ export class WallBackGames {
 
         const screenMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(2.6, 1.3),
-            new THREE.MeshBasicMaterial({ map: this.chessTexture, transparent: true })
+            new THREE.MeshBasicMaterial({ map: this.chessTexture, transparent: true, depthWrite: false })
         );
         screenMesh.position.set(0, 1.0, 0.475);
         station.add(screenMesh);
@@ -208,7 +208,7 @@ export class WallBackGames {
         // Live Simulation Display Chassis (2.7m x 1.4m x 0.06m)
         const screenChassis = new THREE.Mesh(
             new THREE.BoxGeometry(2.7, 1.4, 0.06),
-            this.materials.get('instrumentChassis')
+            this.materials.get('holoPanel')
         );
         screenChassis.position.set(0, 1.0, 0.44);
         station.add(screenChassis);
@@ -224,7 +224,7 @@ export class WallBackGames {
 
         const screenMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(2.6, 1.3),
-            new THREE.MeshBasicMaterial({ map: this.simTexture, transparent: true })
+            new THREE.MeshBasicMaterial({ map: this.simTexture, transparent: true, depthWrite: false })
         );
         screenMesh.position.set(0, 1.0, 0.475);
         station.add(screenMesh);
@@ -270,7 +270,7 @@ export class WallBackGames {
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#060a12';
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
         ctx.fillRect(0, 0, 1024, 512);
         ctx.strokeStyle = '#10b981';
         ctx.lineWidth = 4;
@@ -298,7 +298,7 @@ export class WallBackGames {
         tex.magFilter = THREE.LinearFilter;
         const screenMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(2.2, 1.1),
-            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
         screenMesh.position.set(0, 0.6, 0.88);
         termGroup.add(screenMesh);
@@ -359,7 +359,8 @@ export class WallBackGames {
             const w = this.chessCanvas.width;
             const h = this.chessCanvas.height;
 
-            ctx.fillStyle = '#060a12';
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
             ctx.fillRect(0, 0, w, h);
             ctx.strokeStyle = '#a78bfa';
             ctx.lineWidth = 4;
@@ -392,7 +393,8 @@ export class WallBackGames {
             const w = this.simCanvas.width;
             const h = this.simCanvas.height;
 
-            ctx.fillStyle = '#060a12';
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
             ctx.fillRect(0, 0, w, h);
             ctx.strokeStyle = '#ff9d00';
             ctx.lineWidth = 4;
