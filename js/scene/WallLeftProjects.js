@@ -67,7 +67,7 @@ export class WallLeftProjects {
         headerGroup.position.set(0, 5.2, 0.58);
 
         const backGeom = new THREE.BoxGeometry(7.4, 1.35, 0.06);
-        const backMesh = new THREE.Mesh(backGeom, this.materials.get('instrumentChassis'));
+        const backMesh = new THREE.Mesh(backGeom, this.materials.get('holoPanel'));
         headerGroup.add(backMesh);
 
         const borderGeom = new THREE.EdgesGeometry(backGeom);
@@ -81,7 +81,7 @@ export class WallLeftProjects {
         canvas.height = 360;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#060a12';
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
         ctx.fillRect(0, 0, 2048, 360);
         ctx.strokeStyle = 'rgba(255, 157, 0, 0.40)';
         ctx.lineWidth = 4;
@@ -105,7 +105,7 @@ export class WallLeftProjects {
 
         const headerMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(7.2, 1.25),
-            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
         headerMesh.position.z = 0.04;
         headerGroup.add(headerMesh);
@@ -221,8 +221,8 @@ export class WallLeftProjects {
 
         const oledTex = new THREE.CanvasTexture(oledCanvas);
         const oledMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(0.22, 0.11),
-            new THREE.MeshBasicMaterial({ map: oledTex })
+            new THREE.PlaneGeometry(0.24, 0.16),
+            new THREE.MeshBasicMaterial({ map: oledTex, transparent: true, depthWrite: false })
         );
         oledMesh.position.set(-0.04, 0.15, 0.445);
         station.add(oledMesh);
@@ -342,9 +342,9 @@ export class WallLeftProjects {
         const tagGroup = new THREE.Group();
         tagGroup.position.set(x, y, 0.12);
 
-        // Solid Backing Chassis
+        // Holographic Backing Chassis
         const backGeom = new THREE.BoxGeometry(3.05, 0.95, 0.04);
-        const backMesh = new THREE.Mesh(backGeom, this.materials.get('instrumentChassis'));
+        const backMesh = new THREE.Mesh(backGeom, this.materials.get('holoPanel'));
         tagGroup.add(backMesh);
 
         const borderGeom = new THREE.EdgesGeometry(backGeom);
@@ -358,7 +358,7 @@ export class WallLeftProjects {
         canvas.height = 320;
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#060a12';
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.20)';
         ctx.fillRect(0, 0, 1024, 320);
         ctx.strokeStyle = 'rgba(255, 157, 0, 0.45)';
         ctx.lineWidth = 4;
@@ -385,7 +385,7 @@ export class WallLeftProjects {
 
         const mesh = new THREE.Mesh(
             new THREE.PlaneGeometry(3.0, 0.92),
-            new THREE.MeshBasicMaterial({ map: tex, transparent: true })
+            new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
         mesh.position.z = 0.025;
         tagGroup.add(mesh);
