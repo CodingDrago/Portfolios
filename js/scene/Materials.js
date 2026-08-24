@@ -313,6 +313,45 @@ export class Materials {
             roughness: 0.35,
             metalness: 0.2
         });
+
+        // 36. Holographic Panel Backings (Additive translucent UI plane)
+        this.materials.holoPanel = new THREE.MeshBasicMaterial({
+            color: CONFIG.colors.amber || 0xffb703,
+            transparent: true,
+            opacity: 0.15,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        this.materials.holoPanelAmber = this.materials.holoPanel;
+
+        this.materials.holoPanelCyan = new THREE.MeshBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.15,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        this.materials.holoPanelPurple = new THREE.MeshBasicMaterial({
+            color: 0xa78bfa,
+            transparent: true,
+            opacity: 0.15,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        this.materials.holoPanelGreen = new THREE.MeshBasicMaterial({
+            color: 0x10b981,
+            transparent: true,
+            opacity: 0.15,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
     }
 
     /**
