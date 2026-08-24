@@ -66,14 +66,14 @@ export class WallLeftProjects {
         const headerGroup = new THREE.Group();
         headerGroup.position.set(0, 5.2, 0.58);
 
-        const backGeom = new THREE.BoxGeometry(7.4, 1.35, 0.06);
+        const backGeom = new THREE.PlaneGeometry(7.4, 1.35);
         const backMesh = new THREE.Mesh(backGeom, this.materials.get('holoPanel'));
         headerGroup.add(backMesh);
 
         const borderGeom = new THREE.EdgesGeometry(backGeom);
         const borderMat = new THREE.LineBasicMaterial({ color: 0xffb703, linewidth: 2 });
         const border = new THREE.LineSegments(borderGeom, borderMat);
-        border.position.z = 0.035;
+        border.position.z = 0.005;
         headerGroup.add(border);
 
         const canvas = document.createElement('canvas');
@@ -107,7 +107,7 @@ export class WallLeftProjects {
             new THREE.PlaneGeometry(7.2, 1.25),
             new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
-        headerMesh.position.z = 0.04;
+        headerMesh.position.z = 0.01;
         headerGroup.add(headerMesh);
         this.group.add(headerGroup);
     }
@@ -343,14 +343,14 @@ export class WallLeftProjects {
         tagGroup.position.set(x, y, 0.12);
 
         // Holographic Backing Chassis
-        const backGeom = new THREE.BoxGeometry(3.05, 0.95, 0.04);
+        const backGeom = new THREE.PlaneGeometry(3.05, 0.95);
         const backMesh = new THREE.Mesh(backGeom, this.materials.get('holoPanel'));
         tagGroup.add(backMesh);
 
         const borderGeom = new THREE.EdgesGeometry(backGeom);
         const borderMat = new THREE.LineBasicMaterial({ color: 0xffb703, linewidth: 1.5 });
         const border = new THREE.LineSegments(borderGeom, borderMat);
-        border.position.z = 0.025;
+        border.position.z = 0.005;
         tagGroup.add(border);
 
         const canvas = document.createElement('canvas');
@@ -387,7 +387,7 @@ export class WallLeftProjects {
             new THREE.PlaneGeometry(3.0, 0.92),
             new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
-        mesh.position.z = 0.025;
+        mesh.position.z = 0.01;
         tagGroup.add(mesh);
 
         parent.add(tagGroup);

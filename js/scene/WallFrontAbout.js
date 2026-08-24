@@ -84,14 +84,14 @@ export class WallFrontAbout {
         headerGroup.position.set(0, 4.95, 0.58);
 
         // Smoked Backing Plate with Amber Frame (7.6m x 1.45m)
-        const backGeom = new THREE.BoxGeometry(7.6, 1.45, 0.08);
+        const backGeom = new THREE.PlaneGeometry(7.6, 1.45);
         const backMesh = new THREE.Mesh(backGeom, this.materials.get('holoPanel'));
         headerGroup.add(backMesh);
 
         const borderGeom = new THREE.EdgesGeometry(backGeom);
         const borderMat = new THREE.LineBasicMaterial({ color: 0xffb703, linewidth: 2 });
         const border = new THREE.LineSegments(borderGeom, borderMat);
-        border.position.z = 0.045;
+        border.position.z = 0.005;
         headerGroup.add(border);
 
         // High-Resolution 2D Canvas for ultra-sharp typography at normal camera view (2048x512)
@@ -130,7 +130,7 @@ export class WallFrontAbout {
         const textGeom = new THREE.PlaneGeometry(7.4, 1.35);
         const textMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
         const textMesh = new THREE.Mesh(textGeom, textMat);
-        textMesh.position.z = 0.05;
+        textMesh.position.z = 0.01;
         headerGroup.add(textMesh);
 
         this.group.add(headerGroup);
@@ -145,14 +145,14 @@ export class WallFrontAbout {
         const marqueeGroup = new THREE.Group();
         marqueeGroup.position.set(0, 3.75, 0.58);
 
-        const backGeom = new THREE.BoxGeometry(10.4, 0.52, 0.06);
+        const backGeom = new THREE.PlaneGeometry(10.4, 0.52);
         const backMesh = new THREE.Mesh(backGeom, this.materials.get('holoPanel'));
         marqueeGroup.add(backMesh);
 
         const borderGeom = new THREE.EdgesGeometry(backGeom);
         const borderMat = new THREE.LineBasicMaterial({ color: 0xffb703, linewidth: 1.5 });
         const border = new THREE.LineSegments(borderGeom, borderMat);
-        border.position.z = 0.035;
+        border.position.z = 0.005;
         marqueeGroup.add(border);
 
         const canvas = document.createElement('canvas');
@@ -201,7 +201,7 @@ export class WallFrontAbout {
             new THREE.PlaneGeometry(10.2, 0.48),
             new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
-        textMesh.position.z = 0.035;
+        textMesh.position.z = 0.01;
         marqueeGroup.add(textMesh);
 
         this.group.add(marqueeGroup);
@@ -225,8 +225,8 @@ export class WallFrontAbout {
             const cardGroup = new THREE.Group();
             cardGroup.position.set(d.x, d.y, 0.58);
 
-            // Card Chassis (2.8m x 1.05m x 0.06m)
-            const cardGeom = new THREE.BoxGeometry(2.8, 1.05, 0.06);
+            // Card Chassis (2.8m x 1.05m)
+            const cardGeom = new THREE.PlaneGeometry(2.8, 1.05);
             const cardMesh = new THREE.Mesh(cardGeom, this.materials.get('holoPanel'));
             cardGroup.add(cardMesh);
 
@@ -271,7 +271,7 @@ export class WallFrontAbout {
                 new THREE.PlaneGeometry(2.7, 0.98),
                 new THREE.MeshBasicMaterial({ map: cardTex, transparent: true, depthWrite: false })
             );
-            textMesh.position.z = 0.035;
+            textMesh.position.z = 0.01;
             cardGroup.add(textMesh);
 
             this.group.add(cardGroup);
@@ -286,15 +286,15 @@ export class WallFrontAbout {
         const displayGroup = new THREE.Group();
         displayGroup.position.set(0, 0.95, 0.58);
 
-        // Frame Chassis (5.4m x 1.60m x 0.08m)
-        const frameGeom = new THREE.BoxGeometry(5.4, 1.60, 0.08);
+        // Frame Chassis (5.4m x 1.60m)
+        const frameGeom = new THREE.PlaneGeometry(5.4, 1.60);
         const frameMesh = new THREE.Mesh(frameGeom, this.materials.get('holoPanelCyan'));
         displayGroup.add(frameMesh);
 
         const borderGeom = new THREE.EdgesGeometry(frameGeom);
         const borderMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 1.5 });
         const border = new THREE.LineSegments(borderGeom, borderMat);
-        border.position.z = 0.045;
+        border.position.z = 0.005;
         displayGroup.add(border);
 
         // Live Schematic CRT Canvas (1024x512)
@@ -310,7 +310,7 @@ export class WallFrontAbout {
         const screenGeom = new THREE.PlaneGeometry(5.2, 1.48);
         const screenMat = new THREE.MeshBasicMaterial({ map: this.schematicTexture, transparent: true, depthWrite: false });
         const screenMesh = new THREE.Mesh(screenGeom, screenMat);
-        screenMesh.position.z = 0.045;
+        screenMesh.position.z = 0.01;
         displayGroup.add(screenMesh);
 
         this.group.add(displayGroup);

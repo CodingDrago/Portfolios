@@ -72,14 +72,14 @@ export class WallBackGames {
         const headerGroup = new THREE.Group();
         headerGroup.position.set(0, 5.2, 0.58);
 
-        const backGeom = new THREE.BoxGeometry(7.4, 1.35, 0.06);
+        const backGeom = new THREE.PlaneGeometry(7.4, 1.35);
         const backMesh = new THREE.Mesh(backGeom, this.materials.get('holoPanelPurple'));
         headerGroup.add(backMesh);
 
         const borderGeom = new THREE.EdgesGeometry(backGeom);
         const borderMat = new THREE.LineBasicMaterial({ color: 0xa78bfa, linewidth: 2 });
         const border = new THREE.LineSegments(borderGeom, borderMat);
-        border.position.z = 0.035;
+        border.position.z = 0.005;
         headerGroup.add(border);
 
         const canvas = document.createElement('canvas');
@@ -113,7 +113,7 @@ export class WallBackGames {
             new THREE.PlaneGeometry(7.2, 1.25),
             new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
         );
-        headerMesh.position.z = 0.04;
+        headerMesh.position.z = 0.01;
         headerGroup.add(headerMesh);
         this.group.add(headerGroup);
     }
@@ -154,9 +154,9 @@ export class WallBackGames {
             }
         }
 
-        // Live Chess AI Evaluation Display Chassis (2.7m x 1.4m x 0.06m)
+        // Live Chess AI Evaluation Display Chassis (2.7m x 1.4m)
         const screenChassis = new THREE.Mesh(
-            new THREE.BoxGeometry(2.7, 1.4, 0.06),
+            new THREE.PlaneGeometry(2.7, 1.4),
             this.materials.get('holoPanelCyan')
         );
         screenChassis.position.set(0, 1.0, 0.44);
@@ -175,7 +175,7 @@ export class WallBackGames {
             new THREE.PlaneGeometry(2.6, 1.3),
             new THREE.MeshBasicMaterial({ map: this.chessTexture, transparent: true, depthWrite: false })
         );
-        screenMesh.position.set(0, 1.0, 0.475);
+        screenMesh.position.set(0, 1.0, 0.445);
         station.add(screenMesh);
 
         this.group.add(station);
@@ -205,9 +205,9 @@ export class WallBackGames {
         const tube = new THREE.Mesh(tubeGeom, this.materials.get('holoLineAmber'));
         station.add(tube);
 
-        // Live Simulation Display Chassis (2.7m x 1.4m x 0.06m)
+        // Live Simulation Display Chassis (2.7m x 1.4m)
         const screenChassis = new THREE.Mesh(
-            new THREE.BoxGeometry(2.7, 1.4, 0.06),
+            new THREE.PlaneGeometry(2.7, 1.4),
             this.materials.get('holoPanel')
         );
         screenChassis.position.set(0, 1.0, 0.44);
@@ -226,7 +226,7 @@ export class WallBackGames {
             new THREE.PlaneGeometry(2.6, 1.3),
             new THREE.MeshBasicMaterial({ map: this.simTexture, transparent: true, depthWrite: false })
         );
-        screenMesh.position.set(0, 1.0, 0.475);
+        screenMesh.position.set(0, 1.0, 0.445);
         station.add(screenMesh);
 
         this.group.add(station);
