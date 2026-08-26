@@ -20,6 +20,12 @@ export class WallRightSocial {
         this.time = 0;
         this.blinkingLEDs = [];
 
+        this.interactiveObjects = {
+            github: null,
+            linkedin: null,
+            contact: null
+        };
+
         this._initWallArchitecture();
         this._initGitHubRack();
         this._initLinkedInNode();
@@ -192,6 +198,7 @@ export class WallRightSocial {
         screenMesh.position.set(0, 2.0, 0.88);
         rackGroup.add(screenMesh);
 
+        this.interactiveObjects.github = rackGroup;
         this.group.add(rackGroup);
     }
 
@@ -248,6 +255,7 @@ export class WallRightSocial {
         screenMesh.position.set(0, 0.3, 0.75);
         nodeGroup.add(screenMesh);
 
+        this.interactiveObjects.linkedin = nodeGroup;
         this.group.add(nodeGroup);
     }
 
@@ -305,6 +313,7 @@ export class WallRightSocial {
         screenMesh.position.set(0, 0.6, 0.88);
         termGroup.add(screenMesh);
 
+        this.interactiveObjects.contact = termGroup;
         this.group.add(termGroup);
     }
 

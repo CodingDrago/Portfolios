@@ -36,7 +36,13 @@ export class InspectionMode {
             position: new THREE.Vector3(),
             quaternion: new THREE.Quaternion(),
             scale: new THREE.Vector3(),
-            parent: null
+            parent: null,
+            worldPosition: new THREE.Vector3(),
+            worldQuaternion: new THREE.Quaternion(),
+            exitStartCamPos: new THREE.Vector3(),
+            exitStartCamQuat: new THREE.Quaternion(),
+            inspectionCamPos: new THREE.Vector3(),
+            inspectionCamQuat: new THREE.Quaternion()
         };
 
         // Inspection Dedicated World Space Position (Slightly left of center to balance right panel)
@@ -51,10 +57,10 @@ export class InspectionMode {
         this._initDOM();
         this._bindEvents();
 
-        // Auto-dismiss intro hint after 5 seconds OR on first mouse interaction
-        this._introAutoDismissTimer = setTimeout(() => this._dismissIntro(), 5000);
+        // The hint starts only after the boot overlay finishes; otherwise a boot
+        // skip click would dismiss it before the visitor can ever see it.
+        this._introAutoDismissTimer = null;
         this._introPointerHandler = () => this._dismissIntro();
-        window.addEventListener('pointerdown', this._introPointerHandler, { once: true });
     }
 
     /**
@@ -182,6 +188,16 @@ export class InspectionMode {
     }
 
     /**
+     * Start the post-boot exploration hint lifecycle.
+     */
+    startIntroTimer() {
+        if (!this.introInstructionElement || this.hasExploredOnce || this._introAutoDismissTimer) return;
+
+        this._introAutoDismissTimer = setTimeout(() => this._dismissIntro(), 5000);
+        window.addEventListener('pointerdown', this._introPointerHandler, { once: true });
+    }
+
+    /**
      * Populate the right-side information panel with object metadata
      * @private
      * @param {Object} target 
@@ -254,10 +270,8 @@ export class InspectionMode {
         this.activeTarget = target;
         this.hasExploredOnce = true;
 
-        // Permanently fade initial intro instruction
-        if (this.introInstructionElement) {
-            this.introInstructionElement.classList.add('fade-out');
-        }
+        // Permanently fade initial intro instruction.
+        this._dismissIntro();
 
         // Update State Manager
         if (this.stateManager) {
@@ -269,12 +283,21 @@ export class InspectionMode {
             this.interactionManager.disable();
         }
 
-        // 1. Store EXACT original transform
+        // 1. Store EXACT original local transform and parent
         const obj = target.mesh;
         this.storedTransform.position.copy(obj.position);
         this.storedTransform.quaternion.copy(obj.quaternion);
         this.storedTransform.scale.copy(obj.scale);
         this.storedTransform.parent = obj.parent;
+
+        // Attach to scene while preserving exact world transform
+        if (this.scene && obj.parent && obj.parent !== this.scene) {
+            this.scene.attach(obj);
+        }
+
+        // Store world transform for smooth interpolation in world space
+        this.storedTransform.worldPosition.copy(obj.position);
+        this.storedTransform.worldQuaternion.copy(obj.quaternion);
 
         // 2. Setup transition animation variables
         this.transitionProgress = 0.0;
@@ -321,6 +344,12 @@ export class InspectionMode {
         this.isTransitioning = true;
         this.transitionDirection = -1;
 
+        // Record camera start pose for smooth exit blend back to workstation camera
+        if (this.camera) {
+            this.storedTransform.exitStartCamPos.copy(this.camera.position);
+            this.storedTransform.exitStartCamQuat.copy(this.camera.quaternion);
+        }
+
         if (this.stateManager) {
             this.stateManager.setState(STATES.EXITING_EXPLORATION);
         }
@@ -352,9 +381,12 @@ export class InspectionMode {
         this.isExploring = false;
         this.isTransitioning = false;
 
-        // Restore exact transforms
+        // Restore exact transforms and hierarchy
         if (this.activeTarget && this.activeTarget.mesh) {
             const obj = this.activeTarget.mesh;
+            if (this.storedTransform.parent && this.storedTransform.parent !== this.scene) {
+                this.storedTransform.parent.attach(obj);
+            }
             obj.position.copy(this.storedTransform.position);
             obj.quaternion.copy(this.storedTransform.quaternion);
             obj.scale.copy(this.storedTransform.scale);
@@ -396,12 +428,43 @@ export class InspectionMode {
                 targetPos.set(-0.4, 0.2, 0.0);
             }
 
-            // Smooth position interpolation
-            obj.position.lerpVectors(this.storedTransform.position, targetPos, t);
+            // Smooth position interpolation in world space
+            obj.position.lerpVectors(this.storedTransform.worldPosition, targetPos, t);
 
             // Subtle smooth tilt orientation during inspection
             const inspectQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0.15);
-            obj.quaternion.slerpQuaternions(this.storedTransform.quaternion, inspectQuat, t);
+            obj.quaternion.slerpQuaternions(this.storedTransform.worldQuaternion, inspectQuat, t);
+
+            // Blend the camera into and out of inspection so neither transition jumps.
+            if (this.camera && this.inspectionCamera) {
+                if (this.transitionDirection === 1) {
+                    this.inspectionCamera.getPose(
+                        this.storedTransform.inspectionCamPos,
+                        this.storedTransform.inspectionCamQuat
+                    );
+                    this.camera.position.lerpVectors(
+                        this.inspectionCamera.savedCameraPosition,
+                        this.storedTransform.inspectionCamPos,
+                        t
+                    );
+                    this.camera.quaternion.slerpQuaternions(
+                        this.inspectionCamera.savedCameraQuaternion,
+                        this.storedTransform.inspectionCamQuat,
+                        t
+                    );
+                } else {
+                    this.camera.position.lerpVectors(
+                        this.inspectionCamera.savedCameraPosition,
+                        this.storedTransform.exitStartCamPos,
+                        t
+                    );
+                    this.camera.quaternion.slerpQuaternions(
+                        this.inspectionCamera.savedCameraQuaternion,
+                        this.storedTransform.exitStartCamQuat,
+                        t
+                    );
+                }
+            }
 
             // Workstation Lighting Dim Factor Interpolation
             if (this.lighting && this.lighting.setDimLevel) {
@@ -425,7 +488,7 @@ export class InspectionMode {
             this.holographicInspector.update(deltaTime);
         }
 
-        if (this.isExploring && this.inspectionCamera) {
+        if (this.isExploring && !this.isTransitioning && this.inspectionCamera) {
             this.inspectionCamera.update(deltaTime, pointerTracker, this.spatialCursor);
         }
     }

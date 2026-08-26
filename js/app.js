@@ -3,27 +3,27 @@
  * GUNA - Interactive Robotics Workstation Portfolio Hero (Phase 4 Spatial Exploration)
  */
 
-import { CONFIG, STATES } from './config.js?v=63';
-import { BootManager } from './loader/BootManager.js?v=63';
-import { StateManager } from './state/StateManager.js?v=63';
-import { PointerTracker } from './input/PointerTracker.js?v=63';
-import { SpatialCursor } from './input/SpatialCursor.js?v=63';
-import { SceneManager } from './scene/SceneManager.js?v=63';
-import { Lighting } from './scene/Lighting.js?v=63';
-import { Materials } from './scene/Materials.js?v=63';
-import { MountingPlatform } from './scene/MountingPlatform.js?v=63';
-import { Environment } from './scene/Environment.js?v=63';
-import { Workbench } from './scene/Workbench.js?v=63';
-import { RobotController } from './robot/RobotController.js?v=63';
-import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=63';
-import { HolographicInspector } from './scene/HolographicInspector.js?v=63';
-import { InspectionCamera } from './scene/InspectionCamera.js?v=63';
-import { InspectionMode } from './scene/InspectionMode.js?v=63';
-import { WallFrontAbout } from './scene/WallFrontAbout.js?v=63';
-import { WallLeftProjects } from './scene/WallLeftProjects.js?v=63';
-import { WallRightSocial } from './scene/WallRightSocial.js?v=63';
-import { WallBackGames } from './scene/WallBackGames.js?v=63';
-import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=63';
+import { CONFIG, STATES } from './config.js?v=65';
+import { BootManager } from './loader/BootManager.js?v=65';
+import { StateManager } from './state/StateManager.js?v=65';
+import { PointerTracker } from './input/PointerTracker.js?v=65';
+import { SpatialCursor } from './input/SpatialCursor.js?v=65';
+import { SceneManager } from './scene/SceneManager.js?v=65';
+import { Lighting } from './scene/Lighting.js?v=65';
+import { Materials } from './scene/Materials.js?v=65';
+import { MountingPlatform } from './scene/MountingPlatform.js?v=65';
+import { Environment } from './scene/Environment.js?v=65';
+import { Workbench } from './scene/Workbench.js?v=65';
+import { RobotController } from './robot/RobotController.js?v=65';
+import { ObjectInteractionManager } from './scene/ObjectInteractionManager.js?v=65';
+import { HolographicInspector } from './scene/HolographicInspector.js?v=65';
+import { InspectionCamera } from './scene/InspectionCamera.js?v=65';
+import { InspectionMode } from './scene/InspectionMode.js?v=65';
+import { WallFrontAbout } from './scene/WallFrontAbout.js?v=65';
+import { WallLeftProjects } from './scene/WallLeftProjects.js?v=65';
+import { WallRightSocial } from './scene/WallRightSocial.js?v=65';
+import { WallBackGames } from './scene/WallBackGames.js?v=65';
+import { WallVisibilityManager } from './scene/WallVisibilityManager.js?v=65';
 import * as THREE from 'three';
 
 class App {
@@ -80,6 +80,7 @@ class App {
 
         this._onFrame = this._onFrame.bind(this);
         this._onBootComplete = this._onBootComplete.bind(this);
+        this._onVisibilityChange = this._onVisibilityChange.bind(this);
     }
 
     /**
@@ -172,7 +173,13 @@ class App {
             }
 
             // 8.8. Initialize Phase 4 Spatial Object Interaction Subsystems
-            this.interactionManager = new ObjectInteractionManager(this.sceneManager.camera, this.sceneManager.scene);
+            this.interactionManager = new ObjectInteractionManager(
+                this.sceneManager.camera,
+                this.sceneManager.scene,
+                this.pointerTracker
+            );
+            // Do not allow the boot-overlay skip click to also open an inspection.
+            this.interactionManager.disable();
             this.holographicInspector = new HolographicInspector();
             this.holographicInspector.addToScene(this.sceneManager.scene);
 
@@ -239,6 +246,18 @@ class App {
         if (this.stateManager) {
             this.stateManager.setState(STATES.NORMAL);
         }
+
+        if (this.interactionManager) {
+            this.interactionManager.enable();
+        }
+
+        // Defer registration so a click used to skip the boot overlay does not
+        // immediately consume the exploration hint.
+        setTimeout(() => {
+            if (this.inspectionMode) {
+                this.inspectionMode.startIntroTimer();
+            }
+        }, 0);
     }
 
     /**
@@ -287,13 +306,16 @@ class App {
 
         // Initialize Fixed HTML Navigation Overlay
         this._initNavigation();
+
+        // Rendering a hidden tab wastes GPU/CPU time and creates a large first-frame delta on return.
+        document.addEventListener('visibilitychange', this._onVisibilityChange);
     }
 
     /**
      * Start high-performance RequestAnimationFrame Loop
      */
     startLoop() {
-        if (this.isLoopRunning) return;
+        if (this.isLoopRunning || document.hidden) return;
         this.isLoopRunning = true;
         this.lastFrameTime = performance.now();
         requestAnimationFrame(this._onFrame);
@@ -307,7 +329,19 @@ class App {
     }
 
     /**
-     * Register all 7 interactive hardware targets with rich technical metadata
+     * Pause the renderer while the page is backgrounded and resume cleanly on return.
+     * @private
+     */
+    _onVisibilityChange() {
+        if (document.hidden) {
+            this.stopLoop();
+        } else {
+            this.startLoop();
+        }
+    }
+
+    /**
+     * Register all interactive workstation targets with rich technical metadata
      * @private
      */
     _registerSpatialTargets() {
@@ -544,6 +578,326 @@ class App {
                     ['PACKET DECODER:', 'MOTOR_SYNC / IMU_ACK', '#38bdf8'],
                     ['TRIGGER MASK:', '0x7FF [FRAME CONVERGED]', '#10b981'],
                     ['DIAGNOSTIC STATUS:', 'ACTIVE STREAMING / NOMINAL', '#f8fafc']
+                ]
+            });
+        }
+
+        // 8. PROJ-01: Autonomous Hexapod Robot
+        if (this.wallLeftProjects && this.wallLeftProjects.interactiveObjects.hexapod) {
+            this.interactionManager.registerTarget({
+                id: 'hexapod',
+                title: '6-LEGGED AUTONOMOUS HEXAPOD ROBOT',
+                category: 'PROJECT 01 // KINEMATICS & GAIT',
+                description: '18-DOF dynamic hexapod robot with analytical tripod gait solver, terrain adaptation, and FreeRTOS control.',
+                features: [
+                    '18-DOF articulated spider kinematics with 3-DOF per coxa-femur-tibia leg',
+                    'Dynamic tripod and wave gait generation running at 100 Hz',
+                    'Terrain slope compensation via 6-axis IMU sensor fusion',
+                    'Low-latency FreeRTOS task scheduling with deterministic servo telemetry'
+                ],
+                technicalData: {
+                    'DEGREES OF FREEDOM': '18-DOF (3-DOF x 6 LEGS)',
+                    'GAIT CONTROLLER': 'TRIPOD / WAVE / RIPPLE',
+                    'MICROCONTROLLER': 'STM32F407 ARM CORTEX-M4',
+                    'SERVO BUS': '1.0 Mbps TTL SERIAL PROTOCOL',
+                    'TERRAIN ADAPTATION': 'CLOSED-LOOP IMU COMPENSATION'
+                },
+                mesh: this.wallLeftProjects.interactiveObjects.hexapod,
+                anchorPoint: new THREE.Vector3(-11.5, 1.4, -4.5),
+                getData: () => [
+                    ['ACTIVE GAIT:', 'TRIPOD RUNNING @ 100 Hz', '#ff9d00'],
+                    ['LEGS IN STANCE:', '3 OF 6 [STABLE BASE]', '#10b981'],
+                    ['IMU ATTITUDE:', 'PITCH: 0.0° / ROLL: 0.0°', '#38bdf8'],
+                    ['SERVO TELEMETRY:', '18/18 HEALTHY // 42°C', '#10b981'],
+                    ['POWER CONSUMPTION:', '11.1V 3S LiPo // 2.4A', '#f8fafc']
+                ]
+            });
+        }
+
+        // 9. PROJ-02: Smart IoT Environmental Sensor Node
+        if (this.wallLeftProjects && this.wallLeftProjects.interactiveObjects.iotNode) {
+            this.interactionManager.registerTarget({
+                id: 'iotNode',
+                title: 'SMART IOT ENVIRONMENTAL SENSOR NODE',
+                category: 'PROJECT 02 // IOT & TELEMETRY',
+                description: 'Ultra-low power LoRa telemetry node with multi-gas atmospheric sensing, energy harvesting, and cloud telemetry.',
+                features: [
+                    'LoRaWAN 868/915 MHz long-range RF telemetry with 15km line-of-sight',
+                    'Multi-gas environmental array: CO2, VOCs, particulate matter, Temp & Humidity',
+                    'Deep-sleep current draw < 15 µA with wake-on-interrupt timer',
+                    'Integrated solar MPPT energy harvesting battery management'
+                ],
+                technicalData: {
+                    'RF PROTOCOL': 'LoRaWAN CLASS A / POINT-TO-POINT',
+                    'SENSORS': 'BME680 + SCD40 NDIR CO2',
+                    'DEEP SLEEP DRAW': '< 15 µA ULTRA-LOW POWER',
+                    'ENERGY HARVEST': 'SOLAR MPPT + LiFePO4 CELL',
+                    'TRANSMISSION RANGE': 'UP TO 15 KM LOS'
+                },
+                mesh: this.wallLeftProjects.interactiveObjects.iotNode,
+                anchorPoint: new THREE.Vector3(-11.5, 1.4, -1.5),
+                getData: () => [
+                    ['LORA LINK:', '868 MHz // RSSI -74 dBm', '#10b981'],
+                    ['TEMPERATURE:', '23.4°C [STABLE]', '#38bdf8'],
+                    ['HUMIDITY:', '48.2% RH', '#38bdf8'],
+                    ['AIR QUALITY (VOC):', '12 ppb [EXCELLENT]', '#10b981'],
+                    ['BATTERY LEVEL:', '3.31V // 94% CHARGE', '#ff9d00']
+                ]
+            });
+        }
+
+        // 10. PROJ-03: Embedded ML Vision & Neural Accelerator
+        if (this.wallLeftProjects && this.wallLeftProjects.interactiveObjects.mlVision) {
+            this.interactionManager.registerTarget({
+                id: 'mlVision',
+                title: 'EMBEDDED ML VISION & EDGE ACCELERATOR',
+                category: 'PROJECT 03 // APPLIED ML & VISION',
+                description: 'High-speed edge inference accelerator executing quantized YOLO neural networks for 60 fps object tracking.',
+                features: [
+                    'Dedicated edge NPU accelerator providing 1.2 TOPS quantized integer inference',
+                    'Real-time 60 fps spatial tracking and multi-class object detection',
+                    'Global shutter optical camera sensor with low-distortion lens',
+                    'Hardware-accelerated optical flow and visual spatial odometry'
+                ],
+                technicalData: {
+                    'NPU PERFORMANCE': '1.2 TOPS INT8 ACCELERATION',
+                    'MODEL ARCHITECTURE': 'TINY-YOLOv8 INT8 QUANTIZED',
+                    'CAMERA INTERFACE': 'MIPI CSI-2 2-LANE @ 1080p',
+                    'FRAME LATENCY': '14.2 ms END-TO-END',
+                    'DETECTION CLASSES': 'ROBOT, TOOLS, INSTRUMENTS, HANDS'
+                },
+                mesh: this.wallLeftProjects.interactiveObjects.mlVision,
+                anchorPoint: new THREE.Vector3(-11.5, 1.4, 1.5),
+                getData: () => [
+                    ['INFERENCE SPEED:', '60.0 FPS [14.2 ms]', '#10b981'],
+                    ['CONFIDENCE SCORE:', '98.4% [ROBOTIC_ARM]', '#ff9d00'],
+                    ['NPU TEMPERATURE:', '46.8°C [NOMINAL]', '#38bdf8'],
+                    ['OPTICAL ODOMETRY:', 'TRACKING LOCKED', '#10b981'],
+                    ['MEMORY BANDWIDTH:', '2.4 GB/s DMA STREAM', '#f8fafc']
+                ]
+            });
+        }
+
+        // 11. PROJ-04: BLDC Motor Dynamometer Test Bench
+        if (this.wallLeftProjects && this.wallLeftProjects.interactiveObjects.bldcDyno) {
+            this.interactionManager.registerTarget({
+                id: 'bldcDyno',
+                title: 'HIGH-TORQUE BLDC MOTOR DYNAMOMETER',
+                category: 'PROJECT 04 // POWER & ACTUATION',
+                description: 'Field-Oriented Control (FOC) dyno test fixture for continuous torque, back-EMF, and efficiency characterization.',
+                features: [
+                    'Field-Oriented Control (FOC) sinusoidal commutation algorithm at 25 kHz PWM',
+                    'Precision active load torque braking via four-quadrant regenerative dyno',
+                    'High-resolution 16-bit absolute magnetic angle encoder feedback',
+                    'Real-time automated torque-speed (T-N) curve plotting and thermal logging'
+                ],
+                technicalData: {
+                    'FOC FREQUENCY': '25 kHz SVPWM SWITCHING',
+                    'MAX CONTINUOUS TORQUE': '4.2 Nm @ 3500 RPM',
+                    'ENCODER RESOLUTION': '16-BIT MAGNETIC ABSOLUTE (0.005°)',
+                    'BRAKING MODE': 'REGENERATIVE 4-QUADRANT',
+                    'EFFICIENCY PEAK': '93.8% @ 2.8 Nm 2800 RPM'
+                },
+                mesh: this.wallLeftProjects.interactiveObjects.bldcDyno,
+                anchorPoint: new THREE.Vector3(-11.5, 1.4, 4.5),
+                getData: () => [
+                    ['ROTOR SPEED:', '3,450 RPM [FOC LOCKED]', '#10b981'],
+                    ['ACTIVE TORQUE:', '2.64 Nm [LOAD: 62.8%]', '#ff9d00'],
+                    ['PHASE CURRENT:', '12.4 A RMS [SINE]', '#38bdf8'],
+                    ['INVERTER EFFICIENCY:', '93.4% EFFICIENCY', '#10b981'],
+                    ['STATOR TEMP:', '51.2°C [AIR-COOLED]', '#f8fafc']
+                ]
+            });
+        }
+
+        // 12. Chess AI Matrix Station
+        if (this.wallBackGames && this.wallBackGames.interactiveObjects.chessAI) {
+            this.interactionManager.registerTarget({
+                id: 'chessAI',
+                title: '3D CHESS AI & MINIMAX SEARCH ENGINE',
+                category: 'GAMES & AI // ENGINE-01',
+                description: 'Alpha-Beta pruned minimax chess evaluation engine calculating depth-18 positions in real-time.',
+                features: [
+                    'Bitboard move generator evaluating >2.4M positions/sec in WebAssembly',
+                    'Transposition table with Zobrist hashing and principal variation search',
+                    'Dynamic piece-square positional tables and piece mobility heuristic',
+                    'Interactive robotic arm board move physical execution mapping'
+                ],
+                technicalData: {
+                    'SEARCH DEPTH': '18 PLY [ALPHA-BETA PRUNING]',
+                    'EVAL SPEED': '2,450,000 NODES / SEC',
+                    'TRANSPOSITION': '128 MB ZOBRIST HASH TABLE',
+                    'POSITION EVAL': '+1.60 [WHITE ADVANTAGE]',
+                    'OPENING BOOK': '12,500 ECO TOURNAMENT LINES'
+                },
+                mesh: this.wallBackGames.interactiveObjects.chessAI,
+                anchorPoint: new THREE.Vector3(-4.5, 1.4, 11.5),
+                getData: () => [
+                    ['EVALUATION:', '+1.60 [WHITE ADVANTAGE]', '#10b981'],
+                    ['SEARCH DEPTH:', '18 PLY // 2.45M N/s', '#ff9d00'],
+                    ['BEST LINE:', '1. e4 c6 2. d4 d5 3. Nc3', '#38bdf8'],
+                    ['MOVE GENERATOR:', 'MAGIC BITBOARDS ACTIVE', '#10b981'],
+                    ['TABLE MEMORY:', '128MB HASH // 0.00% COLLISION', '#f8fafc']
+                ]
+            });
+        }
+
+        // 13. Physics & Kinematics Trajectory Simulator
+        if (this.wallBackGames && this.wallBackGames.interactiveObjects.physicsSim) {
+            this.interactionManager.registerTarget({
+                id: 'physicsSim',
+                title: 'KINEMATICS TRAJECTORY & PHYSICS SIMULATOR',
+                category: 'GAMES & PHYSICS // SIM-01',
+                description: 'Verlet numerical physics integration calculating 60Hz 3D robotic projectile and arc kinematics.',
+                features: [
+                    'Verlet symplectic integration for zero-energy drift orbital kinematics',
+                    'Continuous collision detection (CCD) against convex hull geometries',
+                    'Aerodynamic drag, Magnus effect, and gravitational Coriolis compensation',
+                    'Real-time path projection and polynomial trajectory smoothing'
+                ],
+                technicalData: {
+                    'SOLVER KERNEL': 'VERLET SYMPLECTIC INTEGRATION',
+                    'TIMESTEP': '60 Hz FIXED DELTA-T (16.6ms)',
+                    'TRAJECTORY': 'QUADRATIC POLYNOMIAL SPLINE',
+                    'ACCURACY': '0.001mm POSITION CONVERGENCE',
+                    'GRAVITY COMP': 'ACTIVE [-9.81 m/s²]'
+                },
+                mesh: this.wallBackGames.interactiveObjects.physicsSim,
+                anchorPoint: new THREE.Vector3(0, 1.4, 11.5),
+                getData: () => [
+                    ['INTEGRATION:', 'VERLET 60 Hz [STABLE]', '#10b981'],
+                    ['TRAJECTORY PEAK:', 'Y = +0.45m [CONVERGED]', '#ff9d00'],
+                    ['INITIAL VELOCITY:', 'V0 = 4.82 m/s @ 45°', '#38bdf8'],
+                    ['ENERGY CONSERVATION:', '99.98% NO DRIFT', '#10b981'],
+                    ['GRAVITY VECTOR:', '-9.81 m/s² [LOCAL FRAME]', '#f8fafc']
+                ]
+            });
+        }
+
+        // 14. Hardware Logic & Arcade Test Terminal
+        if (this.wallBackGames && this.wallBackGames.interactiveObjects.arcade) {
+            this.interactionManager.registerTarget({
+                id: 'arcade',
+                title: 'RETRO HARDWARE LOGIC & ARCADE TERMINAL',
+                category: 'GAMES & INTERACTIVE // ARCADE-01',
+                description: 'Interactive hardware logic testing game benchmarking 6-DOF robotic response time and user input accuracy.',
+                features: [
+                    'Interactive robotic IK response challenge benchmarking millisecond latency',
+                    'Color-coded capacitive arcade input buttons with tactile LED triggers',
+                    'Vector CRT phosphorescent beam raster simulation display',
+                    'Global high score leaderboard and hardware diagnostic suite'
+                ],
+                technicalData: {
+                    'CURRENT SCORE': '094200 // HIGH: 128000',
+                    'TRIAL TYPE': '6-DOF INVERSE KINEMATICS TRIAL',
+                    'RESPONSE LATENCY': '< 8.4 ms SUB-FRAME MATCH',
+                    'DISPLAY MODE': 'PHOSPHOR CRT SIMULATION',
+                    'STATE': 'SYSTEM READY // ACTIVE'
+                },
+                mesh: this.wallBackGames.interactiveObjects.arcade,
+                anchorPoint: new THREE.Vector3(4.5, 1.4, 11.5),
+                getData: () => [
+                    ['SCORE:', '094200 // HIGH: 128000', '#ff9d00'],
+                    ['RESPONSE MATCH:', '< 8.4 ms LATENCY', '#10b981'],
+                    ['INPUT CHANNELS:', '5 TACTILE BUTTONS ARMED', '#38bdf8'],
+                    ['CRT RASTER:', '1080p 60fps SIMULATION', '#10b981'],
+                    ['SYSTEM STATE:', 'ACTIVE & READY', '#f8fafc']
+                ]
+            });
+        }
+
+        // 15. GitHub Code Gateway Node
+        if (this.wallRightSocial && this.wallRightSocial.interactiveObjects.github) {
+            this.interactionManager.registerTarget({
+                id: 'github',
+                title: 'GITHUB OPEN-SOURCE CODEBASE & REPOSITORIES',
+                category: 'SOCIAL & NETWORK // GIT-01',
+                description: 'Central open-source repository hub hosting firmware, kinematics algorithms, and robotics blueprints.',
+                features: [
+                    'Over 50 open-source repositories covering Embedded Systems, Robotics, and ML',
+                    'Automated GitHub Actions CI/CD test runners with 100% build health',
+                    'Comprehensive hardware schematics, Gerber files, and CAD step models',
+                    'Semantic versioning with clean automated release pipelines'
+                ],
+                technicalData: {
+                    'HANDLE': 'github.com/gunal',
+                    'REPOSITORIES': '50+ OPEN-SOURCE PROJECTS',
+                    'LANGUAGES': 'C/C++, PYTHON, RUST, JS',
+                    'CI/CD STATUS': 'PASSED (100% HEALTH)',
+                    'LICENSE': 'MIT / APACHE-2.0 OPEN SOURCE'
+                },
+                mesh: this.wallRightSocial.interactiveObjects.github,
+                anchorPoint: new THREE.Vector3(11.5, 1.6, -3.0),
+                getData: () => [
+                    ['REGISTRY:', 'github.com/gunal', '#10b981'],
+                    ['CORE STACK:', 'C/C++ · Python · Rust · JS', '#ff9d00'],
+                    ['CI/CD STATUS:', 'PASSED (100% HEALTH)', '#10b981'],
+                    ['OPEN SOURCE:', 'MIT / APACHE-2.0 LICENSED', '#38bdf8'],
+                    ['CONTRIBUTIONS:', 'DAILY COMMITS ACTIVE', '#f8fafc']
+                ]
+            });
+        }
+
+        // 16. LinkedIn Professional Network Node
+        if (this.wallRightSocial && this.wallRightSocial.interactiveObjects.linkedin) {
+            this.interactionManager.registerTarget({
+                id: 'linkedin',
+                title: 'LINKEDIN PROFESSIONAL ENGINEERING NETWORK',
+                category: 'SOCIAL & NETWORK // NET-01',
+                description: 'Professional engineering node detailing industry experience, collaborative research, and publications.',
+                features: [
+                    'Comprehensive track record in Embedded Systems, Robotics, and Applied ML',
+                    'Cross-functional team leadership and agile hardware-software co-design',
+                    'Direct communication channel for engineering consulting and opportunities',
+                    'Verified credentials and international technical project portfolio'
+                ],
+                technicalData: {
+                    'PROFILE': 'linkedin.com/in/gunal',
+                    'DISCIPLINES': 'ECE, EMBEDDED, ROBOTICS, ML',
+                    'EXPERIENCE': 'HARDWARE & EMBEDDED R&D',
+                    'NETWORK STATUS': 'CONNECTED & OPEN',
+                    'LOCATION': 'GLOBAL / REMOTE READY'
+                },
+                mesh: this.wallRightSocial.interactiveObjects.linkedin,
+                anchorPoint: new THREE.Vector3(11.5, 1.6, 0.0),
+                getData: () => [
+                    ['PROFILE:', 'linkedin.com/in/gunal', '#38bdf8'],
+                    ['DISCIPLINE:', 'ECE · EMBEDDED · ROBOTICS', '#ff9d00'],
+                    ['STATUS:', 'CONNECTED & OPEN', '#10b981'],
+                    ['RESEARCH:', 'APPLIED ROBOTIC SYSTEMS', '#38bdf8'],
+                    ['COLLABORATION:', 'OPEN TO INQUIRIES', '#f8fafc']
+                ]
+            });
+        }
+
+        // 17. Direct Engineering Communications Terminal
+        if (this.wallRightSocial && this.wallRightSocial.interactiveObjects.contact) {
+            this.interactionManager.registerTarget({
+                id: 'contact',
+                title: 'DIRECT ENGINEERING COMMUNICATIONS LINK',
+                category: 'SOCIAL & NETWORK // COMMS-01',
+                description: 'Direct encrypted engineering gateway for project inquiries, technical partnerships, and consultations.',
+                features: [
+                    'Encrypted direct communications protocol with 256-bit PGP security',
+                    'Direct access to technical lead for architectural consultations',
+                    'Rapid response time for hardware prototyping inquiries',
+                    'Secure authenticated email transmission channel'
+                ],
+                technicalData: {
+                    'EMAIL GATEWAY': 'contact@guna.engineering',
+                    'PROTOCOL': 'SECURE 256-BIT PGP',
+                    'AVAILABILITY': 'ACTIVE TRANSMITTER [LISTENING]',
+                    'PURPOSE': 'COLLABORATION & INQUIRIES',
+                    'ENCRYPTION': 'END-TO-END VERIFIED'
+                },
+                mesh: this.wallRightSocial.interactiveObjects.contact,
+                anchorPoint: new THREE.Vector3(11.5, 1.6, 3.5),
+                getData: () => [
+                    ['GATEWAY:', 'contact@guna.engineering', '#10b981'],
+                    ['SECURITY:', '256-BIT PGP ENCRYPTED', '#38bdf8'],
+                    ['TRANSMITTER:', 'ACTIVE [LISTENING]', '#10b981'],
+                    ['RESPONSE TIME:', '< 24 HOURS NOMINAL', '#ff9d00'],
+                    ['CHANNELS:', 'DIRECT EMAIL / CONSULTATION', '#f8fafc']
                 ]
             });
         }
@@ -847,8 +1201,10 @@ class App {
             const btnSection = btn.getAttribute('data-section');
             if (btnSection === sectionId) {
                 btn.classList.add('active');
+                btn.setAttribute('aria-current', 'page');
             } else {
                 btn.classList.remove('active');
+                btn.removeAttribute('aria-current');
             }
         });
     }

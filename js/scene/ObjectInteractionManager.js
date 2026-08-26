@@ -8,15 +8,17 @@
 import * as THREE from 'three';
 
 export class ObjectInteractionManager {
-    constructor(camera, scene) {
+    constructor(camera, scene, pointerTracker = null) {
         this.camera = camera;
         this.scene = scene;
+        this.pointerTracker = pointerTracker;
         this.raycaster = new THREE.Raycaster();
         this.mouseNDC = new THREE.Vector2(0, 0);
 
         // Registry of interactive targets
         this.interactiveTargets = [];
         this.targetMeshes = [];
+        this.visibleTargetMeshes = [];
 
         // Active Hover State
         this.hoveredTarget = null;
@@ -36,6 +38,8 @@ export class ObjectInteractionManager {
 
         // Click handler callback
         this.clickListeners = new Set();
+
+        this._onClick = this._onClick.bind(this);
 
         this._initSpatialPrompt();
         this._bindClick();
@@ -145,39 +149,49 @@ export class ObjectInteractionManager {
      * @private
      */
     _bindClick() {
-        window.addEventListener('click', (event) => {
-            if (!this.isEnabled) return;
+        window.addEventListener('click', this._onClick);
+    }
 
-            // Only trigger if click wasn't consumed by UI element
-            const targetEl = event.target;
-            if (targetEl && (targetEl.closest('.inspection-panel') || targetEl.closest('.inspection-close') || targetEl.closest('button'))) {
-                return;
-            }
+    /**
+     * Open an inspection only for a deliberate click/tap, never the click emitted
+     * after orbiting the camera.
+     * @private
+     */
+    _onClick(event) {
+        if (!this.isEnabled || (this.pointerTracker && this.pointerTracker.didDrag)) return;
 
-            let clickedTarget = this.hoveredTarget;
+        // Only trigger if click wasn't consumed by UI element
+        const targetEl = event.target;
+        if (targetEl && (targetEl.closest('.inspection-panel') || targetEl.closest('.inspection-close') || targetEl.closest('button'))) {
+            return;
+        }
 
-            // Direct raycast on click coordinates to eliminate any frame-delay race condition
-            if (!clickedTarget && this.camera && this.targetMeshes.length > 0) {
-                const clickNDC = new THREE.Vector2(
-                    (event.clientX / window.innerWidth) * 2.0 - 1.0,
-                    -(event.clientY / window.innerHeight) * 2.0 + 1.0
-                );
-                this.raycaster.setFromCamera(clickNDC, this.camera);
-                const intersects = this.raycaster.intersectObjects(this.targetMeshes, false);
-                if (intersects.length > 0) {
-                    for (const hit of intersects) {
-                        if (hit.object.userData && hit.object.userData.interactiveTarget) {
-                            clickedTarget = hit.object.userData.interactiveTarget;
-                            break;
-                        }
+        let clickedTarget = null;
+
+        // Always raycast from the click itself. The hover state can be one frame
+        // old if a visitor moves and clicks quickly.
+        if (this.camera && this.targetMeshes.length > 0 && Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+            const clickNDC = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2.0 - 1.0,
+                -(event.clientY / window.innerHeight) * 2.0 + 1.0
+            );
+            this.raycaster.setFromCamera(clickNDC, this.camera);
+            const intersects = this.raycaster.intersectObjects(this._getVisibleTargetMeshes(), false);
+            if (intersects.length > 0) {
+                for (const hit of intersects) {
+                    if (hit.object.userData && hit.object.userData.interactiveTarget) {
+                        clickedTarget = hit.object.userData.interactiveTarget;
+                        break;
                     }
                 }
             }
+        } else {
+            clickedTarget = this.hoveredTarget;
+        }
 
-            if (clickedTarget) {
-                this.clickListeners.forEach(listener => listener(clickedTarget));
-            }
-        });
+        if (clickedTarget) {
+            this.clickListeners.forEach(listener => listener(clickedTarget));
+        }
     }
 
     /**
@@ -335,6 +349,33 @@ export class ObjectInteractionManager {
     }
 
     /**
+     * Raycasting individual meshes bypasses parent visibility in Three.js, so
+     * discard targets inside walls or groups currently hidden from the camera.
+     * @private
+     * @returns {THREE.Mesh[]}
+     */
+    _getVisibleTargetMeshes() {
+        this.visibleTargetMeshes.length = 0;
+
+        for (const mesh of this.targetMeshes) {
+            let node = mesh;
+            let isVisible = true;
+            while (node) {
+                if (node.visible === false) {
+                    isVisible = false;
+                    break;
+                }
+                node = node.parent;
+            }
+            if (isVisible) {
+                this.visibleTargetMeshes.push(mesh);
+            }
+        }
+
+        return this.visibleTargetMeshes;
+    }
+
+    /**
      * Per-frame update: Raycast against ONLY registered target meshes and animate spatial hover prompt
      * @param {number} deltaTime 
      * @param {Object} pointerTracker 
@@ -358,7 +399,7 @@ export class ObjectInteractionManager {
             this.mouseNDC.set(pointerTracker.normalizedX, pointerTracker.normalizedY);
             this.raycaster.setFromCamera(this.mouseNDC, this.camera);
 
-            const intersects = this.raycaster.intersectObjects(this.targetMeshes, false);
+            const intersects = this.raycaster.intersectObjects(this._getVisibleTargetMeshes(), false);
             if (intersects.length > 0) {
                 for (const hit of intersects) {
                     if (hit.object.userData && hit.object.userData.interactiveTarget) {
@@ -460,6 +501,18 @@ export class ObjectInteractionManager {
      */
     getActiveTarget() {
         return this.hoveredTarget;
+    }
+
+    /**
+     * Release transient DOM listeners when this manager is discarded.
+     */
+    destroy() {
+        window.removeEventListener('click', this._onClick);
+        this._clearHover();
+        this.clickListeners.clear();
+        this.interactiveTargets = [];
+        this.targetMeshes = [];
+        this.visibleTargetMeshes = [];
     }
 
     /**

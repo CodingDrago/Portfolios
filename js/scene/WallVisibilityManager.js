@@ -150,34 +150,6 @@ export class WallVisibilityManager {
 
             this.wallStates[wallKey] = isVisible;
             group.visible = isVisible;
-
-            if (isVisible) {
-                // Calculate smooth opacity factor between hideThreshold (0.25) and fullThreshold (0.70)
-                const alpha = THREE.MathUtils.clamp(
-                    (score - this.hideThreshold) / (this.fullThreshold - this.hideThreshold),
-                    0.0,
-                    1.0
-                );
-
-                // Apply opacity to child mesh materials
-                group.traverse((child) => {
-                    if (child.isMesh && child.material) {
-                        const mats = Array.isArray(child.material) ? child.material : [child.material];
-                        mats.forEach((mat) => {
-                            const cached = this._materialOpacities.get(mat);
-                            if (cached) {
-                                if (alpha < 0.99) {
-                                    mat.transparent = true;
-                                    mat.opacity = cached.opacity * alpha;
-                                } else {
-                                    mat.transparent = cached.transparent;
-                                    mat.opacity = cached.opacity;
-                                }
-                            }
-                        });
-                    }
-                });
-            }
         }
     }
 

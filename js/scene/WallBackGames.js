@@ -26,6 +26,12 @@ export class WallBackGames {
         this.simContext = null;
         this.simTexture = null;
 
+        this.interactiveObjects = {
+            chessAI: null,
+            physicsSim: null,
+            arcade: null
+        };
+
         this._initWallArchitecture();
         this._initChessAIStation();
         this._initPhysicsSimStation();
@@ -178,6 +184,7 @@ export class WallBackGames {
         screenMesh.position.set(0, 1.0, 0.445);
         station.add(screenMesh);
 
+        this.interactiveObjects.chessAI = station;
         this.group.add(station);
     }
 
@@ -229,6 +236,7 @@ export class WallBackGames {
         screenMesh.position.set(0, 1.0, 0.445);
         station.add(screenMesh);
 
+        this.interactiveObjects.physicsSim = station;
         this.group.add(station);
     }
 
@@ -303,6 +311,7 @@ export class WallBackGames {
         screenMesh.position.set(0, 0.6, 0.88);
         termGroup.add(screenMesh);
 
+        this.interactiveObjects.arcade = termGroup;
         this.group.add(termGroup);
     }
 

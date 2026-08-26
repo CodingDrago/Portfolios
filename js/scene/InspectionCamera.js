@@ -38,6 +38,8 @@ export class InspectionCamera {
         // Saved Main Workstation Camera State
         this.savedCameraPosition = new THREE.Vector3();
         this.savedCameraQuaternion = new THREE.Quaternion();
+        this._lookAtMatrix = new THREE.Matrix4();
+        this._up = new THREE.Vector3(0, 1, 0);
     }
 
     /**
@@ -87,6 +89,24 @@ export class InspectionCamera {
     }
 
     /**
+     * Resolve the current orbital camera pose without applying it. This lets the
+     * inspection controller blend into the view instead of jumping on entry.
+     * @param {THREE.Vector3} position Target vector for the calculated position
+     * @param {THREE.Quaternion} quaternion Target quaternion for the calculated orientation
+     * @returns {{ position: THREE.Vector3, quaternion: THREE.Quaternion }}
+     */
+    getPose(position = new THREE.Vector3(), quaternion = new THREE.Quaternion()) {
+        const sinPhi = Math.sin(this.currentPhi);
+        position.set(
+            this.currentRadius * sinPhi * Math.sin(this.currentTheta) + this.targetFocus.x,
+            this.currentRadius * Math.cos(this.currentPhi) + this.targetFocus.y,
+            this.currentRadius * sinPhi * Math.cos(this.currentTheta) + this.targetFocus.z
+        );
+        quaternion.setFromRotationMatrix(this._lookAtMatrix.lookAt(position, this.targetFocus, this._up));
+        return { position, quaternion };
+    }
+
+    /**
      * Per-frame update for 360° inspection orbit & camera positioning
      * @param {number} deltaTime 
      * @param {Object} pointerTracker 
@@ -125,13 +145,7 @@ export class InspectionCamera {
         this.currentPhi += (this.targetPhi - this.currentPhi) * damping;
         this.currentRadius += (this.targetRadius - this.currentRadius) * damping;
 
-        // 5. Convert Spherical Coordinates to 3D Cartesian Position
-        const sinPhi = Math.sin(this.currentPhi);
-        const camX = this.currentRadius * sinPhi * Math.sin(this.currentTheta) + this.targetFocus.x;
-        const camY = this.currentRadius * Math.cos(this.currentPhi) + this.targetFocus.y;
-        const camZ = this.currentRadius * sinPhi * Math.cos(this.currentTheta) + this.targetFocus.z;
-
-        this.camera.position.set(camX, camY, camZ);
-        this.camera.lookAt(this.targetFocus);
+        // 5. Convert spherical coordinates into the active camera pose.
+        this.getPose(this.camera.position, this.camera.quaternion);
     }
 }

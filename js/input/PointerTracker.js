@@ -23,7 +23,9 @@ export class PointerTracker {
         this.smoothY = 0;
 
         // Orbit / Drag Inspection States
+        this.isPointerDown = false;
         this.isDragging = false;
+        this.didDrag = false;
         this.dragStartX = 0;
         this.dragStartY = 0;
         this.dragDeltaX = 0;
@@ -54,6 +56,7 @@ export class PointerTracker {
         this._onTouchStart = this._onTouchStart.bind(this);
         this._onTouchMove = this._onTouchMove.bind(this);
         this._onTouchEnd = this._onTouchEnd.bind(this);
+        this._onTouchCancel = this._onTouchCancel.bind(this);
 
         this._initListeners();
     }
@@ -73,6 +76,8 @@ export class PointerTracker {
         window.addEventListener('touchstart', this._onTouchStart, { passive: true });
         window.addEventListener('touchmove', this._onTouchMove, { passive: true });
         window.addEventListener('touchend', this._onTouchEnd, { passive: true });
+        window.addEventListener('touchcancel', this._onTouchCancel, { passive: true });
+        window.addEventListener('blur', this._onPointerLeave, { passive: true });
     }
 
     /**
@@ -87,6 +92,7 @@ export class PointerTracker {
             const dist = Math.hypot(curX - this.dragStartX, curY - this.dragStartY);
             if (dist > 4) {
                 this.isDragging = true;
+                this.didDrag = true;
             }
         }
 
@@ -124,6 +130,7 @@ export class PointerTracker {
         if (event.button === 0) {
             this.isPointerDown = true;
             this.isDragging = false;
+            this.didDrag = false;
             this.dragStartX = event.clientX;
             this.dragStartY = event.clientY;
             this.lastDragX = event.clientX;
@@ -150,6 +157,9 @@ export class PointerTracker {
      * @private
      */
     _onWheel(event) {
+        // Preserve browser zoom and operating-system accessibility gestures.
+        if (event.ctrlKey || event.metaKey) return;
+
         event.preventDefault();
         const delta = event.deltaY !== undefined ? event.deltaY : event.detail;
         const sign = Math.sign(delta) || 1;
@@ -171,6 +181,7 @@ export class PointerTracker {
      * @private
      */
     _onPointerLeave() {
+        this.isPointerDown = false;
         this.isDragging = false;
         this.dragDeltaX = 0;
         this.dragDeltaY = 0;
@@ -185,7 +196,11 @@ export class PointerTracker {
         if (event.touches.length > 0) {
             const touch = event.touches[0];
             this._updateTouchCoords(touch);
-            this.isDragging = true;
+            this.isPointerDown = true;
+            this.isDragging = false;
+            this.didDrag = false;
+            this.dragStartX = touch.clientX;
+            this.dragStartY = touch.clientY;
             this.lastDragX = touch.clientX;
             this.lastDragY = touch.clientY;
             this._updateActivity(true);
@@ -199,6 +214,13 @@ export class PointerTracker {
     _onTouchMove(event) {
         if (event.touches.length > 0) {
             const touch = event.touches[0];
+            if (this.isPointerDown && !this.isDragging) {
+                const distance = Math.hypot(touch.clientX - this.dragStartX, touch.clientY - this.dragStartY);
+                if (distance > 6) {
+                    this.isDragging = true;
+                    this.didDrag = true;
+                }
+            }
             if (this.isDragging) {
                 this.dragDeltaX = touch.clientX - this.lastDragX;
                 this.dragDeltaY = touch.clientY - this.lastDragY;
@@ -215,10 +237,19 @@ export class PointerTracker {
      * @private
      */
     _onTouchEnd() {
+        this.isPointerDown = false;
         this.isDragging = false;
         this.dragDeltaX = 0;
         this.dragDeltaY = 0;
         this._updateActivity(false);
+    }
+
+    /**
+     * Reset the gesture state when the browser cancels an active touch sequence.
+     * @private
+     */
+    _onTouchCancel() {
+        this._onTouchEnd();
     }
 
     /**
@@ -312,8 +343,9 @@ export class PointerTracker {
         window.removeEventListener('touchstart', this._onTouchStart);
         window.removeEventListener('touchmove', this._onTouchMove);
         window.removeEventListener('touchend', this._onTouchEnd);
+        window.removeEventListener('touchcancel', this._onTouchCancel);
+        window.removeEventListener('blur', this._onPointerLeave);
         this.activityListeners.clear();
         this.resetListeners.clear();
     }
 }
-

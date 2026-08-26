@@ -20,6 +20,13 @@ export class WallLeftProjects {
         this.time = 0;
         this.blinkingLEDs = [];
 
+        this.interactiveObjects = {
+            hexapod: null,
+            iotNode: null,
+            mlVision: null,
+            bldcDyno: null
+        };
+
         this._initWallArchitecture();
         this._initHexapodStation();
         this._initIoTStation();
@@ -174,6 +181,7 @@ export class WallLeftProjects {
         harness.rotation.x = Math.PI / 2;
         station.add(harness);
 
+        this.interactiveObjects.hexapod = station;
         this.group.add(station);
     }
 
@@ -227,6 +235,7 @@ export class WallLeftProjects {
         oledMesh.position.set(-0.04, 0.15, 0.445);
         station.add(oledMesh);
 
+        this.interactiveObjects.iotNode = station;
         this.group.add(station);
     }
 
@@ -275,6 +284,7 @@ export class WallLeftProjects {
         board.position.set(0, 0.02, 0.35);
         station.add(board);
 
+        this.interactiveObjects.mlVision = station;
         this.group.add(station);
     }
 
@@ -331,6 +341,7 @@ export class WallLeftProjects {
         heatSink.position.set(0, 0.06, 0.1);
         station.add(heatSink);
 
+        this.interactiveObjects.bldcDyno = station;
         this.group.add(station);
     }
 
